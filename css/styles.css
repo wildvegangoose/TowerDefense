@@ -282,6 +282,46 @@ body {
   font-size: 0.88rem;
 }
 
+.campaign-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.difficulty-switch {
+  display: inline-flex;
+  background: var(--surface-inset);
+  border: 1px solid var(--border-brass);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+  gap: 2px;
+}
+
+.diff-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--text-parchment);
+  font-family: var(--font-sans);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 6px 11px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.14s ease, color 0.14s ease;
+}
+
+.diff-btn.active {
+  background: linear-gradient(180deg, #e8b857 0%, #c58e2f 100%);
+  color: #211408;
+}
+
+.diff-btn.grandmaster.active {
+  background: linear-gradient(180deg, #d8594b 0%, #9f3024 100%);
+  color: #fff3f0;
+}
+
 .dev-unlock-toggle {
   display: inline-flex;
   align-items: center;

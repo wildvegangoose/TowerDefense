@@ -40,10 +40,16 @@
             <h2>Royal Campaign</h2>
             <p class="campaign-hint">Each victory unlocks a new Chess piece — culminating in Relics beyond the board.</p>
           </div>
-          <label class="dev-unlock-toggle" title="Unlock every level immediately for testing & iteration">
-            <input type="checkbox" id="toggle-sandbox" />
-            <span>Sandbox Unlock All</span>
-          </label>
+          <div class="campaign-controls">
+            <div class="difficulty-switch" role="group" aria-label="Difficulty Mode">
+              <button id="btn-diff-standard" class="diff-btn active" type="button">Tactical</button>
+              <button id="btn-diff-grandmaster" class="diff-btn" type="button">Grandmaster</button>
+            </div>
+            <label class="dev-unlock-toggle" title="Unlock every level immediately for testing & iteration">
+              <input type="checkbox" id="toggle-sandbox" />
+              <span>Sandbox Unlock All</span>
+            </label>
+          </div>
         </div>
 
         <div id="level-grid" class="level-grid" role="list"></div>
@@ -66,11 +72,11 @@
         <div class="hud-stats">
           <div class="stat-chip stat-gold" title="Royal Gold">
             <span class="stat-icon">&#9733;</span>
-            <span id="hud-gold">135</span>
+            <span id="hud-gold">95</span>
           </div>
           <div class="stat-chip stat-lives" title="Citadel Lives">
             <span class="stat-icon">&#9829;</span>
-            <span id="hud-lives">18</span>
+            <span id="hud-lives">12</span>
           </div>
           <div class="stat-chip stat-wave" title="Current Wave">
             <span class="stat-label">WAVE</span>
@@ -81,7 +87,8 @@
         <div class="topbar-controls">
           <button id="btn-speed" class="icon-btn text-btn" type="button" title="Toggle Game Speed">1x</button>
           <button id="btn-pause" class="icon-btn" type="button" title="Pause">&#10074;&#10074;</button>
-          <button id="btn-mute" class="icon-btn" type="button" title="Toggle Sound">&#128266;</button>
+          <button id="btn-music" class="icon-btn" type="button" title="Toggle Battle Music">&#127925;</button>
+          <button id="btn-mute" class="icon-btn" type="button" title="Toggle Sound Effects">&#128266;</button>
           <button id="btn-game-codex" class="icon-btn" type="button" title="Piece Codex">&#128214;</button>
         </div>
       </header>

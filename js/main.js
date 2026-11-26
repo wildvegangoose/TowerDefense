@@ -23,6 +23,7 @@ class CrownwardApp {
   constructor() {
     this.progress = this._loadProgress();
     this.sandboxAll = localStorage.getItem('crownward_sandbox') === '1';
+    this.difficulty = localStorage.getItem('crownward_difficulty') || 'standard';
     this.currentLevel = null;
     this.engine = null;
     this.bannerTimer = null;
@@ -40,6 +41,8 @@ class CrownwardApp {
       screenGame: document.getElementById('screen-game'),
       levelGrid: document.getElementById('level-grid'),
       toggleSandbox: document.getElementById('toggle-sandbox'),
+      btnDiffStandard: document.getElementById('btn-diff-standard'),
+      btnDiffGrandmaster: document.getElementById('btn-diff-grandmaster'),
       btnOpenCodex: document.getElementById('btn-open-codex'),
       btnGameCodex: document.getElementById('btn-game-codex'),
       btnInstallPwa: document.getElementById('btn-install-pwa'),
@@ -54,6 +57,7 @@ class CrownwardApp {
       hudWave: document.getElementById('hud-wave'),
       btnSpeed: document.getElementById('btn-speed'),
       btnPause: document.getElementById('btn-pause'),
+      btnMusic: document.getElementById('btn-music'),
       btnMute: document.getElementById('btn-mute'),
       battleBanner: document.getElementById('battle-banner'),
 
@@ -121,6 +125,7 @@ class CrownwardApp {
 
   async _init() {
     this.el.toggleSandbox.checked = this.sandboxAll;
+    this._syncDifficultyUi();
     this._syncMuteIcon();
     this._renderCampaign();
 
@@ -156,6 +161,15 @@ class CrownwardApp {
       this._renderCampaign();
     });
 
+    const setDiff = (mode) => {
+      this.difficulty = mode;
+      localStorage.setItem('crownward_difficulty', mode);
+      this._syncDifficultyUi();
+      this._renderCampaign();
+    };
+    this.el.btnDiffStandard.addEventListener('click', () => setDiff('standard'));
+    this.el.btnDiffGrandmaster.addEventListener('click', () => setDiff('grandmaster'));
+
     this.el.btnOpenCodex.addEventListener('click', () => this._openCodex());
     this.el.btnGameCodex.addEventListener('click', () => this._openCodex());
     this.el.btnCloseCodex.addEventListener('click', () => {
@@ -174,6 +188,11 @@ class CrownwardApp {
     this.el.btnPause.addEventListener('click', () => {
       sound.unlock();
       this.engine?.togglePause();
+    });
+    this.el.btnMusic.addEventListener('click', () => {
+      sound.unlock();
+      sound.toggleMusic();
+      this._syncMuteIcon();
     });
     this.el.btnMute.addEventListener('click', () => {
       sound.unlock();
@@ -262,9 +281,20 @@ class CrownwardApp {
     }
   }
 
+  _syncDifficultyUi() {
+    const isGm = this.difficulty === 'grandmaster';
+    this.el.btnDiffStandard.classList.toggle('active', !isGm);
+    this.el.btnDiffGrandmaster.classList.toggle('active', isGm);
+    this.el.btnDiffGrandmaster.classList.toggle('grandmaster', true);
+  }
+
   _syncMuteIcon() {
-    this.el.btnMute.textContent = sound.muted ? '🔇' : '🔊';
-    this.el.btnMute.classList.toggle('active-toggle', sound.muted);
+    this.el.btnMute.textContent = sound.sfxMuted ? '🔇' : '🔊';
+    this.el.btnMute.classList.toggle('active-toggle', sound.sfxMuted);
+    if (this.el.btnMusic) {
+      this.el.btnMusic.textContent = sound.musicMuted ? '🚫' : '🎵';
+      this.el.btnMusic.classList.toggle('active-toggle', sound.musicMuted);
+    }
   }
 
   // ==================== CAMPAIGN SCREEN ====================
@@ -272,12 +302,14 @@ class CrownwardApp {
   _renderCampaign() {
     const grid = this.el.levelGrid;
     grid.innerHTML = '';
+    const goldMult = this.difficulty === 'grandmaster' ? 0.88 : 1.0;
 
     for (const lvl of LEVELS) {
       const unlocked = this.sandboxAll || lvl.id <= this.progress.highestUnlocked;
       const earnedStars = this.progress.stars[lvl.id] || 0;
       const piece = PIECE_REGISTRY[lvl.unlocksPiece];
       const isMythic = piece?.category === 'mythic';
+      const displayGold = Math.round(lvl.startingGold * goldMult);
 
       const card = document.createElement('button');
       card.type = 'button';
@@ -305,7 +337,7 @@ class CrownwardApp {
           </div>
         </div>
         <div class="level-card-footer">
-          <span>${lvl.waves.length} Waves • ${lvl.startingGold}g</span>
+          <span>${lvl.waves.length} Waves • ${displayGold}g</span>
           <strong>${unlocked ? 'Play →' : '🔒 Locked'}</strong>
         </div>
       `;
@@ -328,10 +360,11 @@ class CrownwardApp {
 
     this.el.screenHome.classList.remove('active');
     this.el.screenGame.classList.add('active');
-    this.el.hudLevelNum.textContent = `LEVEL ${lvl.id}`;
+    const diffTag = this.difficulty === 'grandmaster' ? ' • GRANDMASTER' : '';
+    this.el.hudLevelNum.textContent = `LEVEL ${lvl.id}${diffTag}`;
     this.el.hudLevelName.textContent = lvl.name;
 
-    this.engine.loadLevel(lvl);
+    this.engine.loadLevel(lvl, this.difficulty);
     requestAnimationFrame(() => this.engine.resize());
 
     if (showBriefing) {

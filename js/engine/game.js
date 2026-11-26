@@ -4,7 +4,7 @@
 
 import { BOARD_SIZE, expandWaypoints } from '../data/levels.js';
 import { PIECE_REGISTRY, getPieceStats, getUpgradeInfo } from '../data/pieces.js';
-import { createEnemyConfig } from '../data/enemies.js';
+import { createEnemyConfig, DIFFICULTY_PRESETS } from '../data/enemies.js';
 import { SPRITES } from '../assets.js';
 import { sound } from '../audio.js';
 import { getPatternTiles, selectTarget, getEnemiesOnRay } from './targeting.js';
@@ -18,6 +18,7 @@ export class GameEngine {
     this.callbacks = callbacks || {};
 
     this.level = null;
+    this.difficulty = 'standard';
     this.pathTiles = [];
     this.pathSet = new Set();
 
@@ -130,12 +131,14 @@ export class GameEngine {
     this.tileSize = (cssSize - this.framePad * 2) / BOARD_SIZE;
   }
 
-  loadLevel(level) {
+  loadLevel(level, difficulty = 'standard') {
     this.level = level;
+    this.difficulty = difficulty;
+    const diff = DIFFICULTY_PRESETS[difficulty] || DIFFICULTY_PRESETS.standard;
     this.pathTiles = expandWaypoints(level.waypoints);
     this.pathSet = new Set(this.pathTiles.map(([c, r]) => `${c},${r}`));
 
-    this.gold = level.startingGold;
+    this.gold = Math.round(level.startingGold * diff.goldMult);
     this.lives = level.startingLives;
     this.maxLives = level.startingLives;
     this.score = 0;
@@ -157,6 +160,9 @@ export class GameEngine {
     this.selectedBuildPieceId = level.unlocksPiece || 'pawn';
     this.previewTile = null;
     this.selectedTowerId = null;
+
+    sound.setMusicDucked(false);
+    sound.setMusicIntensity('prep');
 
     this.resize();
     this._emitHud();
@@ -185,13 +191,16 @@ export class GameEngine {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
     }
+    sound.setMusicIntensity('off');
   }
 
   togglePause() {
     if (this.gameState === 'playing') {
       this.gameState = 'paused';
+      sound.setMusicDucked(true);
     } else if (this.gameState === 'paused') {
       this.gameState = 'playing';
+      sound.setMusicDucked(false);
       this.lastFrameTime = performance.now();
     }
     this._emitHud();
@@ -376,6 +385,7 @@ export class GameEngine {
     this.spawnQueue.sort((a, b) => a.time - b.time);
 
     sound.playWaveStart(hasBoss);
+    sound.setMusicIntensity(hasBoss ? 'boss' : 'battle');
     if (hasBoss) {
       this._triggerShake(0.4, 5);
       this._emitBanner('Crimson Warlord Approaches!');
@@ -550,6 +560,7 @@ export class GameEngine {
         this._emitHud();
         if (this.lives <= 0) {
           this.gameState = 'defeat';
+          sound.setMusicIntensity('off');
           sound.playDefeat();
           this.callbacks.onGameEnd?.({ victory: false, level: this.level, score: this.score });
           return;
@@ -622,7 +633,8 @@ export class GameEngine {
       typeId,
       this.level.id,
       Math.max(0, this.waveIndex),
-      this.level.waves.length
+      this.level.waves.length,
+      this.difficulty
     );
     const [sx, sy] = this.pathTiles[0];
     const enemy = {
@@ -835,6 +847,7 @@ export class GameEngine {
   _resolveProjectileImpact(p) {
     const splash = p.stats.splashRadius || 0.85;
     const isCannon = p.kind === 'cannonball';
+    sound.playImpact(p.kind);
     this._spawnRing(p.x2, p.y2, splash, isCannon ? '#e88b3c' : '#f2c14e', 0.38);
     this._spawnDustBurst(p.x2, p.y2, isCannon ? '#f0a250' : '#ffe099', isCannon ? 12 : 9);
     this._triggerShake(0.14, isCannon ? 3.5 : 2.2);
@@ -871,7 +884,7 @@ export class GameEngine {
       this._triggerShake(0.35, 5);
       this._spawnRing(enemy.x, enemy.y, 1.4, '#e04f3e', 0.5);
       this._spawnFloatText(enemy.x, enemy.y - 0.55, 'Reinforcements!', '#ff7666');
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 4; i++) {
         this._spawnEnemy('footman', {
           x: enemy.x + (Math.random() - 0.5) * 0.3,
           y: enemy.y + (Math.random() - 0.5) * 0.3,
@@ -886,16 +899,18 @@ export class GameEngine {
       this.gold += enemy.reward;
       this.score += enemy.reward * 10;
       if (tower) tower.kills += 1;
-      sound.playEnemyKill();
+      sound.playEnemyKill(Boolean(enemy.isBoss));
       this._spawnDustBurst(enemy.x, enemy.y, '#e8684a', enemy.isBoss ? 22 : 9);
       this._spawnFloatText(enemy.x, enemy.y - 0.25, `+${enemy.reward}g`, '#f5cc66');
       this._emitHud();
+    } else {
+      sound.playHit(isCrit, effArmor >= 0.35);
     }
   }
 
   _onWaveCleared() {
-    // Wave clear bonus + King Royal Treasury gold!
-    const waveBonus = 22 + this.waveIndex * 6;
+    // Tightened wave clear bonus + King Royal Treasury gold!
+    const waveBonus = 15 + this.waveIndex * 4;
     let kingBonus = 0;
     for (const t of this.towers) {
       if (t.pieceId === 'king') {
@@ -914,6 +929,7 @@ export class GameEngine {
       this.gameState = 'victory';
       const lifeRatio = this.lives / this.maxLives;
       const stars = lifeRatio >= 0.85 ? 3 : lifeRatio >= 0.45 ? 2 : 1;
+      sound.setMusicIntensity('off');
       sound.playVictory();
       this._emitHud();
       this.callbacks.onGameEnd?.({
@@ -926,6 +942,7 @@ export class GameEngine {
       return;
     }
 
+    sound.setMusicIntensity('prep');
     this._emitBanner(`Wave ${this.waveIndex + 1} Cleared! +${waveBonus + kingBonus}g`);
     this._emitHud();
   }
