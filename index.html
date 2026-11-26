@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#261b14" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="description" content="Crownward is a tactile chess tower defense game for Android web browsers. Unlock a new chess piece every level, battle escalating obsidian legions, and discover mythic non-chess relics." />
+  <title>Crownward — Chess Tower Defense</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="icon" type="image/png" href="assets/icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- ==================== CAMPAIGN / HOME SCREEN ==================== -->
+    <section id="screen-home" class="screen screen-home active" aria-label="Campaign Menu">
+      <header class="home-header">
+        <div class="brand-lockup">
+          <img src="assets/icons/icon-192.png" alt="Crownward Crest" class="brand-emblem" />
+          <div class="brand-copy">
+            <h1>Crownward</h1>
+            <p class="brand-subtitle">Tactical Chess Tower Defense</p>
+          </div>
+        </div>
+        <div class="home-actions">
+          <button id="btn-open-codex" class="btn btn-secondary" type="button">Piece Codex</button>
+          <button id="btn-install-pwa" class="btn btn-gold hidden" type="button">Install App</button>
+        </div>
+      </header>
+
+      <main class="campaign-shell">
+        <div class="campaign-bar">
+          <div>
+            <h2>Royal Campaign</h2>
+            <p class="campaign-hint">Each victory unlocks a new Chess piece — culminating in Relics beyond the board.</p>
+          </div>
+          <label class="dev-unlock-toggle" title="Unlock every level immediately for testing & iteration">
+            <input type="checkbox" id="toggle-sandbox" />
+            <span>Sandbox Unlock All</span>
+          </label>
+        </div>
+
+        <div id="level-grid" class="level-grid" role="list"></div>
+      </main>
+    </section>
+
+    <!-- ==================== GAMEPLAY SCREEN ==================== -->
+    <section id="screen-game" class="screen screen-game" aria-label="Chessboard Battle">
+      <header class="game-topbar">
+        <div class="topbar-left">
+          <button id="btn-back-menu" class="icon-btn" type="button" aria-label="Back to Campaign" title="Campaign Map">
+            &#8592;
+          </button>
+          <div class="level-badge">
+            <span id="hud-level-num" class="level-kicker">LEVEL 1</span>
+            <strong id="hud-level-name">The Pawn's Bastion</strong>
+          </div>
+        </div>
+
+        <div class="hud-stats">
+          <div class="stat-chip stat-gold" title="Royal Gold">
+            <span class="stat-icon">&#9733;</span>
+            <span id="hud-gold">135</span>
+          </div>
+          <div class="stat-chip stat-lives" title="Citadel Lives">
+            <span class="stat-icon">&#9829;</span>
+            <span id="hud-lives">18</span>
+          </div>
+          <div class="stat-chip stat-wave" title="Current Wave">
+            <span class="stat-label">WAVE</span>
+            <span id="hud-wave">0/5</span>
+          </div>
+        </div>
+
+        <div class="topbar-controls">
+          <button id="btn-speed" class="icon-btn text-btn" type="button" title="Toggle Game Speed">1x</button>
+          <button id="btn-pause" class="icon-btn" type="button" title="Pause">&#10074;&#10074;</button>
+          <button id="btn-mute" class="icon-btn" type="button" title="Toggle Sound">&#128266;</button>
+          <button id="btn-game-codex" class="icon-btn" type="button" title="Piece Codex">&#128214;</button>
+        </div>
+      </header>
+
+      <div class="battle-layout">
+        <!-- Chessboard Stage -->
+        <div class="board-stage">
+          <div class="board-wrapper">
+            <canvas id="game-canvas" aria-label="8 by 8 Chess Tower Defense Board"></canvas>
+            <div id="battle-banner" class="battle-banner hidden" aria-live="polite"></div>
+            <div id="touch-confirm-bar" class="touch-confirm-bar hidden">
+              <span id="touch-confirm-label">Place Pawn (40g)</span>
+              <div class="touch-confirm-actions">
+                <button id="btn-cancel-preview" class="btn btn-sm btn-secondary" type="button">Cancel</button>
+                <button id="btn-confirm-place" class="btn btn-sm btn-confirm" type="button">Place Here</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tactical Dock (Right sidebar on desktop, bottom tray on mobile) -->
+        <aside class="tactical-dock">
+          <!-- Wave Action & Intel -->
+          <div class="wave-panel">
+            <div class="wave-intel">
+              <span class="wave-intel-label" id="wave-intel-title">Next Wave Ready</span>
+              <div class="wave-enemies-preview" id="wave-enemies-preview"></div>
+            </div>
+            <button id="btn-start-wave" class="btn btn-gold btn-wave" type="button">
+              Send Wave 1
+            </button>
+          </div>
+
+          <!-- Active Piece Build Hint (Desktop/Mobile context strip) -->
+          <div id="build-hint-bar" class="build-hint-bar"></div>
+
+          <!-- Piece Build Roster -->
+          <div id="piece-roster-section" class="dock-section">
+            <div class="dock-section-header">
+              <span>Defenders</span>
+              <span id="roster-count-label" class="muted-note">Tap piece, then board square</span>
+            </div>
+            <div id="piece-dock" class="piece-dock" role="listbox" aria-label="Available Pieces"></div>
+          </div>
+
+          <!-- Selected Placed Tower Inspector (replaces/overlays dock on mobile when a piece is selected) -->
+          <div id="tower-inspector" class="tower-inspector hidden" aria-live="polite">
+            <div class="inspector-header">
+              <div class="inspector-identity">
+                <img id="insp-sprite" src="" alt="" class="insp-sprite" />
+                <div>
+                  <div class="insp-title-row">
+                    <strong id="insp-name">Pawn</strong>
+                    <span id="insp-tier" class="tier-badge">Tier 1</span>
+                  </div>
+                  <span id="insp-pattern" class="insp-pattern">Adjacent 8 Tiles</span>
+                </div>
+              </div>
+              <button id="btn-close-inspector" class="icon-btn icon-btn-sm" type="button" aria-label="Close Inspector">&#10005;</button>
+            </div>
+
+            <div class="inspector-stats">
+              <div class="insp-stat"><span>DMG</span><strong id="insp-dmg">18</strong></div>
+              <div class="insp-stat"><span>RATE</span><strong id="insp-rate">1.25/s</strong></div>
+              <div class="insp-stat"><span>KILLS</span><strong id="insp-kills">0</strong></div>
+              <div class="insp-stat"><span>AURA</span><strong id="insp-aura">—</strong></div>
+            </div>
+
+            <p id="insp-upgrade-desc" class="insp-upgrade-desc"></p>
+
+            <div class="inspector-actions">
+              <button id="btn-upgrade-tower" class="btn btn-gold btn-sm" type="button">Promote</button>
+              <button id="btn-target-mode" class="btn btn-secondary btn-sm" type="button">Target: First</button>
+              <button id="btn-sell-tower" class="btn btn-danger btn-sm" type="button">Sell</button>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ==================== LEVEL BRIEFING / UNLOCK MODAL ==================== -->
+    <div id="modal-briefing" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+      <div class="modal-card briefing-card">
+        <span id="brief-kicker" class="modal-kicker">LEVEL 1 BRIEFING</span>
+        <h2 id="brief-title">The Pawn's Bastion</h2>
+        <div class="unlock-spotlight">
+          <img id="brief-piece-img" src="" alt="" class="spotlight-sprite" />
+          <div class="spotlight-copy">
+            <span id="brief-unlock-badge" class="unlock-tag">NEW PIECE UNLOCKED</span>
+            <h3 id="brief-piece-name">Pawn</h3>
+            <p id="brief-piece-pattern" class="spotlight-pattern"></p>
+            <p id="brief-desc" class="spotlight-desc"></p>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-brief-start" class="btn btn-gold" type="button">Enter the Board</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== VICTORY / DEFEAT MODAL ==================== -->
+    <div id="modal-result" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+      <div class="modal-card result-card">
+        <span id="result-kicker" class="modal-kicker">CITADEL DEFENDED</span>
+        <h2 id="result-title">Victory!</h2>
+        <div id="result-stars" class="result-stars"></div>
+        <p id="result-summary" class="result-summary"></p>
+        <div id="result-next-unlock" class="unlock-spotlight compact hidden">
+          <img id="result-next-img" src="" alt="" class="spotlight-sprite sm" />
+          <div class="spotlight-copy">
+            <span class="unlock-tag">NEXT LEVEL UNLOCKS</span>
+            <h3 id="result-next-name"></h3>
+            <p id="result-next-pattern" class="spotlight-pattern"></p>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button id="btn-result-menu" class="btn btn-secondary" type="button">Campaign</button>
+          <button id="btn-result-retry" class="btn btn-secondary" type="button">Replay</button>
+          <button id="btn-result-next" class="btn btn-gold" type="button">Next Level</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== PIECE CODEX MODAL ==================== -->
+    <div id="modal-codex" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+      <div class="modal-card codex-card">
+        <div class="codex-header">
+          <div>
+            <span class="modal-kicker">ROYAL ARCHIVES</span>
+            <h2>Piece Codex</h2>
+          </div>
+          <button id="btn-close-codex" class="icon-btn" type="button" aria-label="Close Codex">&#10005;</button>
+        </div>
+        <div id="codex-body" class="codex-body"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
