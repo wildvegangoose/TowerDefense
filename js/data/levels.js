@@ -56,7 +56,7 @@ export const LEVELS = [
     name: "The Knight's Fork",
     subtitle: 'Twin Hairpins',
     unlocksPiece: 'knight',
-    startingGold: 130,
+    startingGold: 145,
     startingLives: 12,
     description: 'Unlock the Knight! Place armored warhorses on the central ridges so their L-jump splash attacks fork both the upper and lower corridors against fast Charger packs.',
     waypoints: [
@@ -77,7 +77,7 @@ export const LEVELS = [
     name: "The Bishop's Diagonal",
     subtitle: 'Sunbeam Staircase',
     unlocksPiece: 'bishop',
-    startingGold: 160,
+    startingGold: 165,
     startingLives: 12,
     description: 'Unlock the Bishop! Sight along the long marble diagonals to pierce columns of foes and sunder heavy armor while Blighted Clerics march to mend their allies.',
     waypoints: [
@@ -99,7 +99,7 @@ export const LEVELS = [
     name: "The Rook's Siege",
     subtitle: 'Grand Straightaways',
     unlocksPiece: 'rook',
-    startingGold: 190,
+    startingGold: 245,
     startingLives: 12,
     description: 'Unlock the Rook! Anchor heavy fortress artillery at the ends of these long straight ranks to pound armored Bastions and Warlords into rubble.',
     waypoints: [
@@ -107,7 +107,7 @@ export const LEVELS = [
     ],
     waves: [
       { groups: [{ type: 'footman', count: 12, interval: 0.62 }, { type: 'bastion', count: 3, interval: 1.7, delay: 0.8 }] },
-      { groups: [{ type: 'bastion', count: 5, interval: 1.55 }, { type: 'cleric', count: 3, interval: 1.4, delay: 0.7 }] },
+      { groups: [{ type: 'bastion', count: 3, interval: 1.75 }, { type: 'cleric', count: 2, interval: 1.7, delay: 0.9 }, { type: 'footman', count: 8, interval: 0.6, delay: 0.8 }] },
       { groups: [{ type: 'lancer', count: 16, interval: 0.4 }, { type: 'footman', count: 14, interval: 0.48, delay: 0.9 }] },
       { groups: [{ type: 'bastion', count: 6, interval: 1.38 }, { type: 'cleric', count: 4, interval: 1.25, delay: 0.7 }, { type: 'lancer', count: 12, interval: 0.42, delay: 1.0 }] },
       { groups: [{ type: 'warlord', count: 1, interval: 2.0 }, { type: 'footman', count: 16, interval: 0.42, delay: 1.0 }, { type: 'cleric', count: 3, interval: 1.2, delay: 0.8 }] },
@@ -122,7 +122,7 @@ export const LEVELS = [
     name: "The Queen's Gambit",
     subtitle: 'Royal Spiral Court',
     unlocksPiece: 'queen',
-    startingGold: 225,
+    startingGold: 265,
     startingLives: 10,
     description: 'Unlock the Queen! Command the central throne tiles where all 8 orthogonal and diagonal rays rain ricocheting royal bolts across the spiral.',
     waypoints: [
@@ -130,7 +130,7 @@ export const LEVELS = [
     ],
     waves: [
       { groups: [{ type: 'footman', count: 16, interval: 0.56 }, { type: 'lancer', count: 10, interval: 0.44, delay: 0.8 }] },
-      { groups: [{ type: 'bastion', count: 6, interval: 1.35 }, { type: 'cleric', count: 4, interval: 1.2, delay: 0.7 }] },
+      { groups: [{ type: 'bastion', count: 4, interval: 1.6 }, { type: 'cleric', count: 2, interval: 1.5, delay: 0.9 }, { type: 'footman', count: 10, interval: 0.52, delay: 0.8 }] },
       { groups: [{ type: 'lancer', count: 20, interval: 0.36 }, { type: 'footman', count: 14, interval: 0.44, delay: 0.9 }] },
       { groups: [{ type: 'bastion', count: 7, interval: 1.25 }, { type: 'cleric', count: 5, interval: 1.15, delay: 0.7 }, { type: 'footman', count: 16, interval: 0.42, delay: 0.9 }] },
       { groups: [{ type: 'warlord', count: 1, interval: 2.0 }, { type: 'lancer', count: 14, interval: 0.4, delay: 1.2 }, { type: 'cleric', count: 4, interval: 1.1, delay: 0.8 }] },
@@ -146,7 +146,7 @@ export const LEVELS = [
     name: "The King's Citadel",
     subtitle: 'Sovereign Courtyard',
     unlocksPiece: 'king',
-    startingGold: 255,
+    startingGold: 270,
     startingLives: 10,
     description: 'Unlock the King! Crown your central courtyard to supercharge all adjacent chess defenders with Royal Decree speed, damage, and treasury gold.',
     waypoints: [
@@ -171,7 +171,7 @@ export const LEVELS = [
     name: 'Beyond the Board',
     subtitle: 'Mythic Rift Trial',
     unlocksPiece: 'obelisk',
-    startingGold: 285,
+    startingGold: 320,
     startingLives: 10,
     description: 'Unlock the first Non-Chess Relic — the Frost Obelisk! Chill relentless obsidian legions in glacial choke points while your royal chess pieces shatter them.',
     waypoints: [
@@ -179,7 +179,7 @@ export const LEVELS = [
     ],
     waves: [
       { groups: [{ type: 'lancer', count: 18, interval: 0.38 }, { type: 'footman', count: 16, interval: 0.44, delay: 0.8 }] },
-      { groups: [{ type: 'bastion', count: 7, interval: 1.2 }, { type: 'cleric', count: 5, interval: 1.05, delay: 0.7 }] },
+      { groups: [{ type: 'bastion', count: 5, interval: 1.45 }, { type: 'cleric', count: 2, interval: 1.4, delay: 0.9 }, { type: 'footman', count: 10, interval: 0.48, delay: 0.8 }] },
       { groups: [{ type: 'lancer', count: 24, interval: 0.32 }, { type: 'bastion', count: 6, interval: 1.15, delay: 0.9 }] },
       { groups: [{ type: 'warlord', count: 2, interval: 4.0 }, { type: 'cleric', count: 5, interval: 1.05, delay: 0.9 }, { type: 'lancer', count: 16, interval: 0.34, delay: 1.0 }] },
       { groups: [{ type: 'bastion', count: 10, interval: 1.0 }, { type: 'cleric', count: 6, interval: 0.95, delay: 0.7 }, { type: 'footman', count: 24, interval: 0.32, delay: 0.9 }] },

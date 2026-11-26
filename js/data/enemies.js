@@ -96,21 +96,22 @@ export function createEnemyConfig(typeId, levelNum, waveIndex, totalWaves, diffi
   if (!base) throw new Error(`Unknown enemy type: ${typeId}`);
   const diff = DIFFICULTY_PRESETS[difficultyId] || DIFFICULTY_PRESETS.standard;
 
-  const levelHpScale = Math.pow(1.27, levelNum - 1);
+  // Sustainable per-level scaling (1.0x on Lv1 -> 1.84x on Lv7) paired with steeper wave-by-wave ramp
+  const levelHpScale = 1 + (levelNum - 1) * 0.14;
   const waveProgress = totalWaves > 1 ? waveIndex / (totalWaves - 1) : 0;
-  const waveHpScale = 1 + waveIndex * 0.21 + waveProgress * 0.18;
+  const waveHpScale = 1 + waveIndex * 0.2 + waveProgress * 0.22;
 
-  const speedScale = (1 + (levelNum - 1) * 0.04 + waveIndex * 0.015) * diff.speedMult;
-  const bonusArmor = Math.min(0.22, (levelNum - 1) * 0.022 + Math.floor(waveIndex / 3) * 0.02);
+  const speedScale = (1 + (levelNum - 1) * 0.022 + waveIndex * 0.012) * diff.speedMult;
+  const bonusArmor = Math.min(0.18, (levelNum - 1) * 0.015 + Math.floor(waveIndex / 3) * 0.02);
 
   return {
     ...base,
     maxHp: Math.round(base.baseHp * levelHpScale * waveHpScale * diff.hpMult),
     speed: Number((base.speed * speedScale).toFixed(3)),
-    armor: Math.min(0.7, base.armor + bonusArmor),
-    reward: Math.max(5, Math.round(base.reward * (1 + (levelNum - 1) * 0.06))),
+    armor: Math.min(0.68, base.armor + bonusArmor),
+    reward: Math.max(5, Math.round(base.reward * (1 + (levelNum - 1) * 0.05))),
     healAmount: base.healAmount
-      ? Math.round(base.healAmount * levelHpScale * (1 + waveIndex * 0.12) * diff.hpMult)
+      ? Math.round(base.healAmount * levelHpScale * (1 + waveIndex * 0.1) * diff.hpMult)
       : 0,
   };
 }
