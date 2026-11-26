@@ -35,6 +35,7 @@ JS_FILES_IN_ORDER = [
     "js/data/pieces.js",
     "js/data/enemies.js",
     "js/audio.js",
+    "js/storage.js",
     "js/engine/targeting.js",
     "js/engine/game.js",
     "js/main.js",

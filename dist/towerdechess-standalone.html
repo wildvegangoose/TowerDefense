@@ -275,12 +275,77 @@ body {
   padding: 0 4px;
 }
 
+.campaign-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .campaign-bar h2 {
   margin: 0;
   font-family: var(--font-display);
   font-size: 1.25rem;
   letter-spacing: 0.05em;
   color: var(--gold-bright);
+}
+
+.stars-summary-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--surface-inset);
+  border: 1px solid var(--border-brass);
+  color: var(--gold-bright);
+  font-size: 0.8rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.save-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.save-code-label {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.save-code-box {
+  width: 100%;
+  resize: none;
+  background: var(--surface-inset);
+  color: var(--text-ivory);
+  border: 1px solid var(--border-brass);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.76rem;
+  line-height: 1.4;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.save-status-msg {
+  min-height: 18px;
+  margin: 8px 0 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gold-bright);
+}
+
+.save-status-msg.error {
+  color: #f07b6e;
 }
 
 .campaign-hint {
@@ -1301,6 +1366,7 @@ body {
         </div>
         <div class="home-actions">
           <button id="btn-open-codex" class="btn btn-secondary" type="button">Piece Codex</button>
+          <button id="btn-open-save" class="btn btn-secondary" type="button">Save Data</button>
           <button id="btn-install-pwa" class="btn btn-gold hidden" type="button">Install App</button>
         </div>
       </header>
@@ -1308,7 +1374,10 @@ body {
       <main class="campaign-shell">
         <div class="campaign-bar">
           <div>
-            <h2>Royal Campaign</h2>
+            <div class="campaign-title-row">
+              <h2>Royal Campaign</h2>
+              <span id="campaign-total-stars" class="stars-summary-pill" title="Total stars earned">★ 0 / 21</span>
+            </div>
             <p class="campaign-hint">Each victory unlocks a new Chess piece — culminating in Relics beyond the board.</p>
           </div>
           <div class="campaign-controls">
@@ -1494,6 +1563,34 @@ body {
           <button id="btn-close-codex" class="icon-btn" type="button" aria-label="Close Codex">&#10005;</button>
         </div>
         <div id="codex-body" class="codex-body"></div>
+      </div>
+    </div>
+
+    <!-- ==================== SAVE DATA BACKUP MODAL ==================== -->
+    <div id="modal-save" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+      <div class="modal-card save-card">
+        <div class="codex-header">
+          <div>
+            <span class="modal-kicker">CAMPAIGN PROGRESS</span>
+            <h2>Save Data</h2>
+          </div>
+          <button id="btn-close-save" class="icon-btn" type="button" aria-label="Close Save Data">&#10005;</button>
+        </div>
+        <p class="result-summary">
+          Your unlocked levels and stars (both Tactical and Grandmaster) are saved automatically on this device. Copy your Save Code below to back up or transfer your progress between web and Android.
+        </p>
+        <div class="save-stats-row">
+          <div class="insp-stat"><span>TACTICAL STARS</span><strong id="save-tactical-stars">★ 0 / 21</strong></div>
+          <div class="insp-stat"><span>GRANDMASTER</span><strong id="save-gm-stars">★ 0 / 21</strong></div>
+          <div class="insp-stat"><span>UNLOCKED</span><strong id="save-unlocked-lv">Lv. 1 / 7</strong></div>
+        </div>
+        <label class="save-code-label" for="input-save-code">Save Code (Copy or Paste to Restore)</label>
+        <textarea id="input-save-code" class="save-code-box" rows="3" spellcheck="false"></textarea>
+        <p id="save-status-msg" class="save-status-msg"></p>
+        <div class="modal-actions">
+          <button id="btn-copy-save" class="btn btn-secondary" type="button">Copy Code</button>
+          <button id="btn-import-save" class="btn btn-gold" type="button">Restore / Merge</button>
+        </div>
       </div>
     </div>
   </div>
@@ -2897,6 +2994,275 @@ class SoundEngine {
   }
 }
 const sound = new SoundEngine();
+
+
+// === js/storage.js ===
+/**
+ * Persistent Save-State Manager for TowerDeChess.
+ *
+ * Features:
+ * - Stores unlocked levels, stars per level (overall + per difficulty), and best scores.
+ * - Automatically migrates & merges legacy `crownward_progress_v1` saves so no stars are lost.
+ * - Dual-layer persistence: synchronous `localStorage` + durable `IndexedDB` mirror.
+ * - Portable Base64 Save Code export/import to transfer progress between web, PWA, and Play Store.
+ */
+
+const PRIMARY_KEY = 'towerdechess_progress_v1';
+const LEGACY_KEYS = ['crownward_progress_v1'];
+const IDB_NAME = 'TowerDeChessDB';
+const IDB_STORE = 'saves';
+const IDB_KEY = 'campaign_progress';
+function createEmptyProgress() {
+  return {
+    version: 2,
+    highestUnlocked: 1,
+    stars: {}, // levelId -> best stars across difficulties (0..3)
+    starsByDifficulty: {
+      standard: {},
+      grandmaster: {},
+    },
+    bestScores: {}, // levelId -> highest score
+    updatedAt: Date.now(),
+  };
+}
+
+function normalizeProgress(raw) {
+  const base = createEmptyProgress();
+  if (!raw || typeof raw !== 'object') return base;
+
+  base.highestUnlocked = Math.max(1, Number(raw.highestUnlocked) || 1);
+  if (raw.stars && typeof raw.stars === 'object') {
+    for (const [k, v] of Object.entries(raw.stars)) {
+      const n = Math.max(0, Math.min(3, Number(v) || 0));
+      if (n > 0) base.stars[k] = n;
+    }
+  }
+
+  if (raw.starsByDifficulty && typeof raw.starsByDifficulty === 'object') {
+    for (const mode of ['standard', 'grandmaster']) {
+      const src = raw.starsByDifficulty[mode];
+      if (src && typeof src === 'object') {
+        for (const [k, v] of Object.entries(src)) {
+          const n = Math.max(0, Math.min(3, Number(v) || 0));
+          if (n > 0) {
+            base.starsByDifficulty[mode][k] = n;
+            base.stars[k] = Math.max(base.stars[k] || 0, n);
+          }
+        }
+      }
+    }
+  } else {
+    // Legacy save only had top-level `stars` — mirror into `standard` so nothing looks empty
+    for (const [k, v] of Object.entries(base.stars)) {
+      base.starsByDifficulty.standard[k] = v;
+    }
+  }
+
+  if (raw.bestScores && typeof raw.bestScores === 'object') {
+    for (const [k, v] of Object.entries(raw.bestScores)) {
+      const n = Math.max(0, Number(v) || 0);
+      if (n > 0) base.bestScores[k] = n;
+    }
+  }
+
+  base.updatedAt = Number(raw.updatedAt) || Date.now();
+  return base;
+}
+function mergeProgress(a, b) {
+  const pA = normalizeProgress(a);
+  const pB = normalizeProgress(b);
+  const out = createEmptyProgress();
+
+  out.highestUnlocked = Math.max(pA.highestUnlocked, pB.highestUnlocked);
+  const allStarKeys = new Set([...Object.keys(pA.stars), ...Object.keys(pB.stars)]);
+  for (const k of allStarKeys) {
+    out.stars[k] = Math.max(pA.stars[k] || 0, pB.stars[k] || 0);
+  }
+
+  for (const mode of ['standard', 'grandmaster']) {
+    const keys = new Set([
+      ...Object.keys(pA.starsByDifficulty[mode]),
+      ...Object.keys(pB.starsByDifficulty[mode]),
+    ]);
+    for (const k of keys) {
+      const best = Math.max(
+        pA.starsByDifficulty[mode][k] || 0,
+        pB.starsByDifficulty[mode][k] || 0
+      );
+      if (best > 0) {
+        out.starsByDifficulty[mode][k] = best;
+        out.stars[k] = Math.max(out.stars[k] || 0, best);
+      }
+    }
+  }
+
+  const scoreKeys = new Set([...Object.keys(pA.bestScores), ...Object.keys(pB.bestScores)]);
+  for (const k of scoreKeys) {
+    out.bestScores[k] = Math.max(pA.bestScores[k] || 0, pB.bestScores[k] || 0);
+  }
+
+  out.updatedAt = Math.max(pA.updatedAt, pB.updatedAt);
+  return out;
+}
+
+function readLocalKey(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function openDb() {
+  return new Promise((resolve) => {
+    if (typeof indexedDB === 'undefined') {
+      resolve(null);
+      return;
+    }
+    try {
+      const req = indexedDB.open(IDB_NAME, 1);
+      req.onupgradeneeded = () => {
+        const db = req.result;
+        if (!db.objectStoreNames.contains(IDB_STORE)) {
+          db.createObjectStore(IDB_STORE);
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+async function readIdb() {
+  const db = await openDb();
+  if (!db) return null;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(IDB_STORE, 'readonly');
+      const req = tx.objectStore(IDB_STORE).get(IDB_KEY);
+      req.onsuccess = () => resolve(req.result || null);
+      req.onerror = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+async function writeIdb(progress) {
+  const db = await openDb();
+  if (!db) return;
+  try {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(progress, IDB_KEY);
+  } catch {
+    // ignore storage quota errors
+  }
+}
+
+/**
+ * Synchronous load from localStorage + automatic legacy Crownward migration.
+ */
+function loadProgressSync() {
+  let merged = createEmptyProgress();
+  let migrated = false;
+
+  const primary = readLocalKey(PRIMARY_KEY);
+  if (primary) {
+    merged = mergeProgress(merged, primary);
+  }
+
+  for (const legacyKey of LEGACY_KEYS) {
+    const legacy = readLocalKey(legacyKey);
+    if (legacy) {
+      merged = mergeProgress(merged, legacy);
+      migrated = true;
+    }
+  }
+
+  if (migrated) {
+    saveProgress(merged);
+  }
+  return merged;
+}
+
+/**
+ * Async reconciliation with IndexedDB backup (recovers stars if localStorage was cleared).
+ */
+async function hydrateProgressFromBackup(currentProgress) {
+  const backup = await readIdb();
+  if (!backup) {
+    writeIdb(currentProgress);
+    return { progress: currentProgress, changed: false };
+  }
+  const merged = mergeProgress(currentProgress, backup);
+  const changed = JSON.stringify(merged.stars) !== JSON.stringify(currentProgress.stars) ||
+    merged.highestUnlocked !== currentProgress.highestUnlocked ||
+    JSON.stringify(merged.starsByDifficulty) !== JSON.stringify(currentProgress.starsByDifficulty);
+
+  if (changed) {
+    saveProgress(merged);
+  }
+  return { progress: merged, changed };
+}
+function saveProgress(progress) {
+  const normalized = normalizeProgress(progress);
+  normalized.updatedAt = Date.now();
+  try {
+    localStorage.setItem(PRIMARY_KEY, JSON.stringify(normalized));
+  } catch {
+    // ignore storage errors
+  }
+  writeIdb(normalized);
+  return normalized;
+}
+function recordLevelVictory(progress, { levelId, stars, score, difficulty, totalLevels }) {
+  const next = normalizeProgress(progress);
+  const key = String(levelId);
+  const mode = difficulty === 'grandmaster' ? 'grandmaster' : 'standard';
+
+  next.stars[key] = Math.max(next.stars[key] || 0, stars);
+  next.starsByDifficulty[mode][key] = Math.max(next.starsByDifficulty[mode][key] || 0, stars);
+  if (score > 0) {
+    next.bestScores[key] = Math.max(next.bestScores[key] || 0, Math.round(score));
+  }
+  if (levelId + 1 <= totalLevels) {
+    next.highestUnlocked = Math.max(next.highestUnlocked, levelId + 1);
+  }
+  return saveProgress(next);
+}
+function getStarsForLevel(progress, levelId, difficulty = null) {
+  const key = String(levelId);
+  if (difficulty && progress?.starsByDifficulty?.[difficulty]) {
+    return progress.starsByDifficulty[difficulty][key] || 0;
+  }
+  return progress?.stars?.[key] || 0;
+}
+function getTotalStars(progress, difficulty = null) {
+  const map = difficulty
+    ? progress?.starsByDifficulty?.[difficulty] || {}
+    : progress?.stars || {};
+  return Object.values(map).reduce((sum, n) => sum + (Number(n) || 0), 0);
+}
+function exportSaveCode(progress) {
+  const json = JSON.stringify(normalizeProgress(progress));
+  return btoa(unescape(encodeURIComponent(json)));
+}
+function importSaveCode(code, currentProgress) {
+  const cleaned = String(code || '').trim();
+  if (!cleaned) throw new Error('Please paste a Save Code first.');
+  let parsed;
+  try {
+    const json = decodeURIComponent(escape(atob(cleaned)));
+    parsed = JSON.parse(json);
+  } catch {
+    throw new Error('Invalid Save Code. Please check that you copied the full code.');
+  }
+  const merged = mergeProgress(currentProgress, parsed);
+  return saveProgress(merged);
+}
 
 
 // === js/engine/targeting.js ===
@@ -4852,11 +5218,10 @@ class GameEngine {
 
 
 
-const SAVE_KEY = 'towerdechess_progress_v1';
 
 class TowerDeChessApp {
   constructor() {
-    this.progress = this._loadProgress();
+    this.progress = loadProgressSync();
     this.sandboxAll = localStorage.getItem('towerdechess_sandbox') === '1';
     this.difficulty = localStorage.getItem('towerdechess_difficulty') || 'standard';
     this.currentLevel = null;
@@ -4875,10 +5240,12 @@ class TowerDeChessApp {
       screenHome: document.getElementById('screen-home'),
       screenGame: document.getElementById('screen-game'),
       levelGrid: document.getElementById('level-grid'),
+      campaignTotalStars: document.getElementById('campaign-total-stars'),
       toggleSandbox: document.getElementById('toggle-sandbox'),
       btnDiffStandard: document.getElementById('btn-diff-standard'),
       btnDiffGrandmaster: document.getElementById('btn-diff-grandmaster'),
       btnOpenCodex: document.getElementById('btn-open-codex'),
+      btnOpenSave: document.getElementById('btn-open-save'),
       btnGameCodex: document.getElementById('btn-game-codex'),
       btnInstallPwa: document.getElementById('btn-install-pwa'),
 
@@ -4955,6 +5322,17 @@ class TowerDeChessApp {
       modalCodex: document.getElementById('modal-codex'),
       codexBody: document.getElementById('codex-body'),
       btnCloseCodex: document.getElementById('btn-close-codex'),
+
+      // Save Data Modal
+      modalSave: document.getElementById('modal-save'),
+      btnCloseSave: document.getElementById('btn-close-save'),
+      saveTacticalStars: document.getElementById('save-tactical-stars'),
+      saveGmStars: document.getElementById('save-gm-stars'),
+      saveUnlockedLv: document.getElementById('save-unlocked-lv'),
+      inputSaveCode: document.getElementById('input-save-code'),
+      saveStatusMsg: document.getElementById('save-status-msg'),
+      btnCopySave: document.getElementById('btn-copy-save'),
+      btnImportSave: document.getElementById('btn-import-save'),
     };
   }
 
@@ -4963,6 +5341,14 @@ class TowerDeChessApp {
     this._syncDifficultyUi();
     this._syncMuteIcon();
     this._renderCampaign();
+
+    // Reconcile with durable IndexedDB backup in case localStorage was cleared
+    hydrateProgressFromBackup(this.progress).then(({ progress, changed }) => {
+      if (changed) {
+        this.progress = progress;
+        this._renderCampaign();
+      }
+    });
 
     await preloadAssets();
 
@@ -5012,6 +5398,35 @@ class TowerDeChessApp {
     });
     this.el.modalCodex.addEventListener('click', (e) => {
       if (e.target === this.el.modalCodex) this.el.modalCodex.classList.add('hidden');
+    });
+
+    this.el.btnOpenSave.addEventListener('click', () => this._openSaveModal());
+    this.el.btnCloseSave.addEventListener('click', () => {
+      this.el.modalSave.classList.add('hidden');
+    });
+    this.el.modalSave.addEventListener('click', (e) => {
+      if (e.target === this.el.modalSave) this.el.modalSave.classList.add('hidden');
+    });
+    this.el.btnCopySave.addEventListener('click', async () => {
+      const code = exportSaveCode(this.progress);
+      this.el.inputSaveCode.value = code;
+      try {
+        await navigator.clipboard.writeText(code);
+        this._setSaveStatus('Save Code copied to clipboard!', false);
+      } catch {
+        this.el.inputSaveCode.select();
+        this._setSaveStatus('Save Code selected — tap Copy to save it.', false);
+      }
+    });
+    this.el.btnImportSave.addEventListener('click', () => {
+      try {
+        this.progress = importSaveCode(this.el.inputSaveCode.value, this.progress);
+        this._renderCampaign();
+        this._refreshSaveModalStats();
+        this._setSaveStatus('Progress restored & merged!', false);
+      } catch (err) {
+        this._setSaveStatus(err.message || 'Invalid Save Code.', true);
+      }
     });
 
     this.el.btnBackMenu.addEventListener('click', () => this._returnToCampaign());
@@ -5118,28 +5533,27 @@ class TowerDeChessApp {
     }
   }
 
-  _loadProgress() {
-    try {
-      const raw = localStorage.getItem(SAVE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        return {
-          highestUnlocked: Math.max(1, parsed.highestUnlocked || 1),
-          stars: parsed.stars || {},
-        };
-      }
-    } catch {
-      // ignore storage errors
-    }
-    return { highestUnlocked: 1, stars: {} };
+  _openSaveModal() {
+    sound.unlock();
+    sound.playSelect();
+    this._refreshSaveModalStats();
+    this.el.inputSaveCode.value = exportSaveCode(this.progress);
+    this._setSaveStatus('', false);
+    this.el.modalSave.classList.remove('hidden');
   }
 
-  _saveProgress() {
-    try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify(this.progress));
-    } catch {
-      // ignore storage errors
-    }
+  _refreshSaveModalStats() {
+    const maxStars = LEVELS.length * 3;
+    const tacStars = getTotalStars(this.progress, 'standard');
+    const gmStars = getTotalStars(this.progress, 'grandmaster');
+    this.el.saveTacticalStars.textContent = `★ ${tacStars} / ${maxStars}`;
+    this.el.saveGmStars.textContent = `★ ${gmStars} / ${maxStars}`;
+    this.el.saveUnlockedLv.textContent = `Lv. ${this.progress.highestUnlocked} / ${LEVELS.length}`;
+  }
+
+  _setSaveStatus(msg, isError) {
+    this.el.saveStatusMsg.textContent = msg;
+    this.el.saveStatusMsg.classList.toggle('error', Boolean(isError));
   }
 
   _syncDifficultyUi() {
@@ -5164,10 +5578,16 @@ class TowerDeChessApp {
     const grid = this.el.levelGrid;
     grid.innerHTML = '';
     const goldMult = this.difficulty === 'grandmaster' ? 0.9 : 1.0;
+    const maxStars = LEVELS.length * 3;
+    const modeStars = getTotalStars(this.progress, this.difficulty);
+    if (this.el.campaignTotalStars) {
+      const modeTag = this.difficulty === 'grandmaster' ? 'GM ' : '';
+      this.el.campaignTotalStars.textContent = `${modeTag}★ ${modeStars} / ${maxStars}`;
+    }
 
     for (const lvl of LEVELS) {
       const unlocked = this.sandboxAll || lvl.id <= this.progress.highestUnlocked;
-      const earnedStars = this.progress.stars[lvl.id] || 0;
+      const earnedStars = getStarsForLevel(this.progress, lvl.id, this.difficulty);
       const piece = PIECE_REGISTRY[lvl.unlocksPiece];
       const isMythic = piece?.category === 'mythic';
       const displayGold = Math.round(lvl.startingGold * goldMult);
@@ -5436,15 +5856,13 @@ class TowerDeChessApp {
     modal.classList.remove('hidden');
 
     if (result.victory) {
-      const prevStars = this.progress.stars[result.level.id] || 0;
-      this.progress.stars[result.level.id] = Math.max(prevStars, result.stars);
-      if (result.level.id + 1 <= LEVELS.length) {
-        this.progress.highestUnlocked = Math.max(
-          this.progress.highestUnlocked,
-          result.level.id + 1
-        );
-      }
-      this._saveProgress();
+      this.progress = recordLevelVictory(this.progress, {
+        levelId: result.level.id,
+        stars: result.stars,
+        score: result.score,
+        difficulty: this.difficulty,
+        totalLevels: LEVELS.length,
+      });
 
       this.el.resultKicker.textContent = `LEVEL ${result.level.id} CONQUERED`;
       this.el.resultTitle.textContent = 'Victory!';

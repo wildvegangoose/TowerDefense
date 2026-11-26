@@ -268,12 +268,77 @@ body {
   padding: 0 4px;
 }
 
+.campaign-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .campaign-bar h2 {
   margin: 0;
   font-family: var(--font-display);
   font-size: 1.25rem;
   letter-spacing: 0.05em;
   color: var(--gold-bright);
+}
+
+.stars-summary-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--surface-inset);
+  border: 1px solid var(--border-brass);
+  color: var(--gold-bright);
+  font-size: 0.8rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.save-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.save-code-label {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.save-code-box {
+  width: 100%;
+  resize: none;
+  background: var(--surface-inset);
+  color: var(--text-ivory);
+  border: 1px solid var(--border-brass);
+  border-radius: var(--radius-sm);
+  padding: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.76rem;
+  line-height: 1.4;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.save-status-msg {
+  min-height: 18px;
+  margin: 8px 0 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--gold-bright);
+}
+
+.save-status-msg.error {
+  color: #f07b6e;
 }
 
 .campaign-hint {

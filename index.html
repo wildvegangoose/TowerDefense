@@ -30,6 +30,7 @@
         </div>
         <div class="home-actions">
           <button id="btn-open-codex" class="btn btn-secondary" type="button">Piece Codex</button>
+          <button id="btn-open-save" class="btn btn-secondary" type="button">Save Data</button>
           <button id="btn-install-pwa" class="btn btn-gold hidden" type="button">Install App</button>
         </div>
       </header>
@@ -37,7 +38,10 @@
       <main class="campaign-shell">
         <div class="campaign-bar">
           <div>
-            <h2>Royal Campaign</h2>
+            <div class="campaign-title-row">
+              <h2>Royal Campaign</h2>
+              <span id="campaign-total-stars" class="stars-summary-pill" title="Total stars earned">★ 0 / 21</span>
+            </div>
             <p class="campaign-hint">Each victory unlocks a new Chess piece — culminating in Relics beyond the board.</p>
           </div>
           <div class="campaign-controls">
@@ -223,6 +227,34 @@
           <button id="btn-close-codex" class="icon-btn" type="button" aria-label="Close Codex">&#10005;</button>
         </div>
         <div id="codex-body" class="codex-body"></div>
+      </div>
+    </div>
+
+    <!-- ==================== SAVE DATA BACKUP MODAL ==================== -->
+    <div id="modal-save" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+      <div class="modal-card save-card">
+        <div class="codex-header">
+          <div>
+            <span class="modal-kicker">CAMPAIGN PROGRESS</span>
+            <h2>Save Data</h2>
+          </div>
+          <button id="btn-close-save" class="icon-btn" type="button" aria-label="Close Save Data">&#10005;</button>
+        </div>
+        <p class="result-summary">
+          Your unlocked levels and stars (both Tactical and Grandmaster) are saved automatically on this device. Copy your Save Code below to back up or transfer your progress between web and Android.
+        </p>
+        <div class="save-stats-row">
+          <div class="insp-stat"><span>TACTICAL STARS</span><strong id="save-tactical-stars">★ 0 / 21</strong></div>
+          <div class="insp-stat"><span>GRANDMASTER</span><strong id="save-gm-stars">★ 0 / 21</strong></div>
+          <div class="insp-stat"><span>UNLOCKED</span><strong id="save-unlocked-lv">Lv. 1 / 7</strong></div>
+        </div>
+        <label class="save-code-label" for="input-save-code">Save Code (Copy or Paste to Restore)</label>
+        <textarea id="input-save-code" class="save-code-box" rows="3" spellcheck="false"></textarea>
+        <p id="save-status-msg" class="save-status-msg"></p>
+        <div class="modal-actions">
+          <button id="btn-copy-save" class="btn btn-secondary" type="button">Copy Code</button>
+          <button id="btn-import-save" class="btn btn-gold" type="button">Restore / Merge</button>
+        </div>
       </div>
     </div>
   </div>

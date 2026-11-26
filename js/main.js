@@ -16,12 +16,19 @@ import {
 } from './data/pieces.js';
 import { ENEMY_TYPES } from './data/enemies.js';
 import { GameEngine } from './engine/game.js';
-
-const SAVE_KEY = 'towerdechess_progress_v1';
+import {
+  loadProgressSync,
+  hydrateProgressFromBackup,
+  recordLevelVictory,
+  getStarsForLevel,
+  getTotalStars,
+  exportSaveCode,
+  importSaveCode,
+} from './storage.js';
 
 class TowerDeChessApp {
   constructor() {
-    this.progress = this._loadProgress();
+    this.progress = loadProgressSync();
     this.sandboxAll = localStorage.getItem('towerdechess_sandbox') === '1';
     this.difficulty = localStorage.getItem('towerdechess_difficulty') || 'standard';
     this.currentLevel = null;
@@ -40,10 +47,12 @@ class TowerDeChessApp {
       screenHome: document.getElementById('screen-home'),
       screenGame: document.getElementById('screen-game'),
       levelGrid: document.getElementById('level-grid'),
+      campaignTotalStars: document.getElementById('campaign-total-stars'),
       toggleSandbox: document.getElementById('toggle-sandbox'),
       btnDiffStandard: document.getElementById('btn-diff-standard'),
       btnDiffGrandmaster: document.getElementById('btn-diff-grandmaster'),
       btnOpenCodex: document.getElementById('btn-open-codex'),
+      btnOpenSave: document.getElementById('btn-open-save'),
       btnGameCodex: document.getElementById('btn-game-codex'),
       btnInstallPwa: document.getElementById('btn-install-pwa'),
 
@@ -120,6 +129,17 @@ class TowerDeChessApp {
       modalCodex: document.getElementById('modal-codex'),
       codexBody: document.getElementById('codex-body'),
       btnCloseCodex: document.getElementById('btn-close-codex'),
+
+      // Save Data Modal
+      modalSave: document.getElementById('modal-save'),
+      btnCloseSave: document.getElementById('btn-close-save'),
+      saveTacticalStars: document.getElementById('save-tactical-stars'),
+      saveGmStars: document.getElementById('save-gm-stars'),
+      saveUnlockedLv: document.getElementById('save-unlocked-lv'),
+      inputSaveCode: document.getElementById('input-save-code'),
+      saveStatusMsg: document.getElementById('save-status-msg'),
+      btnCopySave: document.getElementById('btn-copy-save'),
+      btnImportSave: document.getElementById('btn-import-save'),
     };
   }
 
@@ -128,6 +148,14 @@ class TowerDeChessApp {
     this._syncDifficultyUi();
     this._syncMuteIcon();
     this._renderCampaign();
+
+    // Reconcile with durable IndexedDB backup in case localStorage was cleared
+    hydrateProgressFromBackup(this.progress).then(({ progress, changed }) => {
+      if (changed) {
+        this.progress = progress;
+        this._renderCampaign();
+      }
+    });
 
     await preloadAssets();
 
@@ -177,6 +205,35 @@ class TowerDeChessApp {
     });
     this.el.modalCodex.addEventListener('click', (e) => {
       if (e.target === this.el.modalCodex) this.el.modalCodex.classList.add('hidden');
+    });
+
+    this.el.btnOpenSave.addEventListener('click', () => this._openSaveModal());
+    this.el.btnCloseSave.addEventListener('click', () => {
+      this.el.modalSave.classList.add('hidden');
+    });
+    this.el.modalSave.addEventListener('click', (e) => {
+      if (e.target === this.el.modalSave) this.el.modalSave.classList.add('hidden');
+    });
+    this.el.btnCopySave.addEventListener('click', async () => {
+      const code = exportSaveCode(this.progress);
+      this.el.inputSaveCode.value = code;
+      try {
+        await navigator.clipboard.writeText(code);
+        this._setSaveStatus('Save Code copied to clipboard!', false);
+      } catch {
+        this.el.inputSaveCode.select();
+        this._setSaveStatus('Save Code selected — tap Copy to save it.', false);
+      }
+    });
+    this.el.btnImportSave.addEventListener('click', () => {
+      try {
+        this.progress = importSaveCode(this.el.inputSaveCode.value, this.progress);
+        this._renderCampaign();
+        this._refreshSaveModalStats();
+        this._setSaveStatus('Progress restored & merged!', false);
+      } catch (err) {
+        this._setSaveStatus(err.message || 'Invalid Save Code.', true);
+      }
     });
 
     this.el.btnBackMenu.addEventListener('click', () => this._returnToCampaign());
@@ -283,28 +340,27 @@ class TowerDeChessApp {
     }
   }
 
-  _loadProgress() {
-    try {
-      const raw = localStorage.getItem(SAVE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        return {
-          highestUnlocked: Math.max(1, parsed.highestUnlocked || 1),
-          stars: parsed.stars || {},
-        };
-      }
-    } catch {
-      // ignore storage errors
-    }
-    return { highestUnlocked: 1, stars: {} };
+  _openSaveModal() {
+    sound.unlock();
+    sound.playSelect();
+    this._refreshSaveModalStats();
+    this.el.inputSaveCode.value = exportSaveCode(this.progress);
+    this._setSaveStatus('', false);
+    this.el.modalSave.classList.remove('hidden');
   }
 
-  _saveProgress() {
-    try {
-      localStorage.setItem(SAVE_KEY, JSON.stringify(this.progress));
-    } catch {
-      // ignore storage errors
-    }
+  _refreshSaveModalStats() {
+    const maxStars = LEVELS.length * 3;
+    const tacStars = getTotalStars(this.progress, 'standard');
+    const gmStars = getTotalStars(this.progress, 'grandmaster');
+    this.el.saveTacticalStars.textContent = `★ ${tacStars} / ${maxStars}`;
+    this.el.saveGmStars.textContent = `★ ${gmStars} / ${maxStars}`;
+    this.el.saveUnlockedLv.textContent = `Lv. ${this.progress.highestUnlocked} / ${LEVELS.length}`;
+  }
+
+  _setSaveStatus(msg, isError) {
+    this.el.saveStatusMsg.textContent = msg;
+    this.el.saveStatusMsg.classList.toggle('error', Boolean(isError));
   }
 
   _syncDifficultyUi() {
@@ -329,10 +385,16 @@ class TowerDeChessApp {
     const grid = this.el.levelGrid;
     grid.innerHTML = '';
     const goldMult = this.difficulty === 'grandmaster' ? 0.9 : 1.0;
+    const maxStars = LEVELS.length * 3;
+    const modeStars = getTotalStars(this.progress, this.difficulty);
+    if (this.el.campaignTotalStars) {
+      const modeTag = this.difficulty === 'grandmaster' ? 'GM ' : '';
+      this.el.campaignTotalStars.textContent = `${modeTag}★ ${modeStars} / ${maxStars}`;
+    }
 
     for (const lvl of LEVELS) {
       const unlocked = this.sandboxAll || lvl.id <= this.progress.highestUnlocked;
-      const earnedStars = this.progress.stars[lvl.id] || 0;
+      const earnedStars = getStarsForLevel(this.progress, lvl.id, this.difficulty);
       const piece = PIECE_REGISTRY[lvl.unlocksPiece];
       const isMythic = piece?.category === 'mythic';
       const displayGold = Math.round(lvl.startingGold * goldMult);
@@ -601,15 +663,13 @@ class TowerDeChessApp {
     modal.classList.remove('hidden');
 
     if (result.victory) {
-      const prevStars = this.progress.stars[result.level.id] || 0;
-      this.progress.stars[result.level.id] = Math.max(prevStars, result.stars);
-      if (result.level.id + 1 <= LEVELS.length) {
-        this.progress.highestUnlocked = Math.max(
-          this.progress.highestUnlocked,
-          result.level.id + 1
-        );
-      }
-      this._saveProgress();
+      this.progress = recordLevelVictory(this.progress, {
+        levelId: result.level.id,
+        stars: result.stars,
+        score: result.score,
+        difficulty: this.difficulty,
+        totalLevels: LEVELS.length,
+      });
 
       this.el.resultKicker.textContent = `LEVEL ${result.level.id} CONQUERED`;
       this.el.resultTitle.textContent = 'Victory!';
