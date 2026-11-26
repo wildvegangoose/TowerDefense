@@ -249,10 +249,36 @@ class CrownwardApp {
       this.deferredInstallPrompt = null;
       this.el.btnInstallPwa.classList.add('hidden');
     });
+    // Android hardware Back button handling when packaged with Capacitor
+    const capApp = window.Capacitor?.Plugins?.App;
+    if (capApp?.addListener) {
+      capApp.addListener('backButton', () => {
+        if (!this.el.modalCodex.classList.contains('hidden')) {
+          this.el.modalCodex.classList.add('hidden');
+          return;
+        }
+        if (!this.el.modalBriefing.classList.contains('hidden')) {
+          this.el.modalBriefing.classList.add('hidden');
+          return;
+        }
+        if (!this.el.modalResult.classList.contains('hidden')) {
+          this.el.modalResult.classList.add('hidden');
+          this._returnToCampaign();
+          return;
+        }
+        if (this.el.screenGame.classList.contains('active')) {
+          this._returnToCampaign();
+          return;
+        }
+        capApp.exitApp();
+      });
+    }
   }
 
   _registerServiceWorker() {
-    if ('serviceWorker' in navigator) {
+    // Native Capacitor builds bundle assets locally — only register SW on web/PWA origins
+    if (window.Capacitor?.isNativePlatform?.()) return;
+    if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
       navigator.serviceWorker.register('./sw.js').catch(() => {});
     }
   }

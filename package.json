@@ -1,0 +1,21 @@
+{
+  "name": "crownward-tower-defense",
+  "version": "1.0.0",
+  "description": "Crownward — 2.5D Isometric Chess Tower Defense for Android & Web",
+  "private": true,
+  "scripts": {
+    "prepare:web": "node scripts/sync_web.mjs",
+    "android:sync": "npm run prepare:web && npx cap sync android",
+    "android:debug": "npm run android:sync && cd android && ./gradlew assembleDebug",
+    "android:bundle": "npm run android:sync && cd android && ./gradlew bundleRelease",
+    "build:standalone": "python3 scripts/build_standalone.py"
+  },
+  "dependencies": {
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/core": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/cli": "^7.0.0"
+  }
+}

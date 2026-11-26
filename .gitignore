@@ -1,0 +1,22 @@
+# Node / Capacitor build output
+node_modules/
+www/
+
+# Android Gradle build & IDE artifacts
+android/.gradle/
+android/.idea/
+android/local.properties
+android/app/build/
+android/build/
+android/capacitor-cordova-android-plugins/build/
+*.iml
+
+# Release signing secrets (NEVER commit!)
+*.jks
+*.keystore
+android/keystore.properties
+keystore.properties
+
+# OS / temp
+.DS_Store
+Thumbs.db

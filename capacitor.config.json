@@ -1,0 +1,15 @@
+{
+  "appId": "io.github.wildvegangoose.crownward",
+  "appName": "Crownward",
+  "webDir": "www",
+  "backgroundColor": "#1a120d",
+  "android": {
+    "backgroundColor": "#1a120d",
+    "allowMixedContent": false,
+    "captureInput": true,
+    "webContentsDebuggingEnabled": false
+  },
+  "server": {
+    "androidScheme": "https"
+  }
+}

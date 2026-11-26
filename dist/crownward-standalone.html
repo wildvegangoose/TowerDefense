@@ -3283,17 +3283,17 @@ class GameEngine {
     this.canvasH = availH;
 
     // Fit high-aerial 8x8 diamond + 0.48-tile walnut bezel + headroom + 3D front slab
-    const bezelSpan = BOARD_SIZE + 1.04;
-    const verticalSpan = (BOARD_SIZE + 1.04) * this.isoRatio + 0.85;
-    const tileW = Math.min((availW - 6) / bezelSpan, (availH - 6) / verticalSpan);
+    const bezelSpan = BOARD_SIZE + 1.08;
+    const verticalSpan = (BOARD_SIZE + 1.15) * this.isoRatio + 1.1;
+    const tileW = Math.min((availW - 8) / bezelSpan, (availH - 8) / verticalSpan);
 
-    this.tileW = Math.max(30, tileW);
+    this.tileW = Math.max(28, tileW);
     this.tileH = this.tileW * this.isoRatio;
     this.elevScale = this.tileW * 0.42;
 
     const boardDiamondH = BOARD_SIZE * this.tileH;
     this.originX = availW * 0.5;
-    this.originY = (availH - boardDiamondH) * 0.5 + this.tileH * 0.14;
+    this.originY = (availH - boardDiamondH) * 0.5 - this.tileH * 0.22;
   }
 
   loadLevel(level, difficulty = 'standard') {
@@ -5084,10 +5084,36 @@ class CrownwardApp {
       this.deferredInstallPrompt = null;
       this.el.btnInstallPwa.classList.add('hidden');
     });
+    // Android hardware Back button handling when packaged with Capacitor
+    const capApp = window.Capacitor?.Plugins?.App;
+    if (capApp?.addListener) {
+      capApp.addListener('backButton', () => {
+        if (!this.el.modalCodex.classList.contains('hidden')) {
+          this.el.modalCodex.classList.add('hidden');
+          return;
+        }
+        if (!this.el.modalBriefing.classList.contains('hidden')) {
+          this.el.modalBriefing.classList.add('hidden');
+          return;
+        }
+        if (!this.el.modalResult.classList.contains('hidden')) {
+          this.el.modalResult.classList.add('hidden');
+          this._returnToCampaign();
+          return;
+        }
+        if (this.el.screenGame.classList.contains('active')) {
+          this._returnToCampaign();
+          return;
+        }
+        capApp.exitApp();
+      });
+    }
   }
 
   _registerServiceWorker() {
-    if ('serviceWorker' in navigator) {
+    // Native Capacitor builds bundle assets locally — only register SW on web/PWA origins
+    if (window.Capacitor?.isNativePlatform?.()) return;
+    if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
       navigator.serviceWorker.register('./sw.js').catch(() => {});
     }
   }

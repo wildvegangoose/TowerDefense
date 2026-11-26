@@ -4,7 +4,7 @@
  * while still supporting offline play on Android home screen.
  */
 
-const CACHE_NAME = 'crownward-v5';
+const CACHE_NAME = 'crownward-v6';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

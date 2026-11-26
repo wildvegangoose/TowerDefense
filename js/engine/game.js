@@ -151,17 +151,17 @@ export class GameEngine {
     this.canvasH = availH;
 
     // Fit high-aerial 8x8 diamond + 0.48-tile walnut bezel + headroom + 3D front slab
-    const bezelSpan = BOARD_SIZE + 1.04;
-    const verticalSpan = (BOARD_SIZE + 1.04) * this.isoRatio + 0.85;
-    const tileW = Math.min((availW - 6) / bezelSpan, (availH - 6) / verticalSpan);
+    const bezelSpan = BOARD_SIZE + 1.08;
+    const verticalSpan = (BOARD_SIZE + 1.15) * this.isoRatio + 1.1;
+    const tileW = Math.min((availW - 8) / bezelSpan, (availH - 8) / verticalSpan);
 
-    this.tileW = Math.max(30, tileW);
+    this.tileW = Math.max(28, tileW);
     this.tileH = this.tileW * this.isoRatio;
     this.elevScale = this.tileW * 0.42;
 
     const boardDiamondH = BOARD_SIZE * this.tileH;
     this.originX = availW * 0.5;
-    this.originY = (availH - boardDiamondH) * 0.5 + this.tileH * 0.14;
+    this.originY = (availH - boardDiamondH) * 0.5 - this.tileH * 0.22;
   }
 
   loadLevel(level, difficulty = 'standard') {
