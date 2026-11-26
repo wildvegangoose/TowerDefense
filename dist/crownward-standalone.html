@@ -1560,18 +1560,18 @@ const LEVELS = [
     name: "The Pawn's Bastion",
     subtitle: 'Opening Rank',
     unlocksPiece: 'pawn',
-    startingGold: 105,
-    startingLives: 12,
-    description: 'Hold the winding opening lanes with steadfast Pawns. Place them on inner corners so their 4 diagonal capture squares land critical strikes — and promote them before heavy Bastions arrive!',
+    startingGold: 125,
+    startingLives: 15,
+    description: 'Hold the winding opening lanes with steadfast Pawns. Place them on inner corners (like E6 & D4) so their 4 diagonal capture squares land critical strikes — and promote them before heavy Bastions arrive!',
     waypoints: [
       [0, 1], [5, 1], [5, 3], [2, 3], [2, 5], [6, 5], [6, 7], [7, 7],
     ],
     waves: [
-      { groups: [{ type: 'footman', count: 8, interval: 0.85 }] },
-      { groups: [{ type: 'footman', count: 10, interval: 0.72 }, { type: 'lancer', count: 3, interval: 0.62, delay: 1.0 }] },
-      { groups: [{ type: 'lancer', count: 7, interval: 0.52 }, { type: 'footman', count: 10, interval: 0.65, delay: 0.9 }] },
-      { groups: [{ type: 'bastion', count: 2, interval: 2.0 }, { type: 'footman', count: 10, interval: 0.62, delay: 0.8 }, { type: 'lancer', count: 6, interval: 0.48, delay: 1.0 }] },
-      { groups: [{ type: 'bastion', count: 3, interval: 1.65 }, { type: 'lancer', count: 10, interval: 0.44, delay: 1.0 }, { type: 'footman', count: 12, interval: 0.5, delay: 0.8 }] },
+      { groups: [{ type: 'footman', count: 7, interval: 0.92 }] },
+      { groups: [{ type: 'footman', count: 9, interval: 0.78 }, { type: 'lancer', count: 3, interval: 0.68, delay: 1.1 }] },
+      { groups: [{ type: 'lancer', count: 6, interval: 0.56 }, { type: 'footman', count: 9, interval: 0.7, delay: 1.0 }] },
+      { groups: [{ type: 'bastion', count: 2, interval: 2.0 }, { type: 'footman', count: 8, interval: 0.68, delay: 0.9 }, { type: 'lancer', count: 5, interval: 0.54, delay: 1.1 }] },
+      { groups: [{ type: 'bastion', count: 3, interval: 1.8 }, { type: 'lancer', count: 8, interval: 0.48, delay: 1.1 }, { type: 'footman', count: 10, interval: 0.56, delay: 0.9 }] },
     ],
   },
 
@@ -1745,39 +1745,40 @@ const PIECE_REGISTRY = {
     category: 'chess',
     unlockLevel: 1,
     sprite: 'piece_pawn',
-    cost: 45,
+    cost: 40,
     limit: null,
     pattern: 'pawn',
     maxRay: 1,
     attackType: 'spear',
-    damage: 16,
-    fireRate: 1.15,
-    diagonalCritMult: 1.35,
+    damage: 18,
+    fireRate: 1.22,
+    diagonalCritMult: 1.38,
     splashRadius: 0,
-    armorPierce: 0.1,
+    armorPierce: 0.15,
     accentColor: '#d4a348',
-    patternLabel: 'Adjacent 8 Tiles (+35% on Diagonals)',
-    tacticalTip: 'Cheap frontline workhorse. Strikes all 8 neighboring squares and deals +35% Critical Thrust damage on its 4 diagonal capture squares.',
+    patternLabel: 'Adjacent 8 Tiles (+38% on Diagonals)',
+    tacticalTip: 'Cheap frontline workhorse. Strikes all 8 neighboring squares and deals +38% Critical Thrust damage on its 4 diagonal capture squares.',
     lore: 'Humble ivory infantry sworn to hold the first rank until promotion.',
     upgrades: [
       {
         tier: 2,
         name: 'Halberd Pawn',
         cost: 55,
-        damage: 30,
+        damage: 32,
         fireRate: 1.45,
-        armorPierce: 0.25,
-        desc: '+65% DMG, faster strikes, 25% armor pierce',
+        diagonalCritMult: 1.45,
+        armorPierce: 0.3,
+        desc: '+75% DMG, faster strikes, 30% armor pierce',
       },
       {
         tier: 3,
         name: 'Promoted Vanguard',
-        cost: 95,
-        damage: 50,
+        cost: 90,
+        damage: 54,
         fireRate: 1.75,
-        armorPierce: 0.45,
-        diagonalCritMult: 1.6,
-        desc: 'Heavy armor-piercing thrust & +60% diagonal crits',
+        armorPierce: 0.5,
+        diagonalCritMult: 1.65,
+        desc: 'Heavy armor-piercing thrust & +65% diagonal crits',
       },
     ],
   },
@@ -2121,7 +2122,7 @@ function getUnlockedPiecesForLevel(levelNumber) {
 // === js/data/enemies.js ===
 /**
  * Enemy Archetypes & Wave Scaling for Crownward.
- * Tuned for genuine tactical challenge — enemies scale steeply in HP, speed, and armor.
+ * Simulation-verified for tense Tactical play and tough-but-achievable Grandmaster runs.
  */
 const DIFFICULTY_PRESETS = {
   standard: {
@@ -2134,9 +2135,9 @@ const DIFFICULTY_PRESETS = {
   grandmaster: {
     id: 'grandmaster',
     label: 'Grandmaster',
-    hpMult: 1.35,
-    speedMult: 1.12,
-    goldMult: 0.88,
+    hpMult: 1.32,
+    speedMult: 1.09,
+    goldMult: 0.9,
   },
 };
 const ENEMY_TYPES = {
@@ -2144,10 +2145,10 @@ const ENEMY_TYPES = {
     id: 'footman',
     name: 'Obsidian Footman',
     sprite: 'enemy_footman',
-    baseHp: 88,
-    speed: 1.4,        // tiles per second
-    armor: 0.08,       // 8% damage reduction
-    reward: 8,
+    baseHp: 70,
+    speed: 1.32,       // tiles per second
+    armor: 0.05,       // 5% damage reduction
+    reward: 9,
     livesCost: 1,
     scale: 0.92,
     trait: 'Relentless dark vanguard soldier.',
@@ -2156,9 +2157,9 @@ const ENEMY_TYPES = {
     id: 'lancer',
     name: 'Shadow Charger',
     sprite: 'enemy_lancer',
-    baseHp: 72,
-    speed: 2.5,
-    armor: 0.05,
+    baseHp: 56,
+    speed: 2.28,
+    armor: 0.0,
     reward: 11,
     livesCost: 1,
     scale: 0.98,
@@ -2168,37 +2169,37 @@ const ENEMY_TYPES = {
     id: 'bastion',
     name: 'Ironclad Bastion',
     sprite: 'enemy_bastion',
-    baseHp: 330,
-    speed: 0.82,
-    armor: 0.52,       // 52% heavy armor — use Rook / Bishop Sunder / Promoted pieces!
-    reward: 20,
+    baseHp: 260,
+    speed: 0.78,
+    armor: 0.45,       // 45% heavy armor — use Promoted Pawns, Bishop Sunder, or Rook!
+    reward: 22,
     livesCost: 2,
     scale: 1.08,
-    trait: 'Heavy armored siege golem (52% armor). Shrugs off unpromoted Pawns.',
+    trait: 'Heavy armored siege golem (45% armor). Promote Pawns or bring Bishop Sunder / Rooks.',
   },
   cleric: {
     id: 'cleric',
     name: 'Blighted Cleric',
     sprite: 'enemy_cleric',
-    baseHp: 185,
-    speed: 1.18,
-    armor: 0.18,
-    reward: 19,
+    baseHp: 155,
+    speed: 1.12,
+    armor: 0.15,
+    reward: 21,
     livesCost: 1,
     scale: 1.0,
-    healRadius: 1.9,
-    healAmount: 44,
-    healCooldown: 2.3,
-    trait: 'Pulses dark mending to heal nearby enemies every 2.3s.',
+    healRadius: 1.85,
+    healAmount: 36,
+    healCooldown: 2.4,
+    trait: 'Pulses dark mending to heal nearby enemies every 2.4s.',
   },
   warlord: {
     id: 'warlord',
     name: 'Crimson Warlord',
     sprite: 'enemy_warlord',
-    baseHp: 1320,
-    speed: 0.7,
-    armor: 0.38,
-    reward: 85,
+    baseHp: 1050,
+    speed: 0.66,
+    armor: 0.34,
+    reward: 90,
     livesCost: 5,
     scale: 1.26,
     isBoss: true,
@@ -2215,21 +2216,21 @@ function createEnemyConfig(typeId, levelNum, waveIndex, totalWaves, difficultyId
   if (!base) throw new Error(`Unknown enemy type: ${typeId}`);
   const diff = DIFFICULTY_PRESETS[difficultyId] || DIFFICULTY_PRESETS.standard;
 
-  const levelHpScale = Math.pow(1.3, levelNum - 1);
+  const levelHpScale = Math.pow(1.27, levelNum - 1);
   const waveProgress = totalWaves > 1 ? waveIndex / (totalWaves - 1) : 0;
-  const waveHpScale = 1 + waveIndex * 0.24 + waveProgress * 0.24;
+  const waveHpScale = 1 + waveIndex * 0.21 + waveProgress * 0.18;
 
-  const speedScale = (1 + (levelNum - 1) * 0.045 + waveIndex * 0.018) * diff.speedMult;
-  const bonusArmor = Math.min(0.24, (levelNum - 1) * 0.025 + Math.floor(waveIndex / 2) * 0.02);
+  const speedScale = (1 + (levelNum - 1) * 0.04 + waveIndex * 0.015) * diff.speedMult;
+  const bonusArmor = Math.min(0.22, (levelNum - 1) * 0.022 + Math.floor(waveIndex / 3) * 0.02);
 
   return {
     ...base,
     maxHp: Math.round(base.baseHp * levelHpScale * waveHpScale * diff.hpMult),
     speed: Number((base.speed * speedScale).toFixed(3)),
-    armor: Math.min(0.74, base.armor + bonusArmor),
-    reward: Math.max(4, Math.round(base.reward * (1 + (levelNum - 1) * 0.06))),
+    armor: Math.min(0.7, base.armor + bonusArmor),
+    reward: Math.max(5, Math.round(base.reward * (1 + (levelNum - 1) * 0.06))),
     healAmount: base.healAmount
-      ? Math.round(base.healAmount * levelHpScale * (1 + waveIndex * 0.14) * diff.hpMult)
+      ? Math.round(base.healAmount * levelHpScale * (1 + waveIndex * 0.12) * diff.hpMult)
       : 0,
   };
 }
@@ -3188,13 +3189,13 @@ class GameEngine {
     this.rafId = null;
     this.lastFrameTime = 0;
 
-    // Layout metrics for 2.5D Diagonal Aerial Isometric projection
+    // Layout metrics for high-angle 2.5D Diagonal Aerial Isometric projection
     this.canvasW = 0;
     this.canvasH = 0;
     this.tileW = 64;
-    this.tileH = 36;
-    this.isoRatio = 0.56;
-    this.elevScale = 36;
+    this.tileH = 47;
+    this.isoRatio = 0.74;
+    this.elevScale = 34;
     this.originX = 0;
     this.originY = 0;
 
@@ -3209,8 +3210,8 @@ class GameEngine {
   }
 
   screenToBoard(sx, sy) {
-    // Pick slightly elevated tile top surface (z = 0.10 midpoint) for crisp finger accuracy
-    const adjY = sy + 0.1 * this.elevScale;
+    // Pick tile top surface cleanly (z = 0.08 midpoint) for crisp mobile thumb accuracy
+    const adjY = sy + 0.08 * this.elevScale;
     const dx = (sx - this.originX) / (this.tileW * 0.5);
     const dy = (adjY - this.originY) / (this.tileH * 0.5);
     return {
@@ -3280,19 +3281,18 @@ class GameEngine {
     this.canvasW = availW;
     this.canvasH = availH;
 
-    // Fit full 8x8 diamond + 0.58-tile walnut bezel + top sprite headroom + 3D front slab thickness
-    const bezelSpan = BOARD_SIZE + 1.25; // horizontal diamond width in tileW units
-    const verticalSpan = (BOARD_SIZE + 1.25) * this.isoRatio + 1.05; // height in tileW units
-    const tileW = Math.min((availW - 8) / bezelSpan, (availH - 8) / verticalSpan);
+    // Fit high-aerial 8x8 diamond + 0.48-tile walnut bezel + headroom + 3D front slab
+    const bezelSpan = BOARD_SIZE + 1.04;
+    const verticalSpan = (BOARD_SIZE + 1.04) * this.isoRatio + 0.85;
+    const tileW = Math.min((availW - 6) / bezelSpan, (availH - 6) / verticalSpan);
 
     this.tileW = Math.max(30, tileW);
     this.tileH = this.tileW * this.isoRatio;
-    this.elevScale = this.tileH * 0.95;
+    this.elevScale = this.tileW * 0.42;
 
-    // Center diamond cleanly with slightly more top headroom for tall chess crowns
     const boardDiamondH = BOARD_SIZE * this.tileH;
     this.originX = availW * 0.5;
-    this.originY = (availH - boardDiamondH) * 0.5 + this.tileH * 0.22;
+    this.originY = (availH - boardDiamondH) * 0.5 + this.tileH * 0.14;
   }
 
   loadLevel(level, difficulty = 'standard') {
@@ -4081,8 +4081,8 @@ class GameEngine {
   }
 
   _onWaveCleared() {
-    // Tightened wave clear bonus + King Royal Treasury gold!
-    const waveBonus = 15 + this.waveIndex * 4;
+    // Balanced wave clear bonus + King Royal Treasury gold!
+    const waveBonus = 18 + this.waveIndex * 4;
     let kingBonus = 0;
     for (const t of this.towers) {
       if (t.pieceId === 'king') {
@@ -4264,13 +4264,13 @@ class GameEngine {
   }
 
   _drawWalnutSlab(ctx) {
-    const b = 0.56; // Walnut frame overhang in tiles
-    const slabTop = 0.06;
-    const slabBot = -0.58;
+    const b = 0.48; // Sleek walnut frame overhang in tiles
+    const slabTop = 0.05;
+    const slabBot = -0.46;
 
     // 1. Soft grounded drop shadow beneath the entire 3D diamond tabletop board
     ctx.save();
-    this._traceIsoQuad(ctx, -b + 0.12, -b + 0.16, BOARD_SIZE + b + 0.12, BOARD_SIZE + b + 0.16, slabBot - 0.18);
+    this._traceIsoQuad(ctx, -b + 0.1, -b + 0.14, BOARD_SIZE + b + 0.1, BOARD_SIZE + b + 0.14, slabBot - 0.16);
     ctx.fillStyle = 'rgba(6, 3, 1, 0.55)';
     ctx.fill();
     ctx.restore();
@@ -4297,7 +4297,7 @@ class GameEngine {
     );
 
     // 3. Gleaming antique brass inlay band running around the 3D vertical slab wall
-    const bandZ = -0.24;
+    const bandZ = -0.2;
     const wL = this.boardToScreen(-b, BOARD_SIZE + b, bandZ);
     const wS = this.boardToScreen(BOARD_SIZE + b, BOARD_SIZE + b, bandZ);
     const wR = this.boardToScreen(BOARD_SIZE + b, -b, bandZ);
@@ -4333,11 +4333,9 @@ class GameEngine {
     const files = 'ABCDEFGH';
 
     for (let i = 0; i < BOARD_SIZE; i++) {
-      // A-H along front-left edge (v = 8.28)
-      const pf = this.boardToScreen(i + 0.5, BOARD_SIZE + 0.28, slabTop);
+      const pf = this.boardToScreen(i + 0.5, BOARD_SIZE + 0.24, slabTop);
       ctx.fillText(files[i], pf.x, pf.y);
-      // 8-1 along front-right edge (u = 8.28)
-      const pr = this.boardToScreen(BOARD_SIZE + 0.28, i + 0.5, slabTop);
+      const pr = this.boardToScreen(BOARD_SIZE + 0.24, i + 0.5, slabTop);
       ctx.fillText(String(8 - i), pr.x, pr.y);
     }
     ctx.restore();
@@ -5138,7 +5136,7 @@ class CrownwardApp {
   _renderCampaign() {
     const grid = this.el.levelGrid;
     grid.innerHTML = '';
-    const goldMult = this.difficulty === 'grandmaster' ? 0.88 : 1.0;
+    const goldMult = this.difficulty === 'grandmaster' ? 0.9 : 1.0;
 
     for (const lvl of LEVELS) {
       const unlocked = this.sandboxAll || lvl.id <= this.progress.highestUnlocked;

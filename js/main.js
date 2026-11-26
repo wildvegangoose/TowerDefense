@@ -302,7 +302,7 @@ class CrownwardApp {
   _renderCampaign() {
     const grid = this.el.levelGrid;
     grid.innerHTML = '';
-    const goldMult = this.difficulty === 'grandmaster' ? 0.88 : 1.0;
+    const goldMult = this.difficulty === 'grandmaster' ? 0.9 : 1.0;
 
     for (const lvl of LEVELS) {
       const unlocked = this.sandboxAll || lvl.id <= this.progress.highestUnlocked;

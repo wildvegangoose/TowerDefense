@@ -58,13 +58,13 @@ export class GameEngine {
     this.rafId = null;
     this.lastFrameTime = 0;
 
-    // Layout metrics for 2.5D Diagonal Aerial Isometric projection
+    // Layout metrics for high-angle 2.5D Diagonal Aerial Isometric projection
     this.canvasW = 0;
     this.canvasH = 0;
     this.tileW = 64;
-    this.tileH = 36;
-    this.isoRatio = 0.56;
-    this.elevScale = 36;
+    this.tileH = 47;
+    this.isoRatio = 0.74;
+    this.elevScale = 34;
     this.originX = 0;
     this.originY = 0;
 
@@ -79,8 +79,8 @@ export class GameEngine {
   }
 
   screenToBoard(sx, sy) {
-    // Pick slightly elevated tile top surface (z = 0.10 midpoint) for crisp finger accuracy
-    const adjY = sy + 0.1 * this.elevScale;
+    // Pick tile top surface cleanly (z = 0.08 midpoint) for crisp mobile thumb accuracy
+    const adjY = sy + 0.08 * this.elevScale;
     const dx = (sx - this.originX) / (this.tileW * 0.5);
     const dy = (adjY - this.originY) / (this.tileH * 0.5);
     return {
@@ -150,19 +150,18 @@ export class GameEngine {
     this.canvasW = availW;
     this.canvasH = availH;
 
-    // Fit full 8x8 diamond + 0.58-tile walnut bezel + top sprite headroom + 3D front slab thickness
-    const bezelSpan = BOARD_SIZE + 1.25; // horizontal diamond width in tileW units
-    const verticalSpan = (BOARD_SIZE + 1.25) * this.isoRatio + 1.05; // height in tileW units
-    const tileW = Math.min((availW - 8) / bezelSpan, (availH - 8) / verticalSpan);
+    // Fit high-aerial 8x8 diamond + 0.48-tile walnut bezel + headroom + 3D front slab
+    const bezelSpan = BOARD_SIZE + 1.04;
+    const verticalSpan = (BOARD_SIZE + 1.04) * this.isoRatio + 0.85;
+    const tileW = Math.min((availW - 6) / bezelSpan, (availH - 6) / verticalSpan);
 
     this.tileW = Math.max(30, tileW);
     this.tileH = this.tileW * this.isoRatio;
-    this.elevScale = this.tileH * 0.95;
+    this.elevScale = this.tileW * 0.42;
 
-    // Center diamond cleanly with slightly more top headroom for tall chess crowns
     const boardDiamondH = BOARD_SIZE * this.tileH;
     this.originX = availW * 0.5;
-    this.originY = (availH - boardDiamondH) * 0.5 + this.tileH * 0.22;
+    this.originY = (availH - boardDiamondH) * 0.5 + this.tileH * 0.14;
   }
 
   loadLevel(level, difficulty = 'standard') {
@@ -951,8 +950,8 @@ export class GameEngine {
   }
 
   _onWaveCleared() {
-    // Tightened wave clear bonus + King Royal Treasury gold!
-    const waveBonus = 15 + this.waveIndex * 4;
+    // Balanced wave clear bonus + King Royal Treasury gold!
+    const waveBonus = 18 + this.waveIndex * 4;
     let kingBonus = 0;
     for (const t of this.towers) {
       if (t.pieceId === 'king') {
@@ -1134,13 +1133,13 @@ export class GameEngine {
   }
 
   _drawWalnutSlab(ctx) {
-    const b = 0.56; // Walnut frame overhang in tiles
-    const slabTop = 0.06;
-    const slabBot = -0.58;
+    const b = 0.48; // Sleek walnut frame overhang in tiles
+    const slabTop = 0.05;
+    const slabBot = -0.46;
 
     // 1. Soft grounded drop shadow beneath the entire 3D diamond tabletop board
     ctx.save();
-    this._traceIsoQuad(ctx, -b + 0.12, -b + 0.16, BOARD_SIZE + b + 0.12, BOARD_SIZE + b + 0.16, slabBot - 0.18);
+    this._traceIsoQuad(ctx, -b + 0.1, -b + 0.14, BOARD_SIZE + b + 0.1, BOARD_SIZE + b + 0.14, slabBot - 0.16);
     ctx.fillStyle = 'rgba(6, 3, 1, 0.55)';
     ctx.fill();
     ctx.restore();
@@ -1167,7 +1166,7 @@ export class GameEngine {
     );
 
     // 3. Gleaming antique brass inlay band running around the 3D vertical slab wall
-    const bandZ = -0.24;
+    const bandZ = -0.2;
     const wL = this.boardToScreen(-b, BOARD_SIZE + b, bandZ);
     const wS = this.boardToScreen(BOARD_SIZE + b, BOARD_SIZE + b, bandZ);
     const wR = this.boardToScreen(BOARD_SIZE + b, -b, bandZ);
@@ -1203,11 +1202,9 @@ export class GameEngine {
     const files = 'ABCDEFGH';
 
     for (let i = 0; i < BOARD_SIZE; i++) {
-      // A-H along front-left edge (v = 8.28)
-      const pf = this.boardToScreen(i + 0.5, BOARD_SIZE + 0.28, slabTop);
+      const pf = this.boardToScreen(i + 0.5, BOARD_SIZE + 0.24, slabTop);
       ctx.fillText(files[i], pf.x, pf.y);
-      // 8-1 along front-right edge (u = 8.28)
-      const pr = this.boardToScreen(BOARD_SIZE + 0.28, i + 0.5, slabTop);
+      const pr = this.boardToScreen(BOARD_SIZE + 0.24, i + 0.5, slabTop);
       ctx.fillText(String(8 - i), pr.x, pr.y);
     }
     ctx.restore();

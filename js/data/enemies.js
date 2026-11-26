@@ -1,6 +1,6 @@
 /**
  * Enemy Archetypes & Wave Scaling for Crownward.
- * Tuned for genuine tactical challenge — enemies scale steeply in HP, speed, and armor.
+ * Simulation-verified for tense Tactical play and tough-but-achievable Grandmaster runs.
  */
 
 export const DIFFICULTY_PRESETS = {
@@ -14,9 +14,9 @@ export const DIFFICULTY_PRESETS = {
   grandmaster: {
     id: 'grandmaster',
     label: 'Grandmaster',
-    hpMult: 1.35,
-    speedMult: 1.12,
-    goldMult: 0.88,
+    hpMult: 1.32,
+    speedMult: 1.09,
+    goldMult: 0.9,
   },
 };
 
@@ -25,10 +25,10 @@ export const ENEMY_TYPES = {
     id: 'footman',
     name: 'Obsidian Footman',
     sprite: 'enemy_footman',
-    baseHp: 88,
-    speed: 1.4,        // tiles per second
-    armor: 0.08,       // 8% damage reduction
-    reward: 8,
+    baseHp: 70,
+    speed: 1.32,       // tiles per second
+    armor: 0.05,       // 5% damage reduction
+    reward: 9,
     livesCost: 1,
     scale: 0.92,
     trait: 'Relentless dark vanguard soldier.',
@@ -37,9 +37,9 @@ export const ENEMY_TYPES = {
     id: 'lancer',
     name: 'Shadow Charger',
     sprite: 'enemy_lancer',
-    baseHp: 72,
-    speed: 2.5,
-    armor: 0.05,
+    baseHp: 56,
+    speed: 2.28,
+    armor: 0.0,
     reward: 11,
     livesCost: 1,
     scale: 0.98,
@@ -49,37 +49,37 @@ export const ENEMY_TYPES = {
     id: 'bastion',
     name: 'Ironclad Bastion',
     sprite: 'enemy_bastion',
-    baseHp: 330,
-    speed: 0.82,
-    armor: 0.52,       // 52% heavy armor — use Rook / Bishop Sunder / Promoted pieces!
-    reward: 20,
+    baseHp: 260,
+    speed: 0.78,
+    armor: 0.45,       // 45% heavy armor — use Promoted Pawns, Bishop Sunder, or Rook!
+    reward: 22,
     livesCost: 2,
     scale: 1.08,
-    trait: 'Heavy armored siege golem (52% armor). Shrugs off unpromoted Pawns.',
+    trait: 'Heavy armored siege golem (45% armor). Promote Pawns or bring Bishop Sunder / Rooks.',
   },
   cleric: {
     id: 'cleric',
     name: 'Blighted Cleric',
     sprite: 'enemy_cleric',
-    baseHp: 185,
-    speed: 1.18,
-    armor: 0.18,
-    reward: 19,
+    baseHp: 155,
+    speed: 1.12,
+    armor: 0.15,
+    reward: 21,
     livesCost: 1,
     scale: 1.0,
-    healRadius: 1.9,
-    healAmount: 44,
-    healCooldown: 2.3,
-    trait: 'Pulses dark mending to heal nearby enemies every 2.3s.',
+    healRadius: 1.85,
+    healAmount: 36,
+    healCooldown: 2.4,
+    trait: 'Pulses dark mending to heal nearby enemies every 2.4s.',
   },
   warlord: {
     id: 'warlord',
     name: 'Crimson Warlord',
     sprite: 'enemy_warlord',
-    baseHp: 1320,
-    speed: 0.7,
-    armor: 0.38,
-    reward: 85,
+    baseHp: 1050,
+    speed: 0.66,
+    armor: 0.34,
+    reward: 90,
     livesCost: 5,
     scale: 1.26,
     isBoss: true,
@@ -96,21 +96,21 @@ export function createEnemyConfig(typeId, levelNum, waveIndex, totalWaves, diffi
   if (!base) throw new Error(`Unknown enemy type: ${typeId}`);
   const diff = DIFFICULTY_PRESETS[difficultyId] || DIFFICULTY_PRESETS.standard;
 
-  const levelHpScale = Math.pow(1.3, levelNum - 1);
+  const levelHpScale = Math.pow(1.27, levelNum - 1);
   const waveProgress = totalWaves > 1 ? waveIndex / (totalWaves - 1) : 0;
-  const waveHpScale = 1 + waveIndex * 0.24 + waveProgress * 0.24;
+  const waveHpScale = 1 + waveIndex * 0.21 + waveProgress * 0.18;
 
-  const speedScale = (1 + (levelNum - 1) * 0.045 + waveIndex * 0.018) * diff.speedMult;
-  const bonusArmor = Math.min(0.24, (levelNum - 1) * 0.025 + Math.floor(waveIndex / 2) * 0.02);
+  const speedScale = (1 + (levelNum - 1) * 0.04 + waveIndex * 0.015) * diff.speedMult;
+  const bonusArmor = Math.min(0.22, (levelNum - 1) * 0.022 + Math.floor(waveIndex / 3) * 0.02);
 
   return {
     ...base,
     maxHp: Math.round(base.baseHp * levelHpScale * waveHpScale * diff.hpMult),
     speed: Number((base.speed * speedScale).toFixed(3)),
-    armor: Math.min(0.74, base.armor + bonusArmor),
-    reward: Math.max(4, Math.round(base.reward * (1 + (levelNum - 1) * 0.06))),
+    armor: Math.min(0.7, base.armor + bonusArmor),
+    reward: Math.max(5, Math.round(base.reward * (1 + (levelNum - 1) * 0.06))),
     healAmount: base.healAmount
-      ? Math.round(base.healAmount * levelHpScale * (1 + waveIndex * 0.14) * diff.hpMult)
+      ? Math.round(base.healAmount * levelHpScale * (1 + waveIndex * 0.12) * diff.hpMult)
       : 0,
   };
 }
