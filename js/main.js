@@ -4,7 +4,7 @@
 
 import { preloadAssets, getSpriteUrl } from './assets.js';
 import { sound } from './audio.js';
-import { LEVELS } from './data/levels.js';
+import { LEVELS, CHAPTERS, getChapterForLevel, expandWaypoints } from './data/levels.js';
 import {
   PIECE_REGISTRY,
   PIECE_ORDER,
@@ -31,6 +31,9 @@ class TowerDeChessApp {
     this.progress = loadProgressSync();
     this.sandboxAll = localStorage.getItem('towerdechess_sandbox') === '1';
     this.difficulty = localStorage.getItem('towerdechess_difficulty') || 'standard';
+    this.selectedMapLevelId = Math.min(LEVELS.length, this.progress.highestUnlocked || 1);
+    this.justUnlockedLevelId = null;
+    this._mapNodeY = new Map();
     this.currentLevel = null;
     this.engine = null;
     this.bannerTimer = null;
@@ -46,8 +49,28 @@ class TowerDeChessApp {
     this.el = {
       screenHome: document.getElementById('screen-home'),
       screenGame: document.getElementById('screen-game'),
-      levelGrid: document.getElementById('level-grid'),
       campaignTotalStars: document.getElementById('campaign-total-stars'),
+      campaignRevealedPill: document.getElementById('campaign-revealed-pill'),
+      mapRealmIndicator: document.getElementById('map-realm-indicator'),
+      btnJumpFrontier: document.getElementById('btn-jump-frontier'),
+      campaignMapViewport: document.getElementById('campaign-map-viewport'),
+      campaignMapCanvas: document.getElementById('campaign-map-canvas'),
+      stageKicker: document.getElementById('stage-kicker'),
+      stageTitle: document.getElementById('stage-title'),
+      stageSubtitle: document.getElementById('stage-subtitle'),
+      stageStars: document.getElementById('stage-stars'),
+      stageMinimap: document.getElementById('stage-minimap'),
+      stageWaves: document.getElementById('stage-waves'),
+      stageGold: document.getElementById('stage-gold'),
+      stageLives: document.getElementById('stage-lives'),
+      stageBestScore: document.getElementById('stage-best-score'),
+      stagePieceBox: document.getElementById('stage-piece-box'),
+      stagePieceImg: document.getElementById('stage-piece-img'),
+      stagePieceBadge: document.getElementById('stage-piece-badge'),
+      stagePieceName: document.getElementById('stage-piece-name'),
+      stagePiecePattern: document.getElementById('stage-piece-pattern'),
+      stageDesc: document.getElementById('stage-desc'),
+      btnStageDeploy: document.getElementById('btn-stage-deploy'),
       toggleSandbox: document.getElementById('toggle-sandbox'),
       btnDiffStandard: document.getElementById('btn-diff-standard'),
       btnDiffGrandmaster: document.getElementById('btn-diff-grandmaster'),
@@ -147,13 +170,14 @@ class TowerDeChessApp {
     this.el.toggleSandbox.checked = this.sandboxAll;
     this._syncDifficultyUi();
     this._syncMuteIcon();
-    this._renderCampaign();
+    this._renderCampaign(true);
 
     // Reconcile with durable IndexedDB backup in case localStorage was cleared
     hydrateProgressFromBackup(this.progress).then(({ progress, changed }) => {
       if (changed) {
         this.progress = progress;
-        this._renderCampaign();
+        this.selectedMapLevelId = Math.min(LEVELS.length, this.progress.highestUnlocked || 1);
+        this._renderCampaign(true);
       }
     });
 
@@ -186,14 +210,32 @@ class TowerDeChessApp {
     this.el.toggleSandbox.addEventListener('change', (e) => {
       this.sandboxAll = e.target.checked;
       localStorage.setItem('towerdechess_sandbox', this.sandboxAll ? '1' : '0');
-      this._renderCampaign();
+      const maxAllowed = this.sandboxAll ? LEVELS.length : Math.min(LEVELS.length, this.progress.highestUnlocked);
+      if (this.selectedMapLevelId > maxAllowed) {
+        this.selectedMapLevelId = maxAllowed;
+      }
+      this._renderCampaign(false);
+    });
+
+    this.el.btnJumpFrontier?.addEventListener('click', () => {
+      sound.unlock();
+      sound.playSelect();
+      const frontierId = Math.min(LEVELS.length, this.progress.highestUnlocked || 1);
+      this._selectMapLevel(frontierId);
+      this._scrollToMapNode(frontierId, true);
+    });
+
+    this.el.btnStageDeploy?.addEventListener('click', () => {
+      sound.unlock();
+      sound.playSelect();
+      this._startLevel(this.selectedMapLevelId, false);
     });
 
     const setDiff = (mode) => {
       this.difficulty = mode;
       localStorage.setItem('towerdechess_difficulty', mode);
       this._syncDifficultyUi();
-      this._renderCampaign();
+      this._renderCampaign(false);
     };
     this.el.btnDiffStandard.addEventListener('click', () => setDiff('standard'));
     this.el.btnDiffGrandmaster.addEventListener('click', () => setDiff('grandmaster'));
@@ -379,72 +421,408 @@ class TowerDeChessApp {
     }
   }
 
-  // ==================== CAMPAIGN SCREEN ====================
+  // ==================== CAMPAIGN MAP SCREEN ====================
 
-  _renderCampaign() {
-    const grid = this.el.levelGrid;
-    grid.innerHTML = '';
-    const goldMult = this.difficulty === 'grandmaster' ? 0.9 : 1.0;
+  _renderCampaign(scrollToFrontier = false) {
+    const canvas = this.el.campaignMapCanvas;
+    if (!canvas) return;
+    canvas.innerHTML = '';
+    this._mapNodeY.clear();
+
     const maxStars = LEVELS.length * 3;
     const modeStars = getTotalStars(this.progress, this.difficulty);
+    const frontierId = Math.min(LEVELS.length, this.progress.highestUnlocked || 1);
+    const revealedMax = this.sandboxAll ? LEVELS.length : frontierId;
+
     if (this.el.campaignTotalStars) {
       const modeTag = this.difficulty === 'grandmaster' ? 'GM ' : '';
       this.el.campaignTotalStars.textContent = `${modeTag}★ ${modeStars} / ${maxStars}`;
     }
+    if (this.el.campaignRevealedPill) {
+      this.el.campaignRevealedPill.textContent =
+        revealedMax >= LEVELS.length
+          ? `All ${LEVELS.length} Revealed`
+          : `${revealedMax} / ${LEVELS.length} Revealed`;
+    }
 
-    for (const lvl of LEVELS) {
-      const unlocked = this.sandboxAll || lvl.id <= this.progress.highestUnlocked;
+    if (this.selectedMapLevelId > revealedMax) {
+      this.selectedMapLevelId = revealedMax;
+    }
+
+    const revealedLevels = LEVELS.filter((l) => l.id <= revealedMax);
+    const nextMysteryLevel = revealedMax < LEVELS.length ? LEVELS.find((l) => l.id === revealedMax + 1) : null;
+
+    // 1. Compute vertical layout coordinates for chapter banners and map nodes
+    const nodesLayout = [];
+    const chapterBands = [];
+    const chapterBanners = [];
+    let cursorY = 44;
+    let currentChapterId = null;
+    let activeBand = null;
+
+    for (const lvl of revealedLevels) {
+      if (lvl.chapter !== currentChapterId) {
+        if (activeBand) {
+          activeBand.bottom = cursorY - 12;
+          chapterBands.push(activeBand);
+        }
+        const ch = getChapterForLevel(lvl.id);
+        currentChapterId = lvl.chapter;
+        const bandTop = chapterBands.length === 0 ? 0 : cursorY - 12;
+        if (chapterBands.length > 0) cursorY += 34;
+
+        const chEarned = ch.levelIds.reduce(
+          (sum, id) => sum + getStarsForLevel(this.progress, id, this.difficulty),
+          0
+        );
+        chapterBanners.push({
+          chapter: ch,
+          y: cursorY,
+          earnedStars: chEarned,
+          maxStars: ch.levelIds.length * 3,
+        });
+        activeBand = { theme: ch.theme, top: bandTop, bottom: cursorY + 130 };
+        cursorY += 98;
+      }
+
+      nodesLayout.push({ lvl, x: lvl.mapX, y: cursorY, shrouded: false });
+      this._mapNodeY.set(lvl.id, cursorY);
+      cursorY += 124;
+    }
+
+    if (nextMysteryLevel) {
+      // Shrouded teaser node just ahead on the mist-covered road
+      nodesLayout.push({
+        lvl: nextMysteryLevel,
+        x: nextMysteryLevel.mapX,
+        y: cursorY,
+        shrouded: true,
+      });
+      cursorY += 178;
+    } else {
+      cursorY += 36;
+    }
+
+    const totalH = Math.max(380, cursorY);
+    if (activeBand) {
+      activeBand.bottom = totalH;
+      chapterBands.push(activeBand);
+    }
+
+    canvas.style.height = `${totalH}px`;
+
+    // 2. Render per-chapter biome terrain backdrops
+    for (const band of chapterBands) {
+      const el = document.createElement('div');
+      el.className = `map-biome-band theme-${band.theme}`;
+      el.style.top = `${band.top}px`;
+      el.style.height = `${Math.max(0, band.bottom - band.top)}px`;
+      canvas.appendChild(el);
+    }
+
+    // 3. Render winding SVG cartography trail (exact % x-coords via 0..1000 viewBox)
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('class', 'map-svg-layer');
+    svg.setAttribute('viewBox', `0 0 1000 ${totalH}`);
+    svg.setAttribute('preserveAspectRatio', 'none');
+
+    // Subtle cartographic topographic contour curves along the canvas
+    for (let cy = 90; cy < totalH; cy += 180) {
+      const contour = document.createElementNS(svgNS, 'path');
+      contour.setAttribute(
+        'd',
+        `M -40 ${cy} Q 260 ${cy - 44}, 520 ${cy + 14} T 1040 ${cy - 22}`
+      );
+      contour.setAttribute('fill', 'none');
+      contour.setAttribute('stroke', 'rgba(232, 206, 158, 0.06)');
+      contour.setAttribute('stroke-width', '1.5');
+      contour.setAttribute('vector-effect', 'non-scaling-stroke');
+      svg.appendChild(contour);
+    }
+
+    // Winding Cubic Bezier Road between consecutive nodes
+    for (let i = 0; i < nodesLayout.length - 1; i++) {
+      const a = nodesLayout[i];
+      const b = nodesLayout[i + 1];
+      const x1 = a.x * 10;
+      const y1 = a.y;
+      const x2 = b.x * 10;
+      const y2 = b.y;
+      const midY = (y1 + y2) * 0.5;
+      const d = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
+
+      const isFogSegment = b.shrouded;
+      const isFrontierSegment = !b.shrouded && b.lvl.id === frontierId;
+
+      // Dark stone roadbed shadow
+      const roadShadow = document.createElementNS(svgNS, 'path');
+      roadShadow.setAttribute('d', d);
+      roadShadow.setAttribute('fill', 'none');
+      roadShadow.setAttribute('stroke', isFogSegment ? 'rgba(12, 8, 5, 0.35)' : 'rgba(12, 8, 5, 0.7)');
+      roadShadow.setAttribute('stroke-width', isFogSegment ? '7' : '11');
+      roadShadow.setAttribute('stroke-linecap', 'round');
+      roadShadow.setAttribute('vector-effect', 'non-scaling-stroke');
+      svg.appendChild(roadShadow);
+
+      // Main gilded/misty trail
+      const roadMain = document.createElementNS(svgNS, 'path');
+      roadMain.setAttribute('d', d);
+      roadMain.setAttribute('fill', 'none');
+      roadMain.setAttribute('stroke-linecap', 'round');
+      roadMain.setAttribute('vector-effect', 'non-scaling-stroke');
+
+      if (isFogSegment) {
+        roadMain.setAttribute('stroke', 'rgba(201, 183, 156, 0.34)');
+        roadMain.setAttribute('stroke-width', '3.5');
+        roadMain.setAttribute('stroke-dasharray', '6 9');
+      } else if (isFrontierSegment) {
+        roadMain.setAttribute('stroke', '#f5ca6d');
+        roadMain.setAttribute('stroke-width', '4.5');
+        roadMain.setAttribute('stroke-dasharray', '9 7');
+        roadMain.setAttribute('class', 'trail-frontier-dash');
+      } else {
+        roadMain.setAttribute('stroke', '#c99439');
+        roadMain.setAttribute('stroke-width', '4.5');
+      }
+      svg.appendChild(roadMain);
+    }
+    canvas.appendChild(svg);
+
+    // Subtle non-distorted Compass Rose watermark in upper-right corner
+    const compass = document.createElement('div');
+    compass.style.cssText =
+      'position:absolute;top:14px;right:14px;width:64px;height:64px;opacity:0.16;pointer-events:none;z-index:2;';
+    compass.innerHTML = `
+      <svg viewBox="0 0 80 80" width="64" height="64" fill="none">
+        <circle cx="40" cy="40" r="34" stroke="#e8c67c" stroke-width="1.2" stroke-dasharray="3 4"/>
+        <circle cx="40" cy="40" r="24" stroke="#e8c67c" stroke-width="1"/>
+        <polygon points="40,6 45,35 40,40 35,35" fill="#f5ca6d"/>
+        <polygon points="40,74 45,45 40,40 35,45" fill="#c9b79c"/>
+        <polygon points="6,40 35,35 40,40 35,45" fill="#c9b79c"/>
+        <polygon points="74,40 45,35 40,40 45,45" fill="#c9b79c"/>
+        <circle cx="40" cy="40" r="4" fill="#f5ca6d"/>
+      </svg>`;
+    canvas.appendChild(compass);
+
+    // 4. Render Chapter Banners
+    for (const cb of chapterBanners) {
+      const banner = document.createElement('div');
+      banner.className = `map-chapter-banner theme-${cb.chapter.theme}`;
+      banner.style.top = `${cb.y}px`;
+      banner.innerHTML = `
+        <span class="map-chapter-roman">Chapter ${cb.chapter.roman}</span>
+        <span class="map-chapter-title">${cb.chapter.name}</span>
+        <span class="map-chapter-stars">★ ${cb.earnedStars}/${cb.maxStars}</span>
+      `;
+      canvas.appendChild(banner);
+    }
+
+    // 5. Render Revealed & Shrouded Nodes
+    for (const item of nodesLayout) {
+      const { lvl, x, y, shrouded } = item;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.style.left = `${x}%`;
+      btn.style.top = `${y}px`;
+      btn.dataset.levelId = String(lvl.id);
+
+      if (shrouded) {
+        btn.className = 'map-node shrouded';
+        btn.title = `Conquer Level ${lvl.id - 1} to reveal this territory`;
+        btn.innerHTML = `
+          <div class="map-node-medallion">
+            <span class="map-node-mystery-glyph">?</span>
+          </div>
+          <span class="map-node-label">Uncharted Territory</span>
+        `;
+        btn.addEventListener('click', () => {
+          sound.unlock();
+          if (this.el.mapRealmIndicator) {
+            this.el.mapRealmIndicator.textContent = `Conquer Level ${lvl.id - 1} to reveal Level ${lvl.id}!`;
+          }
+        });
+        canvas.appendChild(btn);
+        continue;
+      }
+
       const earnedStars = getStarsForLevel(this.progress, lvl.id, this.difficulty);
-      const piece = PIECE_REGISTRY[lvl.unlocksPiece];
-      const isMythic = piece?.category === 'mythic';
-      const displayGold = Math.round(lvl.startingGold * goldMult);
+      const pieceId = lvl.unlocksPiece || lvl.featuredPiece || 'pawn';
+      const piece = PIECE_REGISTRY[pieceId];
+      const isFrontier = lvl.id === frontierId;
+      const isSelected = lvl.id === this.selectedMapLevelId;
+      const isJustRevealed = lvl.id === this.justUnlockedLevelId;
+      const isMythic = piece?.category === 'mythic' && Boolean(lvl.unlocksPiece);
 
-      const card = document.createElement('button');
-      card.type = 'button';
-      card.className = `level-card ${unlocked ? '' : 'locked'} ${isMythic ? 'mythic-level' : ''}`;
-      card.disabled = !unlocked;
+      btn.className = [
+        'map-node',
+        earnedStars > 0 ? 'conquered' : '',
+        isFrontier ? 'frontier' : '',
+        isSelected ? 'selected' : '',
+        isJustRevealed ? 'just-revealed' : '',
+        lvl.isChapterBoss ? 'chapter-boss' : '',
+        isMythic ? 'mythic-node' : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
 
       const starsHtml = [1, 2, 3]
         .map((n) => `<span class="${n <= earnedStars ? '' : 'star-empty'}">★</span>`)
         .join('');
 
-      card.innerHTML = `
-        <div class="level-card-top">
-          <div>
-            <span class="level-card-num">${isMythic ? `LEVEL ${lvl.id} • NON-CHESS RELIC` : `LEVEL ${lvl.id}`}</span>
-            <h3 class="level-card-title">${lvl.name}</h3>
-          </div>
-          <div class="level-stars" aria-label="${earnedStars} of 3 stars">${starsHtml}</div>
+      btn.innerHTML = `
+        ${isFrontier ? '<span class="map-node-beacon">Next Battle</span>' : ''}
+        <div class="map-node-medallion">
+          <img class="map-node-sprite" src="${getSpriteUrl(piece.sprite)}" alt="${piece.name}" />
+          <span class="map-node-num">${lvl.isChapterBoss ? `👑${lvl.id}` : lvl.id}</span>
         </div>
-        <div class="level-unlock-row">
-          <img class="level-unlock-sprite" src="${getSpriteUrl(piece.sprite)}" alt="${piece.name}" />
-          <div class="level-unlock-meta">
-            <span class="level-unlock-label">${lvl.id === 1 ? 'Starting Piece' : 'Unlocks Piece'}</span>
-            <span class="level-unlock-name">${piece.name}</span>
-            <span class="level-unlock-pattern">${piece.patternLabel}</span>
-          </div>
-        </div>
-        <div class="level-card-footer">
-          <span>${lvl.waves.length} Waves • ${displayGold}g</span>
-          <strong>${unlocked ? 'Play →' : '🔒 Locked'}</strong>
-        </div>
+        <div class="map-node-stars" aria-label="${earnedStars} of 3 stars">${starsHtml}</div>
+        <span class="map-node-label">${lvl.name}</span>
       `;
 
-      if (unlocked) {
-        card.addEventListener('click', () => {
-          sound.unlock();
-          sound.playSelect();
-          this._startLevel(lvl.id, true);
-        });
-      }
-      grid.appendChild(card);
+      btn.addEventListener('click', () => {
+        sound.unlock();
+        sound.playSelect();
+        if (this.selectedMapLevelId === lvl.id) {
+          // Clicking an already-selected node scrolls the deploy panel cleanly or launches on desktop double-tap
+          this._renderStagePanel(lvl.id);
+        } else {
+          this._selectMapLevel(lvl.id);
+        }
+      });
+
+      btn.addEventListener('dblclick', () => {
+        sound.unlock();
+        this._startLevel(lvl.id, false);
+      });
+
+      canvas.appendChild(btn);
     }
+
+    // 6. Render Fog-of-War Bank hiding remaining undiscovered territories
+    if (revealedMax < LEVELS.length) {
+      const hiddenCount = LEVELS.length - revealedMax;
+      const fog = document.createElement('div');
+      fog.className = 'map-fog-bank';
+      fog.innerHTML = `
+        <span class="map-fog-pill">☁ Uncharted Lands • ${hiddenCount} ${hiddenCount === 1 ? 'Territory' : 'Territories'} Hidden in Fog</span>
+        <p class="map-fog-sub">Conquer Level ${frontierId} to part the mist and reveal the road ahead.</p>
+      `;
+      canvas.appendChild(fog);
+    }
+
+    // Clear one-shot reveal celebration flag after triggering animation
+    if (this.justUnlockedLevelId) {
+      setTimeout(() => {
+        this.justUnlockedLevelId = null;
+      }, 1000);
+    }
+
+    this._renderStagePanel(this.selectedMapLevelId);
+
+    if (scrollToFrontier) {
+      requestAnimationFrame(() => this._scrollToMapNode(this.selectedMapLevelId, false));
+    }
+  }
+
+  _selectMapLevel(levelId) {
+    this.selectedMapLevelId = levelId;
+    const nodes = this.el.campaignMapCanvas?.querySelectorAll('.map-node[data-level-id]') || [];
+    for (const node of nodes) {
+      node.classList.toggle('selected', Number(node.dataset.levelId) === levelId);
+    }
+    this._renderStagePanel(levelId);
+  }
+
+  _scrollToMapNode(levelId, smooth = true) {
+    const vp = this.el.campaignMapViewport;
+    const y = this._mapNodeY.get(levelId);
+    if (!vp || y === undefined) return;
+    const targetTop = Math.max(0, y - vp.clientHeight * 0.5);
+    vp.scrollTo({ top: targetTop, behavior: smooth ? 'smooth' : 'auto' });
+  }
+
+  _renderStagePanel(levelId) {
+    const lvl = LEVELS.find((l) => l.id === levelId) || LEVELS[0];
+    if (!lvl) return;
+
+    const ch = getChapterForLevel(lvl.id);
+    const goldMult = this.difficulty === 'grandmaster' ? 0.9 : 1.0;
+    const displayGold = Math.round(lvl.startingGold * goldMult);
+    const earnedStars = getStarsForLevel(this.progress, lvl.id, this.difficulty);
+    const bestScore = this.progress.bestScores?.[String(lvl.id)] || 0;
+    const pieceId = lvl.unlocksPiece || lvl.featuredPiece || 'pawn';
+    const piece = PIECE_REGISTRY[pieceId];
+    const isMythic = piece?.category === 'mythic';
+
+    if (this.el.mapRealmIndicator) {
+      this.el.mapRealmIndicator.textContent = `Chapter ${ch.roman} • ${ch.name}`;
+    }
+    this.el.stageKicker.textContent = `CHAPTER ${ch.roman} • LEVEL ${lvl.id}${lvl.isChapterBoss ? ' • FINALE' : ''}`;
+    this.el.stageTitle.textContent = lvl.name;
+    this.el.stageSubtitle.textContent = `${ch.name} — ${lvl.subtitle}`;
+    this.el.stageStars.innerHTML = [1, 2, 3]
+      .map((n) => `<span class="${n <= earnedStars ? '' : 'star-empty'}">★</span>`)
+      .join('');
+    this.el.stageStars.setAttribute('aria-label', `${earnedStars} of 3 stars`);
+
+    this.el.stageWaves.textContent = `${lvl.waves.length}`;
+    this.el.stageGold.textContent = `${displayGold}g`;
+    this.el.stageLives.textContent = `${lvl.startingLives} ♥`;
+    this.el.stageBestScore.textContent = bestScore > 0 ? bestScore.toLocaleString() : '—';
+
+    this.el.stagePieceBox.classList.toggle('mythic', isMythic);
+    this.el.stagePieceImg.src = getSpriteUrl(piece.sprite);
+    this.el.stagePieceImg.alt = piece.name;
+    this.el.stagePieceBadge.textContent = lvl.unlocksPiece
+      ? isMythic
+        ? 'UNLOCKS NON-CHESS RELIC'
+        : lvl.id === 1
+        ? 'STARTING CHESS PIECE'
+        : 'UNLOCKS CHESS PIECE'
+      : 'RECOMMENDED COMMANDER';
+    this.el.stagePieceName.textContent = `${piece.name} — ${piece.title}`;
+    this.el.stagePiecePattern.textContent = piece.patternLabel;
+    this.el.stageDesc.textContent = lvl.description;
+
+    const diffLabel = this.difficulty === 'grandmaster' ? ' (Grandmaster)' : '';
+    this.el.btnStageDeploy.textContent = `Deploy to Level ${lvl.id}${diffLabel} →`;
+    this.el.stageMinimap.innerHTML = this._renderMiniBoardSvg(lvl);
+  }
+
+  _renderMiniBoardSvg(lvl) {
+    const tiles = expandWaypoints(lvl.waypoints);
+    const pathSet = new Set(tiles.map(([c, r]) => `${c},${r}`));
+    const start = tiles[0];
+    const end = tiles[tiles.length - 1];
+    const rects = [];
+
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const isPath = pathSet.has(`${c},${r}`);
+        const isLight = (c + r) % 2 === 0;
+        let fill = isLight ? '#d8c4a2' : '#9c7d56';
+        if (isPath) fill = '#2b2320';
+        rects.push(`<rect x="${c * 10}" y="${r * 10}" width="10" height="10" fill="${fill}"/>`);
+      }
+    }
+
+    const pts = tiles.map(([c, r]) => `${c * 10 + 5},${r * 10 + 5}`).join(' ');
+    return `
+      <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        ${rects.join('')}
+        <polyline points="${pts}" fill="none" stroke="rgba(245, 202, 109, 0.55)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="${start[0] * 10 + 5}" cy="${start[1] * 10 + 5}" r="3.2" fill="#63d48e" stroke="#18120d" stroke-width="1"/>
+        <circle cx="${end[0] * 10 + 5}" cy="${end[1] * 10 + 5}" r="3.5" fill="#f5ca6d" stroke="#8a281e" stroke-width="1.4"/>
+      </svg>
+    `;
   }
 
   _startLevel(levelId, showBriefing = true) {
     const lvl = LEVELS.find((l) => l.id === levelId);
     if (!lvl) return;
     this.currentLevel = lvl;
+    this.selectedMapLevelId = lvl.id;
 
     this.el.screenHome.classList.remove('active');
     this.el.screenGame.classList.add('active');
@@ -456,17 +834,22 @@ class TowerDeChessApp {
     requestAnimationFrame(() => this.engine.resize());
 
     if (showBriefing) {
-      const piece = PIECE_REGISTRY[lvl.unlocksPiece];
-      this.el.briefKicker.textContent = `LEVEL ${lvl.id} • ${lvl.subtitle.toUpperCase()}`;
+      const ch = getChapterForLevel(lvl.id);
+      const pieceId = lvl.unlocksPiece || lvl.featuredPiece || 'pawn';
+      const piece = PIECE_REGISTRY[pieceId];
+      this.el.briefKicker.textContent = `CHAPTER ${ch.roman} • LEVEL ${lvl.id} • ${lvl.subtitle.toUpperCase()}`;
       this.el.briefTitle.textContent = lvl.name;
       this.el.briefPieceImg.src = getSpriteUrl(piece.sprite);
       this.el.briefPieceImg.alt = piece.name;
-      this.el.briefUnlockBadge.textContent =
-        piece.category === 'mythic'
+      this.el.briefUnlockBadge.textContent = lvl.unlocksPiece
+        ? piece.category === 'mythic'
           ? 'NON-CHESS RELIC UNLOCKED'
           : lvl.id === 1
           ? 'STARTING CHESS PIECE'
-          : 'NEW CHESS PIECE UNLOCKED';
+          : 'NEW CHESS PIECE UNLOCKED'
+        : lvl.isChapterBoss
+        ? 'CHAPTER FINALE • KEY COMMANDER'
+        : 'RECOMMENDED COMMANDER';
       this.el.briefPieceName.textContent = `${piece.name} — ${piece.title}`;
       this.el.briefPiecePattern.textContent = piece.patternLabel;
       this.el.briefDesc.textContent = lvl.description;
@@ -480,7 +863,7 @@ class TowerDeChessApp {
     this.el.modalResult.classList.add('hidden');
     this.el.screenGame.classList.remove('active');
     this.el.screenHome.classList.add('active');
-    this._renderCampaign();
+    this._renderCampaign(Boolean(this.justUnlockedLevelId));
   }
 
   // ==================== REACTIVE GAMEPLAY HUD ====================
@@ -663,6 +1046,7 @@ class TowerDeChessApp {
     modal.classList.remove('hidden');
 
     if (result.victory) {
+      const prevUnlocked = this.progress.highestUnlocked;
       this.progress = recordLevelVictory(this.progress, {
         levelId: result.level.id,
         stars: result.stars,
@@ -671,6 +1055,11 @@ class TowerDeChessApp {
         totalLevels: LEVELS.length,
       });
 
+      if (this.progress.highestUnlocked > prevUnlocked) {
+        this.justUnlockedLevelId = this.progress.highestUnlocked;
+        this.selectedMapLevelId = this.progress.highestUnlocked;
+      }
+
       this.el.resultKicker.textContent = `LEVEL ${result.level.id} CONQUERED`;
       this.el.resultTitle.textContent = 'Victory!';
       this.el.resultStars.textContent = '★'.repeat(result.stars) + '☆'.repeat(3 - result.stars);
@@ -678,11 +1067,21 @@ class TowerDeChessApp {
 
       const nextLevel = LEVELS.find((l) => l.id === result.level.id + 1);
       if (nextLevel) {
-        const nextPiece = PIECE_REGISTRY[nextLevel.unlocksPiece];
+        const nextPieceId = nextLevel.unlocksPiece || nextLevel.featuredPiece || 'king';
+        const nextPiece = PIECE_REGISTRY[nextPieceId];
+        const nextCh = getChapterForLevel(nextLevel.id);
+        const tagEl = this.el.resultNextUnlock.querySelector('.unlock-tag');
         this.el.resultNextUnlock.classList.remove('hidden');
         this.el.resultNextImg.src = getSpriteUrl(nextPiece.sprite);
-        this.el.resultNextName.textContent = `${nextPiece.name} — ${nextPiece.title}`;
-        this.el.resultNextPattern.textContent = nextPiece.patternLabel;
+        if (nextLevel.unlocksPiece) {
+          if (tagEl) tagEl.textContent = 'NEXT LEVEL UNLOCKS';
+          this.el.resultNextName.textContent = `${nextPiece.name} — ${nextPiece.title}`;
+          this.el.resultNextPattern.textContent = nextPiece.patternLabel;
+        } else {
+          if (tagEl) tagEl.textContent = `REVEALED ON MAP • CHAPTER ${nextCh.roman}`;
+          this.el.resultNextName.textContent = `Level ${nextLevel.id}: ${nextLevel.name}`;
+          this.el.resultNextPattern.textContent = `${nextCh.name} — ${nextLevel.subtitle}`;
+        }
         this.el.btnResultNext.classList.remove('hidden');
       } else {
         this.el.resultNextUnlock.classList.add('hidden');

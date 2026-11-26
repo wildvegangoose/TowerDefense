@@ -40,23 +40,70 @@
           <div>
             <div class="campaign-title-row">
               <h2>Royal Campaign</h2>
-              <span id="campaign-total-stars" class="stars-summary-pill" title="Total stars earned">★ 0 / 21</span>
+              <span id="campaign-total-stars" class="stars-summary-pill" title="Total stars earned">★ 0 / 54</span>
+              <span id="campaign-revealed-pill" class="revealed-summary-pill" title="Territories revealed on the map">1 / 18 Revealed</span>
             </div>
-            <p class="campaign-hint">Each victory unlocks a new Chess piece — culminating in Relics beyond the board.</p>
+            <p class="campaign-hint">Conquer each stronghold to part the fog of war and reveal new territories across 3 Realms.</p>
           </div>
           <div class="campaign-controls">
             <div class="difficulty-switch" role="group" aria-label="Difficulty Mode">
               <button id="btn-diff-standard" class="diff-btn active" type="button">Tactical</button>
               <button id="btn-diff-grandmaster" class="diff-btn" type="button">Grandmaster</button>
             </div>
-            <label class="dev-unlock-toggle" title="Unlock every level immediately for testing & iteration">
+            <label class="dev-unlock-toggle" title="Reveal and unlock all 18 territories immediately">
               <input type="checkbox" id="toggle-sandbox" />
               <span>Sandbox Unlock All</span>
             </label>
           </div>
         </div>
 
-        <div id="level-grid" class="level-grid" role="list"></div>
+        <div class="campaign-map-layout">
+          <div class="campaign-map-frame">
+            <div class="map-frame-toolbar">
+              <span id="map-realm-indicator" class="map-realm-indicator">Chapter I • The Ivory Ranks</span>
+              <button id="btn-jump-frontier" class="btn-map-pill" type="button" title="Scroll to active battle node">Active Battle ⌖</button>
+            </div>
+            <div id="campaign-map-viewport" class="campaign-map-viewport" role="region" aria-label="Interactive Campaign Map">
+              <div id="campaign-map-canvas" class="campaign-map-canvas"></div>
+            </div>
+          </div>
+
+          <aside id="map-stage-panel" class="map-stage-panel" aria-live="polite">
+            <div class="stage-panel-header">
+              <div>
+                <span id="stage-kicker" class="stage-kicker">CHAPTER I • LEVEL 1</span>
+                <h3 id="stage-title" class="stage-title">The Pawn's Bastion</h3>
+                <p id="stage-subtitle" class="stage-subtitle">Opening Rank</p>
+              </div>
+              <div id="stage-stars" class="stage-stars" aria-label="0 of 3 stars">☆☆☆</div>
+            </div>
+
+            <div class="stage-preview-row">
+              <div id="stage-minimap" class="stage-minimap" aria-label="Board Path Preview"></div>
+              <div class="stage-metrics">
+                <div class="stage-metric"><span>WAVES</span><strong id="stage-waves">5</strong></div>
+                <div class="stage-metric"><span>GOLD</span><strong id="stage-gold">125g</strong></div>
+                <div class="stage-metric"><span>LIVES</span><strong id="stage-lives">15 ♥</strong></div>
+                <div class="stage-metric"><span>BEST</span><strong id="stage-best-score">—</strong></div>
+              </div>
+            </div>
+
+            <div id="stage-piece-box" class="stage-piece-box">
+              <img id="stage-piece-img" src="" alt="" class="stage-piece-img" />
+              <div class="stage-piece-copy">
+                <span id="stage-piece-badge" class="stage-piece-badge">STARTING PIECE</span>
+                <strong id="stage-piece-name">Pawn</strong>
+                <span id="stage-piece-pattern">Adjacent 8 Tiles (+38% on Diagonals)</span>
+              </div>
+            </div>
+
+            <p id="stage-desc" class="stage-desc"></p>
+
+            <button id="btn-stage-deploy" class="btn btn-gold btn-stage-deploy" type="button">
+              Deploy to Board →
+            </button>
+          </aside>
+        </div>
       </main>
     </section>
 
@@ -244,9 +291,9 @@
           Your unlocked levels and stars (both Tactical and Grandmaster) are saved automatically on this device. Copy your Save Code below to back up or transfer your progress between web and Android.
         </p>
         <div class="save-stats-row">
-          <div class="insp-stat"><span>TACTICAL STARS</span><strong id="save-tactical-stars">★ 0 / 21</strong></div>
-          <div class="insp-stat"><span>GRANDMASTER</span><strong id="save-gm-stars">★ 0 / 21</strong></div>
-          <div class="insp-stat"><span>UNLOCKED</span><strong id="save-unlocked-lv">Lv. 1 / 7</strong></div>
+          <div class="insp-stat"><span>TACTICAL STARS</span><strong id="save-tactical-stars">★ 0 / 54</strong></div>
+          <div class="insp-stat"><span>GRANDMASTER</span><strong id="save-gm-stars">★ 0 / 54</strong></div>
+          <div class="insp-stat"><span>UNLOCKED</span><strong id="save-unlocked-lv">Lv. 1 / 18</strong></div>
         </div>
         <label class="save-code-label" for="input-save-code">Save Code (Copy or Paste to Restore)</label>
         <textarea id="input-save-code" class="save-code-box" rows="3" spellcheck="false"></textarea>

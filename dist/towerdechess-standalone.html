@@ -54,9 +54,11 @@ html,
 body {
   margin: 0;
   padding: 0;
-  height: 100%;
-  background:
+  min-height: 100%;
+  background-color: var(--bg-deep);
+  background-image:
     radial-gradient(ellipse 80% 60% at 50% 0%, #342318 0%, var(--bg-deep) 72%);
+  background-attachment: fixed;
   color: var(--text-ivory);
   font-family: var(--font-sans);
   overflow-x: hidden;
@@ -413,135 +415,686 @@ body {
   height: 16px;
 }
 
-.level-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(265px, 1fr));
+.revealed-summary-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(72, 156, 106, 0.14);
+  border: 1px solid rgba(114, 198, 148, 0.36);
+  color: #a9e4bf;
+  font-size: 0.76rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ==================== INTERACTIVE CAMPAIGN MAP ==================== */
+
+.campaign-map-layout {
+  display: flex;
+  flex-direction: column;
   gap: 14px;
 }
 
-.level-card {
+.campaign-map-frame {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, #2b1e15 0%, #1c130d 100%);
+  border: 1px solid var(--border-brass);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card), var(--shadow-inset);
+  overflow: hidden;
+}
+
+.map-frame-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 14px;
+  background: linear-gradient(180deg, rgba(58, 41, 29, 0.92) 0%, rgba(36, 25, 18, 0.96) 100%);
+  border-bottom: 1px solid var(--border-brass);
+  z-index: 4;
+}
+
+.map-realm-indicator {
+  font-family: var(--font-display);
+  font-size: 0.84rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--gold-bright);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-map-pill {
+  appearance: none;
+  border: 1px solid var(--border-brass);
+  background: rgba(223, 169, 68, 0.14);
+  color: var(--gold-bright);
+  font-family: var(--font-sans);
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 5px 11px;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+}
+
+.btn-map-pill:hover {
+  background: rgba(223, 169, 68, 0.24);
+  border-color: var(--border-brass-strong);
+}
+
+.btn-map-pill:active {
+  transform: scale(0.96);
+}
+
+.campaign-map-viewport {
+  position: relative;
+  height: 320px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  background:
+    radial-gradient(ellipse 90% 60% at 50% 0%, rgba(212, 168, 92, 0.08), transparent 70%),
+    linear-gradient(180deg, #271c14 0%, #201610 50%, #1a120d 100%);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212, 168, 92, 0.35) rgba(18, 12, 8, 0.4);
+}
+
+.campaign-map-viewport::-webkit-scrollbar {
+  width: 7px;
+}
+
+.campaign-map-viewport::-webkit-scrollbar-track {
+  background: rgba(18, 12, 8, 0.45);
+}
+
+.campaign-map-viewport::-webkit-scrollbar-thumb {
+  background: rgba(212, 168, 92, 0.35);
+  border-radius: 99px;
+}
+
+.campaign-map-canvas {
+  position: relative;
+  width: 100%;
+  min-height: 100%;
+  overflow: hidden;
+}
+
+/* Subtle biome territory backdrops */
+.map-biome-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.map-biome-band.theme-ivory {
+  background:
+    radial-gradient(circle at 22% 28%, rgba(232, 206, 158, 0.12) 0%, transparent 56%),
+    radial-gradient(circle at 78% 68%, rgba(212, 168, 92, 0.1) 0%, transparent 54%),
+    linear-gradient(180deg, rgba(64, 46, 30, 0.48) 0%, rgba(44, 31, 21, 0.3) 100%);
+}
+
+.map-biome-band.theme-glacial {
+  background:
+    radial-gradient(circle at 75% 24%, rgba(114, 194, 232, 0.14) 0%, transparent 54%),
+    radial-gradient(circle at 24% 72%, rgba(83, 169, 212, 0.12) 0%, transparent 56%),
+    linear-gradient(180deg, rgba(28, 42, 52, 0.48) 0%, rgba(22, 31, 38, 0.34) 100%);
+  border-top: 1px solid rgba(114, 194, 232, 0.16);
+}
+
+.map-biome-band.theme-crimson {
+  background:
+    radial-gradient(circle at 26% 24%, rgba(207, 78, 64, 0.16) 0%, transparent 54%),
+    radial-gradient(circle at 76% 74%, rgba(223, 134, 68, 0.12) 0%, transparent 56%),
+    linear-gradient(180deg, rgba(56, 24, 20, 0.5) 0%, rgba(32, 16, 14, 0.42) 100%);
+  border-top: 1px solid rgba(207, 78, 64, 0.22);
+}
+
+.map-svg-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes trailMarch {
+  to {
+    stroke-dashoffset: -28;
+  }
+}
+
+.trail-frontier-dash {
+  animation: trailMarch 1.4s linear infinite;
+}
+
+/* Cartographic Chapter Banner */
+.map-chapter-banner {
+  position: absolute;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(46, 32, 23, 0.95) 0%, rgba(28, 19, 13, 0.96) 100%);
+  border: 1px solid var(--border-brass);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), var(--shadow-inset);
+  white-space: nowrap;
+  max-width: calc(100% - 24px);
+}
+
+.map-chapter-banner.theme-glacial {
+  border-color: rgba(114, 194, 232, 0.45);
+  background: linear-gradient(180deg, rgba(28, 42, 52, 0.96) 0%, rgba(19, 28, 36, 0.96) 100%);
+}
+
+.map-chapter-banner.theme-crimson {
+  border-color: rgba(218, 96, 82, 0.5);
+  background: linear-gradient(180deg, rgba(58, 25, 21, 0.96) 0%, rgba(34, 15, 13, 0.96) 100%);
+}
+
+.map-chapter-roman {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  text-transform: uppercase;
+}
+
+.map-chapter-banner.theme-glacial .map-chapter-roman {
+  color: #8ad6fc;
+}
+
+.map-chapter-banner.theme-crimson .map-chapter-roman {
+  color: #f08a7e;
+}
+
+.map-chapter-title {
+  font-family: var(--font-display);
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--text-ivory);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.map-chapter-stars {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--gold-bright);
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(15, 10, 7, 0.55);
+  border: 1px solid var(--border-subtle);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Interactive Level Medallion Nodes */
+.map-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+  cursor: pointer;
+  transition: transform 0.16s ease;
+}
+
+.map-node:hover:not(.shrouded) {
+  transform: translate(-50%, -50%) scale(1.06);
+  z-index: 6;
+}
+
+.map-node.selected {
+  transform: translate(-50%, -50%) scale(1.08);
+  z-index: 7;
+}
+
+.map-node-medallion {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 35% 28%, #473324 0%, #2b1d14 68%, #1d130d 100%);
+  border: 2.5px solid var(--border-brass-strong);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.62), inset 0 1px 2px rgba(255, 240, 210, 0.25);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.map-node.chapter-boss .map-node-medallion {
+  width: 74px;
+  height: 74px;
+  border-width: 3px;
+  border-color: #f3c464;
+  box-shadow: 0 0 0 3px rgba(223, 169, 68, 0.18), 0 10px 24px rgba(0, 0, 0, 0.68);
+}
+
+.map-node.mythic-node .map-node-medallion {
+  border-color: rgba(114, 194, 232, 0.78);
+  background: radial-gradient(circle at 35% 28%, #2e4858 0%, #1d2d38 70%, #131e26 100%);
+}
+
+.map-node.conquered .map-node-medallion {
+  border-color: #dfa944;
+}
+
+.map-node.selected .map-node-medallion {
+  border-color: #fff2cc;
+  box-shadow:
+    0 0 0 4px rgba(245, 202, 109, 0.36),
+    0 0 24px rgba(245, 202, 109, 0.45),
+    0 10px 24px rgba(0, 0, 0, 0.7);
+}
+
+@keyframes frontierPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(245, 202, 109, 0.55), 0 8px 20px rgba(0, 0, 0, 0.65);
+  }
+  65% {
+    box-shadow: 0 0 0 12px rgba(245, 202, 109, 0), 0 8px 20px rgba(0, 0, 0, 0.65);
+  }
+}
+
+.map-node.frontier .map-node-medallion {
+  border-color: var(--gold-bright);
+  animation: frontierPulse 2.1s ease-out infinite;
+}
+
+@keyframes nodeRevealBurst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.55);
+    filter: brightness(2.2) blur(4px);
+  }
+  65% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.16);
+    filter: brightness(1.35) blur(0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.08);
+    filter: brightness(1) blur(0);
+  }
+}
+
+.map-node.just-revealed {
+  animation: nodeRevealBurst 0.85s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.map-node-sprite {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 5px rgba(0, 0, 0, 0.6));
+  pointer-events: none;
+}
+
+.map-node.chapter-boss .map-node-sprite {
+  width: 50px;
+  height: 50px;
+}
+
+.map-node-num {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  min-width: 23px;
+  height: 23px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #e8b857 0%, #b77e24 100%);
+  color: #1e1207;
+  border: 1.5px solid #fff2cc;
+  font-size: 0.7rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.55);
+}
+
+.map-node-beacon {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #f3c464 0%, #c68d2e 100%);
+  color: #1f1206;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.55);
+}
+
+.map-node-stars {
+  font-size: 0.78rem;
+  letter-spacing: 2px;
+  line-height: 1;
+  color: var(--gold-bright);
+  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.85);
+}
+
+.map-node-stars .star-empty {
+  color: rgba(255, 236, 204, 0.22);
+}
+
+.map-node-label {
+  padding: 2px 9px;
+  border-radius: 6px;
+  background: rgba(23, 15, 10, 0.88);
+  border: 1px solid rgba(212, 168, 92, 0.24);
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-ivory);
+  white-space: nowrap;
+  max-width: 156px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.map-node.selected .map-node-label {
+  border-color: var(--gold-bright);
+  color: var(--gold-bright);
+}
+
+/* Shrouded Mystery Node (Next Unrevealed Territory) */
+.map-node.shrouded {
+  cursor: not-allowed;
+  opacity: 0.78;
+}
+
+.map-node.shrouded .map-node-medallion {
+  background: radial-gradient(circle at 40% 30%, #2a2420 0%, #181411 75%);
+  border: 2px dashed rgba(201, 183, 156, 0.38);
+  box-shadow: 0 0 22px rgba(15, 12, 10, 0.85);
+}
+
+.map-node-mystery-glyph {
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  font-weight: 800;
+  color: rgba(201, 183, 156, 0.55);
+}
+
+.map-node.shrouded .map-node-label {
+  color: var(--text-muted);
+  border-color: rgba(255, 236, 204, 0.1);
+  font-family: var(--font-sans);
+  font-size: 0.68rem;
+}
+
+/* Uncharted Fog-of-War Bank at Frontier Edge */
+.map-fog-bank {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 36px 18px 24px;
+  text-align: center;
+  background: linear-gradient(
+    180deg,
+    rgba(24, 17, 13, 0) 0%,
+    rgba(24, 17, 13, 0.82) 30%,
+    rgba(19, 13, 10, 0.96) 100%
+  );
+  pointer-events: none;
+}
+
+.map-fog-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: rgba(34, 25, 19, 0.92);
+  border: 1px dashed rgba(212, 168, 92, 0.36);
+  color: var(--text-parchment);
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.55);
+}
+
+.map-fog-sub {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  max-width: 340px;
+}
+
+/* ==================== TACTICAL STAGING PANEL ==================== */
+
+.map-stage-panel {
   display: flex;
   flex-direction: column;
   gap: 12px;
   padding: 16px;
-  background: linear-gradient(165deg, var(--surface-raised) 0%, var(--surface-walnut) 65%, #261a12 100%);
+  background: linear-gradient(170deg, var(--surface-raised) 0%, var(--surface-walnut) 62%, #241912 100%);
   border: 1px solid var(--border-brass);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card), var(--shadow-inset);
-  text-align: left;
-  color: inherit;
-  cursor: pointer;
-  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
-.level-card:hover:not(.locked) {
-  transform: translateY(-2px);
-  border-color: var(--border-brass-strong);
-  box-shadow: 0 14px 32px rgba(8, 4, 2, 0.68), var(--shadow-inset);
-}
-
-.level-card.locked {
-  opacity: 0.56;
-  cursor: not-allowed;
-  filter: grayscale(0.45);
-}
-
-.level-card.mythic-level {
-  border-color: rgba(92, 180, 224, 0.45);
-}
-
-.level-card-top {
+.stage-panel-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
 }
 
-.level-card-num {
-  font-size: 0.72rem;
+.stage-kicker {
+  display: block;
+  font-size: 0.68rem;
   font-weight: 800;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.11em;
   text-transform: uppercase;
   color: var(--gold);
 }
 
-.level-card.mythic-level .level-card-num {
-  color: var(--sapphire);
-}
-
-.level-card-title {
-  margin: 2px 0 0;
+.stage-title {
+  margin: 3px 0 0;
   font-family: var(--font-display);
-  font-size: 1.05rem;
+  font-size: 1.18rem;
   color: var(--text-ivory);
+  line-height: 1.18;
 }
 
-.level-stars {
-  font-size: 0.95rem;
+.stage-subtitle {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: var(--text-parchment);
+}
+
+.stage-stars {
+  font-size: 1.05rem;
   letter-spacing: 2px;
   color: var(--gold-bright);
   white-space: nowrap;
 }
 
-.level-stars .star-empty {
-  color: rgba(255, 236, 204, 0.18);
+.stage-stars .star-empty {
+  color: rgba(255, 236, 204, 0.2);
 }
 
-.level-unlock-row {
+.stage-preview-row {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.stage-minimap {
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1.5px solid var(--border-brass);
+  background: #1b130e;
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.45);
+}
+
+.stage-minimap svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.stage-metrics {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 7px;
+}
+
+.stage-metric {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6px 9px;
+  background: var(--surface-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.stage-metric span {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.stage-metric strong {
+  font-size: 0.9rem;
+  color: var(--text-ivory);
+  margin-top: 1px;
+  font-variant-numeric: tabular-nums;
+}
+
+.stage-piece-box {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 11px;
   padding: 10px;
   background: var(--surface-inset);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
 }
 
-.level-unlock-sprite {
-  width: 52px;
-  height: 52px;
+.stage-piece-box.mythic {
+  border-color: rgba(114, 194, 232, 0.42);
+}
+
+.stage-piece-img {
+  width: 48px;
+  height: 48px;
   object-fit: contain;
   flex-shrink: 0;
   filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.55));
 }
 
-.level-unlock-meta {
+.stage-piece-copy {
   min-width: 0;
-}
-
-.level-unlock-label {
-  display: block;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.level-unlock-name {
-  display: block;
-  font-size: 0.94rem;
-  font-weight: 700;
-  color: var(--text-ivory);
-  margin-top: 1px;
-}
-
-.level-unlock-pattern {
-  display: block;
-  font-size: 0.76rem;
-  color: var(--text-parchment);
-  margin-top: 2px;
-}
-
-.level-card-footer {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 0.78rem;
-  color: var(--text-parchment);
-  margin-top: auto;
+  flex-direction: column;
+  gap: 1px;
 }
+
+.stage-piece-badge {
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.stage-piece-box.mythic .stage-piece-badge {
+  color: #8ad6fc;
+}
+
+.stage-piece-copy strong {
+  font-size: 0.92rem;
+  color: var(--text-ivory);
+}
+
+.stage-piece-copy span:last-child {
+  font-size: 0.74rem;
+  color: var(--text-parchment);
+}
+
+.stage-desc {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.48;
+  color: var(--text-parchment);
+}
+
+.btn-stage-deploy {
+  width: 100%;
+  font-size: 0.96rem;
+  min-height: 46px;
+}
+
+@media (min-width: 900px) {
+  .campaign-map-layout {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 18px;
+  }
+
+  .campaign-map-frame {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .campaign-map-viewport {
+    height: min(65dvh, 580px);
+  }
+
+  .map-stage-panel {
+    width: 348px;
+    flex-shrink: 0;
+    justify-content: space-between;
+  }
+}
+
 
 /* ==================== GAMEPLAY SCREEN ==================== */
 
@@ -1376,23 +1929,70 @@ body {
           <div>
             <div class="campaign-title-row">
               <h2>Royal Campaign</h2>
-              <span id="campaign-total-stars" class="stars-summary-pill" title="Total stars earned">★ 0 / 21</span>
+              <span id="campaign-total-stars" class="stars-summary-pill" title="Total stars earned">★ 0 / 54</span>
+              <span id="campaign-revealed-pill" class="revealed-summary-pill" title="Territories revealed on the map">1 / 18 Revealed</span>
             </div>
-            <p class="campaign-hint">Each victory unlocks a new Chess piece — culminating in Relics beyond the board.</p>
+            <p class="campaign-hint">Conquer each stronghold to part the fog of war and reveal new territories across 3 Realms.</p>
           </div>
           <div class="campaign-controls">
             <div class="difficulty-switch" role="group" aria-label="Difficulty Mode">
               <button id="btn-diff-standard" class="diff-btn active" type="button">Tactical</button>
               <button id="btn-diff-grandmaster" class="diff-btn" type="button">Grandmaster</button>
             </div>
-            <label class="dev-unlock-toggle" title="Unlock every level immediately for testing & iteration">
+            <label class="dev-unlock-toggle" title="Reveal and unlock all 18 territories immediately">
               <input type="checkbox" id="toggle-sandbox" />
               <span>Sandbox Unlock All</span>
             </label>
           </div>
         </div>
 
-        <div id="level-grid" class="level-grid" role="list"></div>
+        <div class="campaign-map-layout">
+          <div class="campaign-map-frame">
+            <div class="map-frame-toolbar">
+              <span id="map-realm-indicator" class="map-realm-indicator">Chapter I • The Ivory Ranks</span>
+              <button id="btn-jump-frontier" class="btn-map-pill" type="button" title="Scroll to active battle node">Active Battle ⌖</button>
+            </div>
+            <div id="campaign-map-viewport" class="campaign-map-viewport" role="region" aria-label="Interactive Campaign Map">
+              <div id="campaign-map-canvas" class="campaign-map-canvas"></div>
+            </div>
+          </div>
+
+          <aside id="map-stage-panel" class="map-stage-panel" aria-live="polite">
+            <div class="stage-panel-header">
+              <div>
+                <span id="stage-kicker" class="stage-kicker">CHAPTER I • LEVEL 1</span>
+                <h3 id="stage-title" class="stage-title">The Pawn's Bastion</h3>
+                <p id="stage-subtitle" class="stage-subtitle">Opening Rank</p>
+              </div>
+              <div id="stage-stars" class="stage-stars" aria-label="0 of 3 stars">☆☆☆</div>
+            </div>
+
+            <div class="stage-preview-row">
+              <div id="stage-minimap" class="stage-minimap" aria-label="Board Path Preview"></div>
+              <div class="stage-metrics">
+                <div class="stage-metric"><span>WAVES</span><strong id="stage-waves">5</strong></div>
+                <div class="stage-metric"><span>GOLD</span><strong id="stage-gold">125g</strong></div>
+                <div class="stage-metric"><span>LIVES</span><strong id="stage-lives">15 ♥</strong></div>
+                <div class="stage-metric"><span>BEST</span><strong id="stage-best-score">—</strong></div>
+              </div>
+            </div>
+
+            <div id="stage-piece-box" class="stage-piece-box">
+              <img id="stage-piece-img" src="" alt="" class="stage-piece-img" />
+              <div class="stage-piece-copy">
+                <span id="stage-piece-badge" class="stage-piece-badge">STARTING PIECE</span>
+                <strong id="stage-piece-name">Pawn</strong>
+                <span id="stage-piece-pattern">Adjacent 8 Tiles (+38% on Diagonals)</span>
+              </div>
+            </div>
+
+            <p id="stage-desc" class="stage-desc"></p>
+
+            <button id="btn-stage-deploy" class="btn btn-gold btn-stage-deploy" type="button">
+              Deploy to Board →
+            </button>
+          </aside>
+        </div>
       </main>
     </section>
 
@@ -1580,9 +2180,9 @@ body {
           Your unlocked levels and stars (both Tactical and Grandmaster) are saved automatically on this device. Copy your Save Code below to back up or transfer your progress between web and Android.
         </p>
         <div class="save-stats-row">
-          <div class="insp-stat"><span>TACTICAL STARS</span><strong id="save-tactical-stars">★ 0 / 21</strong></div>
-          <div class="insp-stat"><span>GRANDMASTER</span><strong id="save-gm-stars">★ 0 / 21</strong></div>
-          <div class="insp-stat"><span>UNLOCKED</span><strong id="save-unlocked-lv">Lv. 1 / 7</strong></div>
+          <div class="insp-stat"><span>TACTICAL STARS</span><strong id="save-tactical-stars">★ 0 / 54</strong></div>
+          <div class="insp-stat"><span>GRANDMASTER</span><strong id="save-gm-stars">★ 0 / 54</strong></div>
+          <div class="insp-stat"><span>UNLOCKED</span><strong id="save-unlocked-lv">Lv. 1 / 18</strong></div>
         </div>
         <label class="save-code-label" for="input-save-code">Save Code (Copy or Paste to Restore)</label>
         <textarea id="input-save-code" class="save-code-box" rows="3" spellcheck="false"></textarea>
@@ -1623,9 +2223,39 @@ async function preloadAssets() {
 // === js/data/levels.js ===
 /**
  * Handcrafted 8x8 Chessboard Campaign Levels for TowerDeChess.
- * Rebalanced for tight gold economy, tense wave pressure, and rewarding chess geometry.
+ * 18 levels spanning 3 themed Realms (Chapters) with escalating wave pressure,
+ * diverse path geometries, and rewarding chess & mythic relic synergies.
  */
 const BOARD_SIZE = 8;
+const CHAPTERS = [
+  {
+    id: 1,
+    roman: 'I',
+    name: 'The Ivory Ranks',
+    subtitle: 'Sunlit Marble Lowlands',
+    theme: 'ivory',
+    levelIds: [1, 2, 3, 4, 5, 6],
+  },
+  {
+    id: 2,
+    roman: 'II',
+    name: 'The Glacial Rift',
+    subtitle: 'Frosted Obsidian Passes',
+    theme: 'glacial',
+    levelIds: [7, 8, 9, 10, 11, 12],
+  },
+  {
+    id: 3,
+    roman: 'III',
+    name: 'The Crimson Citadel',
+    subtitle: 'Ember Basalt Stronghold',
+    theme: 'crimson',
+    levelIds: [13, 14, 15, 16, 17, 18],
+  },
+];
+function getChapterForLevel(levelId) {
+  return CHAPTERS.find((ch) => ch.levelIds.includes(levelId)) || CHAPTERS[0];
+}
 
 /**
  * Expand orthogonal corner waypoints into every consecutive grid tile along the path.
@@ -1652,11 +2282,15 @@ function expandWaypoints(waypoints) {
   return tiles;
 }
 const LEVELS = [
+  // ==================== CHAPTER I: THE IVORY RANKS (Levels 1-6) ====================
   {
     id: 1,
+    chapter: 1,
+    mapX: 30,
     name: "The Pawn's Bastion",
     subtitle: 'Opening Rank',
     unlocksPiece: 'pawn',
+    featuredPiece: 'pawn',
     startingGold: 125,
     startingLives: 15,
     description: 'Hold the winding opening lanes with steadfast Pawns. Place them on inner corners (like E6 & D4) so their 4 diagonal capture squares land critical strikes — and promote them before heavy Bastions arrive!',
@@ -1674,9 +2308,12 @@ const LEVELS = [
 
   {
     id: 2,
+    chapter: 1,
+    mapX: 68,
     name: "The Knight's Fork",
     subtitle: 'Twin Hairpins',
     unlocksPiece: 'knight',
+    featuredPiece: 'knight',
     startingGold: 145,
     startingLives: 12,
     description: 'Unlock the Knight! Place armored warhorses on the central ridges so their L-jump splash attacks fork both the upper and lower corridors against fast Charger packs.',
@@ -1695,9 +2332,12 @@ const LEVELS = [
 
   {
     id: 3,
+    chapter: 1,
+    mapX: 34,
     name: "The Bishop's Diagonal",
     subtitle: 'Sunbeam Staircase',
     unlocksPiece: 'bishop',
+    featuredPiece: 'bishop',
     startingGold: 165,
     startingLives: 12,
     description: 'Unlock the Bishop! Sight along the long marble diagonals to pierce columns of foes and sunder heavy armor while Blighted Clerics march to mend their allies.',
@@ -1717,9 +2357,12 @@ const LEVELS = [
 
   {
     id: 4,
+    chapter: 1,
+    mapX: 70,
     name: "The Rook's Siege",
     subtitle: 'Grand Straightaways',
     unlocksPiece: 'rook',
+    featuredPiece: 'rook',
     startingGold: 245,
     startingLives: 12,
     description: 'Unlock the Rook! Anchor heavy fortress artillery at the ends of these long straight ranks to pound armored Bastions and Warlords into rubble.',
@@ -1740,9 +2383,12 @@ const LEVELS = [
 
   {
     id: 5,
+    chapter: 1,
+    mapX: 32,
     name: "The Queen's Gambit",
     subtitle: 'Royal Spiral Court',
     unlocksPiece: 'queen',
+    featuredPiece: 'queen',
     startingGold: 265,
     startingLives: 10,
     description: 'Unlock the Queen! Command the central throne tiles where all 8 orthogonal and diagonal rays rain ricocheting royal bolts across the spiral.',
@@ -1764,9 +2410,13 @@ const LEVELS = [
 
   {
     id: 6,
+    chapter: 1,
+    mapX: 54,
+    isChapterBoss: true,
     name: "The King's Citadel",
     subtitle: 'Sovereign Courtyard',
     unlocksPiece: 'king',
+    featuredPiece: 'king',
     startingGold: 270,
     startingLives: 10,
     description: 'Unlock the King! Crown your central courtyard to supercharge all adjacent chess defenders with Royal Decree speed, damage, and treasury gold.',
@@ -1787,11 +2437,15 @@ const LEVELS = [
     ],
   },
 
+  // ==================== CHAPTER II: THE GLACIAL RIFT (Levels 7-12) ====================
   {
     id: 7,
+    chapter: 2,
+    mapX: 28,
     name: 'Beyond the Board',
     subtitle: 'Mythic Rift Trial',
     unlocksPiece: 'obelisk',
+    featuredPiece: 'obelisk',
     startingGold: 320,
     startingLives: 10,
     description: 'Unlock the first Non-Chess Relic — the Frost Obelisk! Chill relentless obsidian legions in glacial choke points while your royal chess pieces shatter them.',
@@ -1809,6 +2463,320 @@ const LEVELS = [
       { groups: [{ type: 'warlord', count: 3, interval: 3.2 }, { type: 'bastion', count: 10, interval: 0.95, delay: 0.9 }, { type: 'cleric', count: 6, interval: 0.9, delay: 0.7 }] },
       { groups: [{ type: 'lancer', count: 34, interval: 0.24 }, { type: 'warlord', count: 2, interval: 3.0, delay: 1.0 }] },
       { groups: [{ type: 'warlord', count: 4, interval: 2.8 }, { type: 'bastion', count: 12, interval: 0.85, delay: 0.9 }, { type: 'cleric', count: 7, interval: 0.85, delay: 0.7 }] },
+    ],
+  },
+
+  {
+    id: 8,
+    chapter: 2,
+    mapX: 68,
+    name: 'Frozen Switchback',
+    subtitle: 'Glacial Crevasse',
+    unlocksPiece: null,
+    featuredPiece: 'obelisk',
+    startingGold: 350,
+    startingLives: 10,
+    description: 'Icy switchbacks carve deep pockets across the pass. Anchor Frost Obelisks inside the hairpins so your Rooks and Queens can harvest slowed columns.',
+    waypoints: [
+      [0, 1], [4, 1], [4, 0], [7, 0], [7, 3], [2, 3], [2, 5], [7, 5], [7, 7], [3, 7],
+    ],
+    waves: [
+      { groups: [{ type: 'footman', count: 20, interval: 0.44 }, { type: 'lancer', count: 10, interval: 0.42, delay: 0.8 }] },
+      { groups: [{ type: 'bastion', count: 5, interval: 1.4 }, { type: 'footman', count: 14, interval: 0.44, delay: 0.8 }] },
+      { groups: [{ type: 'lancer', count: 24, interval: 0.34 }, { type: 'cleric', count: 4, interval: 1.1, delay: 0.8 }] },
+      { groups: [{ type: 'bastion', count: 8, interval: 1.15 }, { type: 'cleric', count: 5, interval: 1.05, delay: 0.7 }] },
+      { groups: [{ type: 'warlord', count: 2, interval: 4.2 }, { type: 'lancer', count: 18, interval: 0.34, delay: 1.0 }, { type: 'cleric', count: 4, interval: 1.05, delay: 0.8 }] },
+      { groups: [{ type: 'bastion', count: 10, interval: 0.98 }, { type: 'footman', count: 24, interval: 0.32, delay: 0.8 }, { type: 'cleric', count: 5, interval: 0.95, delay: 0.7 }] },
+      { groups: [{ type: 'lancer', count: 30, interval: 0.28 }, { type: 'bastion', count: 8, interval: 1.0, delay: 0.9 }] },
+      { groups: [{ type: 'warlord', count: 3, interval: 3.4 }, { type: 'bastion', count: 9, interval: 0.95, delay: 1.0 }, { type: 'cleric', count: 6, interval: 0.9, delay: 0.7 }] },
+      { groups: [{ type: 'warlord', count: 4, interval: 2.9 }, { type: 'bastion', count: 11, interval: 0.88, delay: 0.9 }, { type: 'lancer', count: 22, interval: 0.28, delay: 1.0 }] },
+    ],
+  },
+
+  {
+    id: 9,
+    chapter: 2,
+    mapX: 34,
+    name: 'Cavalry Crossing',
+    subtitle: 'Twin Frost Canyons',
+    unlocksPiece: null,
+    featuredPiece: 'knight',
+    startingGold: 390,
+    startingLives: 10,
+    description: 'Two narrow canyons snake past elevated ridges. Position Knights and a buffing King on the high ground to stagger Shadow Chargers across multiple lanes at once.',
+    waypoints: [
+      [0, 2], [2, 2], [2, 0], [5, 0], [5, 3], [1, 3], [1, 6], [6, 6], [6, 2], [7, 2], [7, 5],
+    ],
+    waves: [
+      { groups: [{ type: 'footman', count: 16, interval: 0.48 }, { type: 'lancer', count: 10, interval: 0.46, delay: 0.9 }] },
+      { groups: [{ type: 'bastion', count: 4, interval: 1.5 }, { type: 'cleric', count: 2, interval: 1.4, delay: 0.9 }, { type: 'lancer', count: 10, interval: 0.42, delay: 0.9 }] },
+      { groups: [{ type: 'footman', count: 24, interval: 0.36 }, { type: 'cleric', count: 4, interval: 1.1, delay: 0.8 }] },
+      { groups: [{ type: 'lancer', count: 26, interval: 0.32 }, { type: 'bastion', count: 7, interval: 1.1, delay: 0.9 }] },
+      { groups: [{ type: 'warlord', count: 2, interval: 3.8 }, { type: 'bastion', count: 7, interval: 1.05, delay: 1.0 }, { type: 'cleric', count: 5, interval: 1.0, delay: 0.8 }] },
+      { groups: [{ type: 'lancer', count: 32, interval: 0.26 }, { type: 'cleric', count: 6, interval: 0.92, delay: 0.8 }] },
+      { groups: [{ type: 'bastion', count: 12, interval: 0.9 }, { type: 'footman', count: 24, interval: 0.32, delay: 0.8 }, { type: 'cleric', count: 6, interval: 0.9, delay: 0.7 }] },
+      { groups: [{ type: 'warlord', count: 3, interval: 3.2 }, { type: 'lancer', count: 24, interval: 0.28, delay: 1.0 }, { type: 'cleric', count: 5, interval: 0.92, delay: 0.7 }] },
+      { groups: [{ type: 'warlord', count: 4, interval: 2.8 }, { type: 'bastion', count: 12, interval: 0.86, delay: 0.9 }, { type: 'cleric', count: 7, interval: 0.85, delay: 0.7 }] },
+    ],
+  },
+
+  {
+    id: 10,
+    chapter: 2,
+    mapX: 70,
+    name: 'Cathedral of Rays',
+    subtitle: 'Prism Staircase',
+    unlocksPiece: null,
+    featuredPiece: 'bishop',
+    startingGold: 430,
+    startingLives: 10,
+    description: 'A sweeping diagonal staircase descends into the frost sanctuary. Line up Bishops and Queens along the prism steps to cleave entire legions and shatter Bastion armor.',
+    waypoints: [
+      [0, 0], [2, 0], [2, 2], [4, 2], [4, 4], [6, 4], [6, 6], [2, 6], [2, 4], [0, 4], [0, 7], [7, 7],
+    ],
+    waves: [
+      { groups: [{ type: 'footman', count: 16, interval: 0.5 }, { type: 'lancer', count: 8, interval: 0.48, delay: 0.9 }] },
+      { groups: [{ type: 'bastion', count: 4, interval: 1.55 }, { type: 'footman', count: 12, interval: 0.48, delay: 0.9 }, { type: 'lancer', count: 8, interval: 0.46, delay: 0.9 }] },
+      { groups: [{ type: 'lancer', count: 24, interval: 0.32 }, { type: 'cleric', count: 4, interval: 1.1, delay: 0.8 }] },
+      { groups: [{ type: 'bastion', count: 8, interval: 1.1 }, { type: 'cleric', count: 5, interval: 1.0, delay: 0.7 }] },
+      { groups: [{ type: 'warlord', count: 2, interval: 3.8 }, { type: 'footman', count: 24, interval: 0.32, delay: 1.0 }, { type: 'cleric', count: 5, interval: 0.95, delay: 0.8 }] },
+      { groups: [{ type: 'bastion', count: 11, interval: 0.92 }, { type: 'lancer', count: 22, interval: 0.28, delay: 0.9 }, { type: 'cleric', count: 5, interval: 0.9, delay: 0.7 }] },
+      { groups: [{ type: 'lancer', count: 34, interval: 0.24 }, { type: 'bastion', count: 8, interval: 0.95, delay: 0.9 }] },
+      { groups: [{ type: 'warlord', count: 3, interval: 3.2 }, { type: 'bastion', count: 10, interval: 0.9, delay: 0.9 }, { type: 'cleric', count: 6, interval: 0.88, delay: 0.7 }] },
+      { groups: [{ type: 'bastion', count: 14, interval: 0.82 }, { type: 'cleric', count: 7, interval: 0.82, delay: 0.6 }, { type: 'lancer', count: 24, interval: 0.26, delay: 0.9 }] },
+      { groups: [{ type: 'warlord', count: 4, interval: 2.7 }, { type: 'bastion', count: 12, interval: 0.84, delay: 0.9 }, { type: 'cleric', count: 7, interval: 0.82, delay: 0.7 }] },
+    ],
+  },
+
+  {
+    id: 11,
+    chapter: 2,
+    mapX: 30,
+    name: 'Iron Ramparts',
+    subtitle: 'Siege Trench Line',
+    unlocksPiece: null,
+    featuredPiece: 'rook',
+    startingGold: 415,
+    startingLives: 10,
+    description: 'Long fortified battlements reward decisive Rook cannon lines. Combine chilling Frost Obelisks on the outer corners with Rook fire down every straightaway.',
+    waypoints: [
+      [0, 6], [0, 0], [6, 0], [6, 2], [2, 2], [2, 4], [7, 4], [7, 7], [3, 7],
+    ],
+    waves: [
+      { groups: [{ type: 'footman', count: 22, interval: 0.38 }, { type: 'bastion', count: 4, interval: 1.4, delay: 0.8 }] },
+      { groups: [{ type: 'lancer', count: 24, interval: 0.32 }, { type: 'cleric', count: 4, interval: 1.15, delay: 0.8 }] },
+      { groups: [{ type: 'bastion', count: 8, interval: 1.1 }, { type: 'cleric', count: 5, interval: 1.0, delay: 0.7 }, { type: 'footman', count: 18, interval: 0.36, delay: 0.8 }] },
+      { groups: [{ type: 'warlord', count: 2, interval: 4.0 }, { type: 'bastion', count: 7, interval: 1.05, delay: 1.0 }] },
+      { groups: [{ type: 'lancer', count: 32, interval: 0.26 }, { type: 'bastion', count: 8, interval: 0.95, delay: 0.9 }, { type: 'cleric', count: 5, interval: 0.92, delay: 0.7 }] },
+      { groups: [{ type: 'bastion', count: 12, interval: 0.88 }, { type: 'cleric', count: 6, interval: 0.88, delay: 0.7 }] },
+      { groups: [{ type: 'warlord', count: 3, interval: 3.3 }, { type: 'footman', count: 28, interval: 0.28, delay: 0.9 }, { type: 'cleric', count: 6, interval: 0.88, delay: 0.7 }] },
+      { groups: [{ type: 'lancer', count: 36, interval: 0.23 }, { type: 'bastion', count: 10, interval: 0.88, delay: 0.9 }] },
+      { groups: [{ type: 'warlord', count: 3, interval: 3.0 }, { type: 'bastion', count: 12, interval: 0.84, delay: 0.9 }, { type: 'cleric', count: 7, interval: 0.82, delay: 0.7 }] },
+      { groups: [{ type: 'warlord', count: 5, interval: 2.6 }, { type: 'bastion', count: 12, interval: 0.82, delay: 0.9 }, { type: 'cleric', count: 7, interval: 0.8, delay: 0.7 }] },
+    ],
+  },
+
+  {
+    id: 12,
+    chapter: 2,
+    mapX: 52,
+    isChapterBoss: true,
+    name: 'The Twin Monoliths',
+    subtitle: 'Glacial Rift Finale',
+    unlocksPiece: null,
+    featuredPiece: 'queen',
+    startingGold: 435,
+    startingLives: 10,
+    description: 'The final stronghold of the Glacial Rift! Two symmetrical frozen islands divide the enemy march — crown them with Queens, a King, and Frost Obelisks to break the Warlord vanguard.',
+    waypoints: [
+      [0, 3], [0, 0], [3, 0], [3, 3], [4, 3], [4, 0], [7, 0], [7, 4], [5, 4], [5, 7], [2, 7], [2, 5], [0, 5], [0, 7],
+    ],
+    waves: [
+      { groups: [{ type: 'lancer', count: 24, interval: 0.32 }, { type: 'footman', count: 20, interval: 0.36, delay: 0.8 }] },
+      { groups: [{ type: 'bastion', count: 7, interval: 1.15 }, { type: 'cleric', count: 4, interval: 1.1, delay: 0.8 }] },
+      { groups: [{ type: 'lancer', count: 28, interval: 0.28 }, { type: 'bastion', count: 7, interval: 1.05, delay: 0.9 }, { type: 'cleric', count: 5, interval: 0.95, delay: 0.7 }] },
+      { groups: [{ type: 'warlord', count: 2, interval: 3.6 }, { type: 'cleric', count: 5, interval: 0.95, delay: 0.9 }, { type: 'footman', count: 22, interval: 0.3, delay: 0.8 }] },
+      { groups: [{ type: 'bastion', count: 12, interval: 0.88 }, { type: 'cleric', count: 6, interval: 0.88, delay: 0.6 }, { type: 'lancer', count: 20, interval: 0.28, delay: 0.9 }] },
+      { groups: [{ type: 'warlord', count: 3, interval: 3.2 }, { type: 'lancer', count: 28, interval: 0.25, delay: 0.9 }] },
+      { groups: [{ type: 'bastion', count: 14, interval: 0.82 }, { type: 'cleric', count: 7, interval: 0.82, delay: 0.6 }] },
+      { groups: [{ type: 'warlord', count: 4, interval: 2.9 }, { type: 'bastion', count: 10, interval: 0.86, delay: 0.9 }, { type: 'cleric', count: 6, interval: 0.84, delay: 0.7 }] },
+      { groups: [{ type: 'lancer', count: 40, interval: 0.21 }, { type: 'warlord', count: 3, interval: 2.8, delay: 1.0 }] },
+      { groups: [{ type: 'warlord', count: 5, interval: 2.5 }, { type: 'bastion', count: 14, interval: 0.78, delay: 0.9 }, { type: 'cleric', count: 8, interval: 0.78, delay: 0.6 }] },
+    ],
+  },
+
+  // ==================== CHAPTER III: THE CRIMSON CITADEL (Levels 13-18) ====================
+  {
+    id: 13,
+    chapter: 3,
+    mapX: 28,
+    name: 'Ember Gauntlet',
+    subtitle: 'Basalt Serpentine',
+    unlocksPiece: null,
+    featuredPiece: 'king',
+    startingGold: 465,
+    startingLives: 10,
+    description: 'Enter the Crimson Citadel! Steep vertical corridors channel relentless Charger packs past ember ridges — build a Royal Decree core in the center to dominate every file.',
+    waypoints: [
+      [0, 0], [0, 6], [2, 6], [2, 1], [4, 1], [4, 6], [6, 6], [6, 1], [7, 1], [7, 7],
+    ],
+    waves: [
+      { groups: [{ type: 'footman', count: 20, interval: 0.4 }, { type: 'lancer', count: 14, interval: 0.38, delay: 0.9 }] },
+      { groups: [{ type: 'bastion', count: 5, interval: 1.35 }, { type: 'cleric', count: 2, interval: 1.3, delay: 0.9 }, { type: 'footman', count: 14, interval: 0.42, delay: 0.8 }] },
+      { groups: [{ type: 'lancer', count: 26, interval: 0.28 }, { type: 'bastion', count: 7, interval: 1.05, delay: 0.8 }] },
+      { groups: [{ type: 'warlord', count: 2, interval: 3.6 }, { type: 'bastion', count: 7, interval: 1.0, delay: 0.9 }, { type: 'cleric', count: 4, interval: 0.95, delay: 0.7 }] },
+      { groups: [{ type: 'bastion', count: 12, interval: 0.85 }, { type: 'cleric', count: 6, interval: 0.85, delay: 0.6 }, { type: 'footman', count: 26, interval: 0.28, delay: 0.8 }] },
+      { groups: [{ type: 'lancer', count: 36, interval: 0.22 }, { type: 'warlord', count: 2, interval: 3.2, delay: 0.9 }] },
+      { groups: [{ type: 'warlord', count: 3, interval: 3.0 }, { type: 'bastion', count: 12, interval: 0.84, delay: 0.9 }, { type: 'cleric', count: 6, interval: 0.82, delay: 0.7 }] },
+      { groups: [{ type: 'bastion', count: 15, interval: 0.78 }, { type: 'cleric', count: 7, interval: 0.78, delay: 0.6 }, { type: 'lancer', count: 26, interval: 0.24, delay: 0.9 }] },
+      { groups: [{ type: 'warlord', count: 4, interval: 2.7 }, { type: 'lancer', count: 32, interval: 0.22, delay: 0.9 }, { type: 'cleric', count: 7, interval: 0.78, delay: 0.7 }] },
+      { groups: [{ type: 'warlord', count: 5, interval: 2.4 }, { type: 'bastion', count: 14, interval: 0.76, delay: 0.9 }, { type: 'cleric', count: 8, interval: 0.75, delay: 0.6 }] },
+    ],
+  },
+
+  {
+    id: 14,
+    chapter: 3,
+    mapX: 68,
+    name: 'Obsidian Labyrinth',
+    subtitle: 'Double-Coil Vault',
+    unlocksPiece: null,
+    featuredPiece: 'queen',
+    startingGold: 485,
+    startingLives: 10,
+    description: 'A coiled dark-stone labyrinth wraps twice around an inner throne vault. Place your Sovereign Queen and King in the inner sanctum to shred enemies on both rings.',
+    waypoints: [
+      [7, 0], [0, 0], [0, 7], [7, 7], [7, 2], [2, 2], [2, 5], [5, 5], [5, 4],
+    ],
+    waves: [
+      { groups: [{ type: 'footman', count: 26, interval: 0.32 }, { type: 'lancer', count: 18, interval: 0.32, delay: 0.7 }] },
+      { groups: [{ type: 'bastion', count: 8, interval: 1.05 }, { type: 'cleric', count: 5, interval: 0.98, delay: 0.7 }] },
+      { groups: [{ type: 'lancer', count: 32, interval: 0.25 }, { type: 'cleric', count: 5, interval: 0.92, delay: 0.7 }] },
+      { groups: [{ type: 'warlord', count: 2, interval: 3.4 }, { type: 'bastion', count: 9, interval: 0.92, delay: 0.9 }, { type: 'cleric', count: 6, interval: 0.88, delay: 0.7 }] },
+      { groups: [{ type: 'bastion', count: 14, interval: 0.82 }, { type: 'footman', count: 28, interval: 0.26, delay: 0.8 }] },
+      { groups: [{ type: 'warlord', count: 3, interval: 3.0 }, { type: 'lancer', count: 32, interval: 0.23, delay: 0.9 }, { type: 'cleric', count: 6, interval: 0.84, delay: 0.7 }] },
+      { groups: [{ type: 'bastion', count: 16, interval: 0.76 }, { type: 'cleric', count: 8, interval: 0.76, delay: 0.6 }] },
+      { groups: [{ type: 'warlord', count: 4, interval: 2.7 }, { type: 'bastion', count: 12, interval: 0.8, delay: 0.9 }, { type: 'lancer', count: 28, interval: 0.24, delay: 0.9 }] },
+      { groups: [{ type: 'lancer', count: 42, interval: 0.2 }, { type: 'warlord', count: 3, interval: 2.6, delay: 0.9 }, { type: 'cleric', count: 7, interval: 0.76, delay: 0.7 }] },
+      { groups: [{ type: 'warlord', count: 6, interval: 2.3 }, { type: 'bastion', count: 14, interval: 0.75, delay: 0.8 }, { type: 'cleric', count: 8, interval: 0.74, delay: 0.6 }] },
+    ],
+  },
+
+  {
+    id: 15,
+    chapter: 3,
+    mapX: 34,
+    name: "Cleric's Conclave",
+    subtitle: 'Blighted Cloister',
+    unlocksPiece: null,
+    featuredPiece: 'bishop',
+    startingGold: 515,
+    startingLives: 10,
+    description: 'Blighted Clerics march in tight healing phalanxes alongside armored Bastions. Piercing Bishops and heavy Rook bursts are vital to outpace their dark mending.',
+    waypoints: [
+      [0, 1], [3, 1], [3, 0], [6, 0], [6, 3], [2, 3], [2, 5], [7, 5], [7, 7], [1, 7], [1, 4], [0, 4],
+    ],
+    waves: [
+      { groups: [{ type: 'footman', count: 20, interval: 0.42 }, { type: 'cleric', count: 2, interval: 1.35, delay: 0.9 }] },
+      { groups: [{ type: 'bastion', count: 5, interval: 1.35 }, { type: 'cleric', count: 2, interval: 1.3, delay: 0.9 }, { type: 'footman', count: 14, interval: 0.42, delay: 0.8 }] },
+      { groups: [{ type: 'lancer', count: 26, interval: 0.28 }, { type: 'cleric', count: 5, interval: 0.96, delay: 0.8 }] },
+      { groups: [{ type: 'warlord', count: 2, interval: 3.5 }, { type: 'cleric', count: 6, interval: 0.9, delay: 0.8 }, { type: 'bastion', count: 7, interval: 0.98, delay: 0.9 }] },
+      { groups: [{ type: 'bastion', count: 12, interval: 0.86 }, { type: 'cleric', count: 7, interval: 0.82, delay: 0.6 }] },
+      { groups: [{ type: 'lancer', count: 36, interval: 0.24 }, { type: 'bastion', count: 9, interval: 0.88, delay: 0.8 }, { type: 'cleric', count: 6, interval: 0.84, delay: 0.7 }] },
+      { groups: [{ type: 'warlord', count: 3, interval: 2.9 }, { type: 'bastion', count: 12, interval: 0.82, delay: 0.9 }, { type: 'cleric', count: 8, interval: 0.76, delay: 0.6 }] },
+      { groups: [{ type: 'footman', count: 36, interval: 0.22 }, { type: 'cleric', count: 9, interval: 0.72, delay: 0.6 }, { type: 'bastion', count: 12, interval: 0.8, delay: 0.8 }] },
+      { groups: [{ type: 'warlord', count: 4, interval: 2.6 }, { type: 'cleric', count: 9, interval: 0.72, delay: 0.7 }, { type: 'lancer', count: 30, interval: 0.22, delay: 0.9 }] },
+      { groups: [{ type: 'bastion', count: 16, interval: 0.74 }, { type: 'warlord', count: 3, interval: 2.6, delay: 0.9 }, { type: 'cleric', count: 9, interval: 0.72, delay: 0.6 }] },
+      { groups: [{ type: 'warlord', count: 6, interval: 2.3 }, { type: 'bastion', count: 14, interval: 0.74, delay: 0.8 }, { type: 'cleric', count: 10, interval: 0.7, delay: 0.6 }] },
+    ],
+  },
+
+  {
+    id: 16,
+    chapter: 3,
+    mapX: 70,
+    name: 'Castle Perimeter',
+    subtitle: 'Inner Keep Moat',
+    unlocksPiece: null,
+    featuredPiece: 'rook',
+    startingGold: 540,
+    startingLives: 10,
+    description: 'The obsidian host marches along the outer battlements before breaching straight into the inner keep. Build a layered Rook and Frost Obelisk killbox at the core.',
+    waypoints: [
+      [0, 7], [0, 2], [2, 2], [2, 0], [7, 0], [7, 5], [5, 5], [5, 7], [3, 7], [3, 4], [4, 4], [4, 2],
+    ],
+    waves: [
+      { groups: [{ type: 'footman', count: 22, interval: 0.38 }, { type: 'lancer', count: 14, interval: 0.36, delay: 0.8 }] },
+      { groups: [{ type: 'bastion', count: 6, interval: 1.2 }, { type: 'cleric', count: 3, interval: 1.15, delay: 0.8 }, { type: 'footman', count: 14, interval: 0.38, delay: 0.8 }] },
+      { groups: [{ type: 'warlord', count: 2, interval: 3.5 }, { type: 'lancer', count: 22, interval: 0.28, delay: 0.9 }] },
+      { groups: [{ type: 'bastion', count: 12, interval: 0.86 }, { type: 'cleric', count: 6, interval: 0.85, delay: 0.6 }] },
+      { groups: [{ type: 'lancer', count: 36, interval: 0.22 }, { type: 'bastion', count: 10, interval: 0.86, delay: 0.8 }] },
+      { groups: [{ type: 'warlord', count: 3, interval: 2.9 }, { type: 'bastion', count: 12, interval: 0.82, delay: 0.9 }, { type: 'cleric', count: 7, interval: 0.78, delay: 0.6 }] },
+      { groups: [{ type: 'bastion', count: 16, interval: 0.74 }, { type: 'cleric', count: 8, interval: 0.74, delay: 0.6 }, { type: 'footman', count: 28, interval: 0.25, delay: 0.8 }] },
+      { groups: [{ type: 'warlord', count: 4, interval: 2.6 }, { type: 'lancer', count: 34, interval: 0.21, delay: 0.9 }, { type: 'cleric', count: 7, interval: 0.76, delay: 0.7 }] },
+      { groups: [{ type: 'warlord', count: 4, interval: 2.5 }, { type: 'bastion', count: 14, interval: 0.76, delay: 0.8 }, { type: 'cleric', count: 8, interval: 0.72, delay: 0.6 }] },
+      { groups: [{ type: 'lancer', count: 46, interval: 0.19 }, { type: 'warlord', count: 4, interval: 2.4, delay: 0.9 }] },
+      { groups: [{ type: 'warlord', count: 6, interval: 2.2 }, { type: 'bastion', count: 16, interval: 0.72, delay: 0.8 }, { type: 'cleric', count: 9, interval: 0.7, delay: 0.6 }] },
+    ],
+  },
+
+  {
+    id: 17,
+    chapter: 3,
+    mapX: 30,
+    name: 'The Dread March',
+    subtitle: 'Shattered Battlements',
+    unlocksPiece: null,
+    featuredPiece: 'obelisk',
+    startingGold: 565,
+    startingLives: 10,
+    description: 'Staggered battlements weave across every rank of the board. Only complete synergy between Frost Obelisks, Bishops, Rooks, Knights, Queens, and the King can halt the Dread March.',
+    waypoints: [
+      [0, 0], [3, 0], [3, 2], [6, 2], [6, 0], [7, 0], [7, 4], [4, 4], [4, 6], [7, 6], [7, 7], [1, 7], [1, 3], [0, 3],
+    ],
+    waves: [
+      { groups: [{ type: 'footman', count: 22, interval: 0.38 }, { type: 'lancer', count: 14, interval: 0.36, delay: 0.8 }] },
+      { groups: [{ type: 'bastion', count: 7, interval: 1.15 }, { type: 'cleric', count: 3, interval: 1.15, delay: 0.8 }, { type: 'footman', count: 14, interval: 0.38, delay: 0.8 }] },
+      { groups: [{ type: 'warlord', count: 2, interval: 3.3 }, { type: 'lancer', count: 24, interval: 0.26, delay: 0.8 }, { type: 'cleric', count: 5, interval: 0.88, delay: 0.7 }] },
+      { groups: [{ type: 'bastion', count: 13, interval: 0.82 }, { type: 'cleric', count: 7, interval: 0.8, delay: 0.6 }, { type: 'footman', count: 26, interval: 0.26, delay: 0.8 }] },
+      { groups: [{ type: 'warlord', count: 3, interval: 2.8 }, { type: 'bastion', count: 12, interval: 0.82, delay: 0.8 }, { type: 'lancer', count: 24, interval: 0.24, delay: 0.9 }] },
+      { groups: [{ type: 'lancer', count: 44, interval: 0.19 }, { type: 'cleric', count: 8, interval: 0.74, delay: 0.7 }] },
+      { groups: [{ type: 'warlord', count: 4, interval: 2.6 }, { type: 'bastion', count: 14, interval: 0.76, delay: 0.8 }, { type: 'cleric', count: 8, interval: 0.72, delay: 0.6 }] },
+      { groups: [{ type: 'bastion', count: 18, interval: 0.72 }, { type: 'cleric', count: 9, interval: 0.7, delay: 0.6 }] },
+      { groups: [{ type: 'warlord', count: 5, interval: 2.4 }, { type: 'lancer', count: 36, interval: 0.2, delay: 0.8 }, { type: 'cleric', count: 8, interval: 0.72, delay: 0.6 }] },
+      { groups: [{ type: 'warlord', count: 5, interval: 2.3 }, { type: 'bastion', count: 16, interval: 0.72, delay: 0.8 }, { type: 'cleric', count: 9, interval: 0.7, delay: 0.6 }] },
+      { groups: [{ type: 'warlord', count: 7, interval: 2.1 }, { type: 'bastion', count: 16, interval: 0.7, delay: 0.8 }, { type: 'cleric', count: 10, interval: 0.68, delay: 0.6 }] },
+    ],
+  },
+
+  {
+    id: 18,
+    chapter: 3,
+    mapX: 52,
+    isChapterBoss: true,
+    name: 'Crown of Ash',
+    subtitle: 'Grand Sovereign Finale',
+    unlocksPiece: null,
+    featuredPiece: 'king',
+    startingGold: 610,
+    startingLives: 10,
+    description: 'The final battle for the Royal Board! Four sweeping siege ranks stand between the Crimson Warlord armada and your Citadel Gate. Marshal every promoted piece for checkmate!',
+    waypoints: [
+      [0, 0], [7, 0], [7, 2], [1, 2], [1, 4], [6, 4], [6, 6], [0, 6], [0, 7], [7, 7],
+    ],
+    waves: [
+      { groups: [{ type: 'footman', count: 24, interval: 0.34 }, { type: 'lancer', count: 16, interval: 0.34, delay: 0.8 }] },
+      { groups: [{ type: 'bastion', count: 7, interval: 1.15 }, { type: 'cleric', count: 4, interval: 1.1, delay: 0.8 }, { type: 'footman', count: 14, interval: 0.36, delay: 0.8 }] },
+      { groups: [{ type: 'warlord', count: 2, interval: 3.2 }, { type: 'bastion', count: 9, interval: 0.9, delay: 0.8 }, { type: 'cleric', count: 6, interval: 0.86, delay: 0.7 }] },
+      { groups: [{ type: 'lancer', count: 38, interval: 0.21 }, { type: 'bastion', count: 12, interval: 0.82, delay: 0.8 }] },
+      { groups: [{ type: 'warlord', count: 3, interval: 2.8 }, { type: 'cleric', count: 8, interval: 0.76, delay: 0.7 }, { type: 'footman', count: 32, interval: 0.24, delay: 0.8 }] },
+      { groups: [{ type: 'bastion', count: 16, interval: 0.74 }, { type: 'cleric', count: 8, interval: 0.72, delay: 0.6 }, { type: 'lancer', count: 30, interval: 0.22, delay: 0.8 }] },
+      { groups: [{ type: 'warlord', count: 4, interval: 2.5 }, { type: 'bastion', count: 14, interval: 0.76, delay: 0.8 }, { type: 'cleric', count: 8, interval: 0.72, delay: 0.6 }] },
+      { groups: [{ type: 'lancer', count: 48, interval: 0.18 }, { type: 'warlord', count: 4, interval: 2.4, delay: 0.8 }] },
+      { groups: [{ type: 'warlord', count: 5, interval: 2.3 }, { type: 'bastion', count: 16, interval: 0.72, delay: 0.8 }, { type: 'cleric', count: 9, interval: 0.68, delay: 0.6 }] },
+      { groups: [{ type: 'bastion', count: 20, interval: 0.68 }, { type: 'cleric', count: 10, interval: 0.66, delay: 0.6 }, { type: 'lancer', count: 36, interval: 0.2, delay: 0.8 }] },
+      { groups: [{ type: 'warlord', count: 6, interval: 2.15 }, { type: 'bastion', count: 16, interval: 0.7, delay: 0.8 }, { type: 'cleric', count: 10, interval: 0.66, delay: 0.6 }] },
+      { groups: [{ type: 'warlord', count: 8, interval: 2.0 }, { type: 'bastion', count: 18, interval: 0.68, delay: 0.8 }, { type: 'cleric', count: 10, interval: 0.65, delay: 0.6 }] },
     ],
   },
 ];
@@ -2313,20 +3281,24 @@ function createEnemyConfig(typeId, levelNum, waveIndex, totalWaves, difficultyId
   if (!base) throw new Error(`Unknown enemy type: ${typeId}`);
   const diff = DIFFICULTY_PRESETS[difficultyId] || DIFFICULTY_PRESETS.standard;
 
-  // Sustainable per-level scaling (1.0x on Lv1 -> 1.84x on Lv7) paired with steeper wave-by-wave ramp
-  const levelHpScale = 1 + (levelNum - 1) * 0.14;
+  // Sustainable per-level scaling: identical on Lv1-7 (1.0x -> 1.84x), smoothly tapered across Lv8-18 (up to 2.94x)
+  const levelHpScale =
+    levelNum <= 7 ? 1 + (levelNum - 1) * 0.14 : 1.84 + (levelNum - 7) * 0.1;
   const waveProgress = totalWaves > 1 ? waveIndex / (totalWaves - 1) : 0;
   const waveHpScale = 1 + waveIndex * 0.2 + waveProgress * 0.22;
 
-  const speedScale = (1 + (levelNum - 1) * 0.022 + waveIndex * 0.012) * diff.speedMult;
-  const bonusArmor = Math.min(0.18, (levelNum - 1) * 0.015 + Math.floor(waveIndex / 3) * 0.02);
+  const levelSpeedBonus =
+    levelNum <= 7 ? (levelNum - 1) * 0.022 : 6 * 0.022 + (levelNum - 7) * 0.011;
+  const speedScale = (1 + levelSpeedBonus + waveIndex * 0.012) * diff.speedMult;
+  const bonusArmor = Math.min(0.2, (levelNum - 1) * 0.015 + Math.floor(waveIndex / 3) * 0.02);
+  const rewardScale = 1 + Math.min(12, levelNum - 1) * 0.05;
 
   return {
     ...base,
     maxHp: Math.round(base.baseHp * levelHpScale * waveHpScale * diff.hpMult),
     speed: Number((base.speed * speedScale).toFixed(3)),
     armor: Math.min(0.68, base.armor + bonusArmor),
-    reward: Math.max(5, Math.round(base.reward * (1 + (levelNum - 1) * 0.05))),
+    reward: Math.max(5, Math.round(base.reward * rewardScale)),
     healAmount: base.healAmount
       ? Math.round(base.healAmount * levelHpScale * (1 + waveIndex * 0.1) * diff.hpMult)
       : 0,
@@ -5224,6 +6196,9 @@ class TowerDeChessApp {
     this.progress = loadProgressSync();
     this.sandboxAll = localStorage.getItem('towerdechess_sandbox') === '1';
     this.difficulty = localStorage.getItem('towerdechess_difficulty') || 'standard';
+    this.selectedMapLevelId = Math.min(LEVELS.length, this.progress.highestUnlocked || 1);
+    this.justUnlockedLevelId = null;
+    this._mapNodeY = new Map();
     this.currentLevel = null;
     this.engine = null;
     this.bannerTimer = null;
@@ -5239,8 +6214,28 @@ class TowerDeChessApp {
     this.el = {
       screenHome: document.getElementById('screen-home'),
       screenGame: document.getElementById('screen-game'),
-      levelGrid: document.getElementById('level-grid'),
       campaignTotalStars: document.getElementById('campaign-total-stars'),
+      campaignRevealedPill: document.getElementById('campaign-revealed-pill'),
+      mapRealmIndicator: document.getElementById('map-realm-indicator'),
+      btnJumpFrontier: document.getElementById('btn-jump-frontier'),
+      campaignMapViewport: document.getElementById('campaign-map-viewport'),
+      campaignMapCanvas: document.getElementById('campaign-map-canvas'),
+      stageKicker: document.getElementById('stage-kicker'),
+      stageTitle: document.getElementById('stage-title'),
+      stageSubtitle: document.getElementById('stage-subtitle'),
+      stageStars: document.getElementById('stage-stars'),
+      stageMinimap: document.getElementById('stage-minimap'),
+      stageWaves: document.getElementById('stage-waves'),
+      stageGold: document.getElementById('stage-gold'),
+      stageLives: document.getElementById('stage-lives'),
+      stageBestScore: document.getElementById('stage-best-score'),
+      stagePieceBox: document.getElementById('stage-piece-box'),
+      stagePieceImg: document.getElementById('stage-piece-img'),
+      stagePieceBadge: document.getElementById('stage-piece-badge'),
+      stagePieceName: document.getElementById('stage-piece-name'),
+      stagePiecePattern: document.getElementById('stage-piece-pattern'),
+      stageDesc: document.getElementById('stage-desc'),
+      btnStageDeploy: document.getElementById('btn-stage-deploy'),
       toggleSandbox: document.getElementById('toggle-sandbox'),
       btnDiffStandard: document.getElementById('btn-diff-standard'),
       btnDiffGrandmaster: document.getElementById('btn-diff-grandmaster'),
@@ -5340,13 +6335,14 @@ class TowerDeChessApp {
     this.el.toggleSandbox.checked = this.sandboxAll;
     this._syncDifficultyUi();
     this._syncMuteIcon();
-    this._renderCampaign();
+    this._renderCampaign(true);
 
     // Reconcile with durable IndexedDB backup in case localStorage was cleared
     hydrateProgressFromBackup(this.progress).then(({ progress, changed }) => {
       if (changed) {
         this.progress = progress;
-        this._renderCampaign();
+        this.selectedMapLevelId = Math.min(LEVELS.length, this.progress.highestUnlocked || 1);
+        this._renderCampaign(true);
       }
     });
 
@@ -5379,14 +6375,32 @@ class TowerDeChessApp {
     this.el.toggleSandbox.addEventListener('change', (e) => {
       this.sandboxAll = e.target.checked;
       localStorage.setItem('towerdechess_sandbox', this.sandboxAll ? '1' : '0');
-      this._renderCampaign();
+      const maxAllowed = this.sandboxAll ? LEVELS.length : Math.min(LEVELS.length, this.progress.highestUnlocked);
+      if (this.selectedMapLevelId > maxAllowed) {
+        this.selectedMapLevelId = maxAllowed;
+      }
+      this._renderCampaign(false);
+    });
+
+    this.el.btnJumpFrontier?.addEventListener('click', () => {
+      sound.unlock();
+      sound.playSelect();
+      const frontierId = Math.min(LEVELS.length, this.progress.highestUnlocked || 1);
+      this._selectMapLevel(frontierId);
+      this._scrollToMapNode(frontierId, true);
+    });
+
+    this.el.btnStageDeploy?.addEventListener('click', () => {
+      sound.unlock();
+      sound.playSelect();
+      this._startLevel(this.selectedMapLevelId, false);
     });
 
     const setDiff = (mode) => {
       this.difficulty = mode;
       localStorage.setItem('towerdechess_difficulty', mode);
       this._syncDifficultyUi();
-      this._renderCampaign();
+      this._renderCampaign(false);
     };
     this.el.btnDiffStandard.addEventListener('click', () => setDiff('standard'));
     this.el.btnDiffGrandmaster.addEventListener('click', () => setDiff('grandmaster'));
@@ -5572,72 +6586,408 @@ class TowerDeChessApp {
     }
   }
 
-  // ==================== CAMPAIGN SCREEN ====================
+  // ==================== CAMPAIGN MAP SCREEN ====================
 
-  _renderCampaign() {
-    const grid = this.el.levelGrid;
-    grid.innerHTML = '';
-    const goldMult = this.difficulty === 'grandmaster' ? 0.9 : 1.0;
+  _renderCampaign(scrollToFrontier = false) {
+    const canvas = this.el.campaignMapCanvas;
+    if (!canvas) return;
+    canvas.innerHTML = '';
+    this._mapNodeY.clear();
+
     const maxStars = LEVELS.length * 3;
     const modeStars = getTotalStars(this.progress, this.difficulty);
+    const frontierId = Math.min(LEVELS.length, this.progress.highestUnlocked || 1);
+    const revealedMax = this.sandboxAll ? LEVELS.length : frontierId;
+
     if (this.el.campaignTotalStars) {
       const modeTag = this.difficulty === 'grandmaster' ? 'GM ' : '';
       this.el.campaignTotalStars.textContent = `${modeTag}★ ${modeStars} / ${maxStars}`;
     }
+    if (this.el.campaignRevealedPill) {
+      this.el.campaignRevealedPill.textContent =
+        revealedMax >= LEVELS.length
+          ? `All ${LEVELS.length} Revealed`
+          : `${revealedMax} / ${LEVELS.length} Revealed`;
+    }
 
-    for (const lvl of LEVELS) {
-      const unlocked = this.sandboxAll || lvl.id <= this.progress.highestUnlocked;
+    if (this.selectedMapLevelId > revealedMax) {
+      this.selectedMapLevelId = revealedMax;
+    }
+
+    const revealedLevels = LEVELS.filter((l) => l.id <= revealedMax);
+    const nextMysteryLevel = revealedMax < LEVELS.length ? LEVELS.find((l) => l.id === revealedMax + 1) : null;
+
+    // 1. Compute vertical layout coordinates for chapter banners and map nodes
+    const nodesLayout = [];
+    const chapterBands = [];
+    const chapterBanners = [];
+    let cursorY = 44;
+    let currentChapterId = null;
+    let activeBand = null;
+
+    for (const lvl of revealedLevels) {
+      if (lvl.chapter !== currentChapterId) {
+        if (activeBand) {
+          activeBand.bottom = cursorY - 12;
+          chapterBands.push(activeBand);
+        }
+        const ch = getChapterForLevel(lvl.id);
+        currentChapterId = lvl.chapter;
+        const bandTop = chapterBands.length === 0 ? 0 : cursorY - 12;
+        if (chapterBands.length > 0) cursorY += 34;
+
+        const chEarned = ch.levelIds.reduce(
+          (sum, id) => sum + getStarsForLevel(this.progress, id, this.difficulty),
+          0
+        );
+        chapterBanners.push({
+          chapter: ch,
+          y: cursorY,
+          earnedStars: chEarned,
+          maxStars: ch.levelIds.length * 3,
+        });
+        activeBand = { theme: ch.theme, top: bandTop, bottom: cursorY + 130 };
+        cursorY += 98;
+      }
+
+      nodesLayout.push({ lvl, x: lvl.mapX, y: cursorY, shrouded: false });
+      this._mapNodeY.set(lvl.id, cursorY);
+      cursorY += 124;
+    }
+
+    if (nextMysteryLevel) {
+      // Shrouded teaser node just ahead on the mist-covered road
+      nodesLayout.push({
+        lvl: nextMysteryLevel,
+        x: nextMysteryLevel.mapX,
+        y: cursorY,
+        shrouded: true,
+      });
+      cursorY += 178;
+    } else {
+      cursorY += 36;
+    }
+
+    const totalH = Math.max(380, cursorY);
+    if (activeBand) {
+      activeBand.bottom = totalH;
+      chapterBands.push(activeBand);
+    }
+
+    canvas.style.height = `${totalH}px`;
+
+    // 2. Render per-chapter biome terrain backdrops
+    for (const band of chapterBands) {
+      const el = document.createElement('div');
+      el.className = `map-biome-band theme-${band.theme}`;
+      el.style.top = `${band.top}px`;
+      el.style.height = `${Math.max(0, band.bottom - band.top)}px`;
+      canvas.appendChild(el);
+    }
+
+    // 3. Render winding SVG cartography trail (exact % x-coords via 0..1000 viewBox)
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('class', 'map-svg-layer');
+    svg.setAttribute('viewBox', `0 0 1000 ${totalH}`);
+    svg.setAttribute('preserveAspectRatio', 'none');
+
+    // Subtle cartographic topographic contour curves along the canvas
+    for (let cy = 90; cy < totalH; cy += 180) {
+      const contour = document.createElementNS(svgNS, 'path');
+      contour.setAttribute(
+        'd',
+        `M -40 ${cy} Q 260 ${cy - 44}, 520 ${cy + 14} T 1040 ${cy - 22}`
+      );
+      contour.setAttribute('fill', 'none');
+      contour.setAttribute('stroke', 'rgba(232, 206, 158, 0.06)');
+      contour.setAttribute('stroke-width', '1.5');
+      contour.setAttribute('vector-effect', 'non-scaling-stroke');
+      svg.appendChild(contour);
+    }
+
+    // Winding Cubic Bezier Road between consecutive nodes
+    for (let i = 0; i < nodesLayout.length - 1; i++) {
+      const a = nodesLayout[i];
+      const b = nodesLayout[i + 1];
+      const x1 = a.x * 10;
+      const y1 = a.y;
+      const x2 = b.x * 10;
+      const y2 = b.y;
+      const midY = (y1 + y2) * 0.5;
+      const d = `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`;
+
+      const isFogSegment = b.shrouded;
+      const isFrontierSegment = !b.shrouded && b.lvl.id === frontierId;
+
+      // Dark stone roadbed shadow
+      const roadShadow = document.createElementNS(svgNS, 'path');
+      roadShadow.setAttribute('d', d);
+      roadShadow.setAttribute('fill', 'none');
+      roadShadow.setAttribute('stroke', isFogSegment ? 'rgba(12, 8, 5, 0.35)' : 'rgba(12, 8, 5, 0.7)');
+      roadShadow.setAttribute('stroke-width', isFogSegment ? '7' : '11');
+      roadShadow.setAttribute('stroke-linecap', 'round');
+      roadShadow.setAttribute('vector-effect', 'non-scaling-stroke');
+      svg.appendChild(roadShadow);
+
+      // Main gilded/misty trail
+      const roadMain = document.createElementNS(svgNS, 'path');
+      roadMain.setAttribute('d', d);
+      roadMain.setAttribute('fill', 'none');
+      roadMain.setAttribute('stroke-linecap', 'round');
+      roadMain.setAttribute('vector-effect', 'non-scaling-stroke');
+
+      if (isFogSegment) {
+        roadMain.setAttribute('stroke', 'rgba(201, 183, 156, 0.34)');
+        roadMain.setAttribute('stroke-width', '3.5');
+        roadMain.setAttribute('stroke-dasharray', '6 9');
+      } else if (isFrontierSegment) {
+        roadMain.setAttribute('stroke', '#f5ca6d');
+        roadMain.setAttribute('stroke-width', '4.5');
+        roadMain.setAttribute('stroke-dasharray', '9 7');
+        roadMain.setAttribute('class', 'trail-frontier-dash');
+      } else {
+        roadMain.setAttribute('stroke', '#c99439');
+        roadMain.setAttribute('stroke-width', '4.5');
+      }
+      svg.appendChild(roadMain);
+    }
+    canvas.appendChild(svg);
+
+    // Subtle non-distorted Compass Rose watermark in upper-right corner
+    const compass = document.createElement('div');
+    compass.style.cssText =
+      'position:absolute;top:14px;right:14px;width:64px;height:64px;opacity:0.16;pointer-events:none;z-index:2;';
+    compass.innerHTML = `
+      <svg viewBox="0 0 80 80" width="64" height="64" fill="none">
+        <circle cx="40" cy="40" r="34" stroke="#e8c67c" stroke-width="1.2" stroke-dasharray="3 4"/>
+        <circle cx="40" cy="40" r="24" stroke="#e8c67c" stroke-width="1"/>
+        <polygon points="40,6 45,35 40,40 35,35" fill="#f5ca6d"/>
+        <polygon points="40,74 45,45 40,40 35,45" fill="#c9b79c"/>
+        <polygon points="6,40 35,35 40,40 35,45" fill="#c9b79c"/>
+        <polygon points="74,40 45,35 40,40 45,45" fill="#c9b79c"/>
+        <circle cx="40" cy="40" r="4" fill="#f5ca6d"/>
+      </svg>`;
+    canvas.appendChild(compass);
+
+    // 4. Render Chapter Banners
+    for (const cb of chapterBanners) {
+      const banner = document.createElement('div');
+      banner.className = `map-chapter-banner theme-${cb.chapter.theme}`;
+      banner.style.top = `${cb.y}px`;
+      banner.innerHTML = `
+        <span class="map-chapter-roman">Chapter ${cb.chapter.roman}</span>
+        <span class="map-chapter-title">${cb.chapter.name}</span>
+        <span class="map-chapter-stars">★ ${cb.earnedStars}/${cb.maxStars}</span>
+      `;
+      canvas.appendChild(banner);
+    }
+
+    // 5. Render Revealed & Shrouded Nodes
+    for (const item of nodesLayout) {
+      const { lvl, x, y, shrouded } = item;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.style.left = `${x}%`;
+      btn.style.top = `${y}px`;
+      btn.dataset.levelId = String(lvl.id);
+
+      if (shrouded) {
+        btn.className = 'map-node shrouded';
+        btn.title = `Conquer Level ${lvl.id - 1} to reveal this territory`;
+        btn.innerHTML = `
+          <div class="map-node-medallion">
+            <span class="map-node-mystery-glyph">?</span>
+          </div>
+          <span class="map-node-label">Uncharted Territory</span>
+        `;
+        btn.addEventListener('click', () => {
+          sound.unlock();
+          if (this.el.mapRealmIndicator) {
+            this.el.mapRealmIndicator.textContent = `Conquer Level ${lvl.id - 1} to reveal Level ${lvl.id}!`;
+          }
+        });
+        canvas.appendChild(btn);
+        continue;
+      }
+
       const earnedStars = getStarsForLevel(this.progress, lvl.id, this.difficulty);
-      const piece = PIECE_REGISTRY[lvl.unlocksPiece];
-      const isMythic = piece?.category === 'mythic';
-      const displayGold = Math.round(lvl.startingGold * goldMult);
+      const pieceId = lvl.unlocksPiece || lvl.featuredPiece || 'pawn';
+      const piece = PIECE_REGISTRY[pieceId];
+      const isFrontier = lvl.id === frontierId;
+      const isSelected = lvl.id === this.selectedMapLevelId;
+      const isJustRevealed = lvl.id === this.justUnlockedLevelId;
+      const isMythic = piece?.category === 'mythic' && Boolean(lvl.unlocksPiece);
 
-      const card = document.createElement('button');
-      card.type = 'button';
-      card.className = `level-card ${unlocked ? '' : 'locked'} ${isMythic ? 'mythic-level' : ''}`;
-      card.disabled = !unlocked;
+      btn.className = [
+        'map-node',
+        earnedStars > 0 ? 'conquered' : '',
+        isFrontier ? 'frontier' : '',
+        isSelected ? 'selected' : '',
+        isJustRevealed ? 'just-revealed' : '',
+        lvl.isChapterBoss ? 'chapter-boss' : '',
+        isMythic ? 'mythic-node' : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
 
       const starsHtml = [1, 2, 3]
         .map((n) => `<span class="${n <= earnedStars ? '' : 'star-empty'}">★</span>`)
         .join('');
 
-      card.innerHTML = `
-        <div class="level-card-top">
-          <div>
-            <span class="level-card-num">${isMythic ? `LEVEL ${lvl.id} • NON-CHESS RELIC` : `LEVEL ${lvl.id}`}</span>
-            <h3 class="level-card-title">${lvl.name}</h3>
-          </div>
-          <div class="level-stars" aria-label="${earnedStars} of 3 stars">${starsHtml}</div>
+      btn.innerHTML = `
+        ${isFrontier ? '<span class="map-node-beacon">Next Battle</span>' : ''}
+        <div class="map-node-medallion">
+          <img class="map-node-sprite" src="${getSpriteUrl(piece.sprite)}" alt="${piece.name}" />
+          <span class="map-node-num">${lvl.isChapterBoss ? `👑${lvl.id}` : lvl.id}</span>
         </div>
-        <div class="level-unlock-row">
-          <img class="level-unlock-sprite" src="${getSpriteUrl(piece.sprite)}" alt="${piece.name}" />
-          <div class="level-unlock-meta">
-            <span class="level-unlock-label">${lvl.id === 1 ? 'Starting Piece' : 'Unlocks Piece'}</span>
-            <span class="level-unlock-name">${piece.name}</span>
-            <span class="level-unlock-pattern">${piece.patternLabel}</span>
-          </div>
-        </div>
-        <div class="level-card-footer">
-          <span>${lvl.waves.length} Waves • ${displayGold}g</span>
-          <strong>${unlocked ? 'Play →' : '🔒 Locked'}</strong>
-        </div>
+        <div class="map-node-stars" aria-label="${earnedStars} of 3 stars">${starsHtml}</div>
+        <span class="map-node-label">${lvl.name}</span>
       `;
 
-      if (unlocked) {
-        card.addEventListener('click', () => {
-          sound.unlock();
-          sound.playSelect();
-          this._startLevel(lvl.id, true);
-        });
-      }
-      grid.appendChild(card);
+      btn.addEventListener('click', () => {
+        sound.unlock();
+        sound.playSelect();
+        if (this.selectedMapLevelId === lvl.id) {
+          // Clicking an already-selected node scrolls the deploy panel cleanly or launches on desktop double-tap
+          this._renderStagePanel(lvl.id);
+        } else {
+          this._selectMapLevel(lvl.id);
+        }
+      });
+
+      btn.addEventListener('dblclick', () => {
+        sound.unlock();
+        this._startLevel(lvl.id, false);
+      });
+
+      canvas.appendChild(btn);
     }
+
+    // 6. Render Fog-of-War Bank hiding remaining undiscovered territories
+    if (revealedMax < LEVELS.length) {
+      const hiddenCount = LEVELS.length - revealedMax;
+      const fog = document.createElement('div');
+      fog.className = 'map-fog-bank';
+      fog.innerHTML = `
+        <span class="map-fog-pill">☁ Uncharted Lands • ${hiddenCount} ${hiddenCount === 1 ? 'Territory' : 'Territories'} Hidden in Fog</span>
+        <p class="map-fog-sub">Conquer Level ${frontierId} to part the mist and reveal the road ahead.</p>
+      `;
+      canvas.appendChild(fog);
+    }
+
+    // Clear one-shot reveal celebration flag after triggering animation
+    if (this.justUnlockedLevelId) {
+      setTimeout(() => {
+        this.justUnlockedLevelId = null;
+      }, 1000);
+    }
+
+    this._renderStagePanel(this.selectedMapLevelId);
+
+    if (scrollToFrontier) {
+      requestAnimationFrame(() => this._scrollToMapNode(this.selectedMapLevelId, false));
+    }
+  }
+
+  _selectMapLevel(levelId) {
+    this.selectedMapLevelId = levelId;
+    const nodes = this.el.campaignMapCanvas?.querySelectorAll('.map-node[data-level-id]') || [];
+    for (const node of nodes) {
+      node.classList.toggle('selected', Number(node.dataset.levelId) === levelId);
+    }
+    this._renderStagePanel(levelId);
+  }
+
+  _scrollToMapNode(levelId, smooth = true) {
+    const vp = this.el.campaignMapViewport;
+    const y = this._mapNodeY.get(levelId);
+    if (!vp || y === undefined) return;
+    const targetTop = Math.max(0, y - vp.clientHeight * 0.5);
+    vp.scrollTo({ top: targetTop, behavior: smooth ? 'smooth' : 'auto' });
+  }
+
+  _renderStagePanel(levelId) {
+    const lvl = LEVELS.find((l) => l.id === levelId) || LEVELS[0];
+    if (!lvl) return;
+
+    const ch = getChapterForLevel(lvl.id);
+    const goldMult = this.difficulty === 'grandmaster' ? 0.9 : 1.0;
+    const displayGold = Math.round(lvl.startingGold * goldMult);
+    const earnedStars = getStarsForLevel(this.progress, lvl.id, this.difficulty);
+    const bestScore = this.progress.bestScores?.[String(lvl.id)] || 0;
+    const pieceId = lvl.unlocksPiece || lvl.featuredPiece || 'pawn';
+    const piece = PIECE_REGISTRY[pieceId];
+    const isMythic = piece?.category === 'mythic';
+
+    if (this.el.mapRealmIndicator) {
+      this.el.mapRealmIndicator.textContent = `Chapter ${ch.roman} • ${ch.name}`;
+    }
+    this.el.stageKicker.textContent = `CHAPTER ${ch.roman} • LEVEL ${lvl.id}${lvl.isChapterBoss ? ' • FINALE' : ''}`;
+    this.el.stageTitle.textContent = lvl.name;
+    this.el.stageSubtitle.textContent = `${ch.name} — ${lvl.subtitle}`;
+    this.el.stageStars.innerHTML = [1, 2, 3]
+      .map((n) => `<span class="${n <= earnedStars ? '' : 'star-empty'}">★</span>`)
+      .join('');
+    this.el.stageStars.setAttribute('aria-label', `${earnedStars} of 3 stars`);
+
+    this.el.stageWaves.textContent = `${lvl.waves.length}`;
+    this.el.stageGold.textContent = `${displayGold}g`;
+    this.el.stageLives.textContent = `${lvl.startingLives} ♥`;
+    this.el.stageBestScore.textContent = bestScore > 0 ? bestScore.toLocaleString() : '—';
+
+    this.el.stagePieceBox.classList.toggle('mythic', isMythic);
+    this.el.stagePieceImg.src = getSpriteUrl(piece.sprite);
+    this.el.stagePieceImg.alt = piece.name;
+    this.el.stagePieceBadge.textContent = lvl.unlocksPiece
+      ? isMythic
+        ? 'UNLOCKS NON-CHESS RELIC'
+        : lvl.id === 1
+        ? 'STARTING CHESS PIECE'
+        : 'UNLOCKS CHESS PIECE'
+      : 'RECOMMENDED COMMANDER';
+    this.el.stagePieceName.textContent = `${piece.name} — ${piece.title}`;
+    this.el.stagePiecePattern.textContent = piece.patternLabel;
+    this.el.stageDesc.textContent = lvl.description;
+
+    const diffLabel = this.difficulty === 'grandmaster' ? ' (Grandmaster)' : '';
+    this.el.btnStageDeploy.textContent = `Deploy to Level ${lvl.id}${diffLabel} →`;
+    this.el.stageMinimap.innerHTML = this._renderMiniBoardSvg(lvl);
+  }
+
+  _renderMiniBoardSvg(lvl) {
+    const tiles = expandWaypoints(lvl.waypoints);
+    const pathSet = new Set(tiles.map(([c, r]) => `${c},${r}`));
+    const start = tiles[0];
+    const end = tiles[tiles.length - 1];
+    const rects = [];
+
+    for (let r = 0; r < 8; r++) {
+      for (let c = 0; c < 8; c++) {
+        const isPath = pathSet.has(`${c},${r}`);
+        const isLight = (c + r) % 2 === 0;
+        let fill = isLight ? '#d8c4a2' : '#9c7d56';
+        if (isPath) fill = '#2b2320';
+        rects.push(`<rect x="${c * 10}" y="${r * 10}" width="10" height="10" fill="${fill}"/>`);
+      }
+    }
+
+    const pts = tiles.map(([c, r]) => `${c * 10 + 5},${r * 10 + 5}`).join(' ');
+    return `
+      <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        ${rects.join('')}
+        <polyline points="${pts}" fill="none" stroke="rgba(245, 202, 109, 0.55)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="${start[0] * 10 + 5}" cy="${start[1] * 10 + 5}" r="3.2" fill="#63d48e" stroke="#18120d" stroke-width="1"/>
+        <circle cx="${end[0] * 10 + 5}" cy="${end[1] * 10 + 5}" r="3.5" fill="#f5ca6d" stroke="#8a281e" stroke-width="1.4"/>
+      </svg>
+    `;
   }
 
   _startLevel(levelId, showBriefing = true) {
     const lvl = LEVELS.find((l) => l.id === levelId);
     if (!lvl) return;
     this.currentLevel = lvl;
+    this.selectedMapLevelId = lvl.id;
 
     this.el.screenHome.classList.remove('active');
     this.el.screenGame.classList.add('active');
@@ -5649,17 +6999,22 @@ class TowerDeChessApp {
     requestAnimationFrame(() => this.engine.resize());
 
     if (showBriefing) {
-      const piece = PIECE_REGISTRY[lvl.unlocksPiece];
-      this.el.briefKicker.textContent = `LEVEL ${lvl.id} • ${lvl.subtitle.toUpperCase()}`;
+      const ch = getChapterForLevel(lvl.id);
+      const pieceId = lvl.unlocksPiece || lvl.featuredPiece || 'pawn';
+      const piece = PIECE_REGISTRY[pieceId];
+      this.el.briefKicker.textContent = `CHAPTER ${ch.roman} • LEVEL ${lvl.id} • ${lvl.subtitle.toUpperCase()}`;
       this.el.briefTitle.textContent = lvl.name;
       this.el.briefPieceImg.src = getSpriteUrl(piece.sprite);
       this.el.briefPieceImg.alt = piece.name;
-      this.el.briefUnlockBadge.textContent =
-        piece.category === 'mythic'
+      this.el.briefUnlockBadge.textContent = lvl.unlocksPiece
+        ? piece.category === 'mythic'
           ? 'NON-CHESS RELIC UNLOCKED'
           : lvl.id === 1
           ? 'STARTING CHESS PIECE'
-          : 'NEW CHESS PIECE UNLOCKED';
+          : 'NEW CHESS PIECE UNLOCKED'
+        : lvl.isChapterBoss
+        ? 'CHAPTER FINALE • KEY COMMANDER'
+        : 'RECOMMENDED COMMANDER';
       this.el.briefPieceName.textContent = `${piece.name} — ${piece.title}`;
       this.el.briefPiecePattern.textContent = piece.patternLabel;
       this.el.briefDesc.textContent = lvl.description;
@@ -5673,7 +7028,7 @@ class TowerDeChessApp {
     this.el.modalResult.classList.add('hidden');
     this.el.screenGame.classList.remove('active');
     this.el.screenHome.classList.add('active');
-    this._renderCampaign();
+    this._renderCampaign(Boolean(this.justUnlockedLevelId));
   }
 
   // ==================== REACTIVE GAMEPLAY HUD ====================
@@ -5856,6 +7211,7 @@ class TowerDeChessApp {
     modal.classList.remove('hidden');
 
     if (result.victory) {
+      const prevUnlocked = this.progress.highestUnlocked;
       this.progress = recordLevelVictory(this.progress, {
         levelId: result.level.id,
         stars: result.stars,
@@ -5864,6 +7220,11 @@ class TowerDeChessApp {
         totalLevels: LEVELS.length,
       });
 
+      if (this.progress.highestUnlocked > prevUnlocked) {
+        this.justUnlockedLevelId = this.progress.highestUnlocked;
+        this.selectedMapLevelId = this.progress.highestUnlocked;
+      }
+
       this.el.resultKicker.textContent = `LEVEL ${result.level.id} CONQUERED`;
       this.el.resultTitle.textContent = 'Victory!';
       this.el.resultStars.textContent = '★'.repeat(result.stars) + '☆'.repeat(3 - result.stars);
@@ -5871,11 +7232,21 @@ class TowerDeChessApp {
 
       const nextLevel = LEVELS.find((l) => l.id === result.level.id + 1);
       if (nextLevel) {
-        const nextPiece = PIECE_REGISTRY[nextLevel.unlocksPiece];
+        const nextPieceId = nextLevel.unlocksPiece || nextLevel.featuredPiece || 'king';
+        const nextPiece = PIECE_REGISTRY[nextPieceId];
+        const nextCh = getChapterForLevel(nextLevel.id);
+        const tagEl = this.el.resultNextUnlock.querySelector('.unlock-tag');
         this.el.resultNextUnlock.classList.remove('hidden');
         this.el.resultNextImg.src = getSpriteUrl(nextPiece.sprite);
-        this.el.resultNextName.textContent = `${nextPiece.name} — ${nextPiece.title}`;
-        this.el.resultNextPattern.textContent = nextPiece.patternLabel;
+        if (nextLevel.unlocksPiece) {
+          if (tagEl) tagEl.textContent = 'NEXT LEVEL UNLOCKS';
+          this.el.resultNextName.textContent = `${nextPiece.name} — ${nextPiece.title}`;
+          this.el.resultNextPattern.textContent = nextPiece.patternLabel;
+        } else {
+          if (tagEl) tagEl.textContent = `REVEALED ON MAP • CHAPTER ${nextCh.roman}`;
+          this.el.resultNextName.textContent = `Level ${nextLevel.id}: ${nextLevel.name}`;
+          this.el.resultNextPattern.textContent = `${nextCh.name} — ${nextLevel.subtitle}`;
+        }
         this.el.btnResultNext.classList.remove('hidden');
       } else {
         this.el.resultNextUnlock.classList.add('hidden');
