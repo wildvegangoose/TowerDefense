@@ -252,7 +252,8 @@ body {
 .home-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .campaign-shell {
@@ -341,6 +342,155 @@ body {
 
 .save-status-msg.error {
   color: #f07b6e;
+}
+
+/* ==================== SETTINGS MODAL ==================== */
+
+.settings-card {
+  max-width: 500px;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.settings-section:last-of-type {
+  padding-bottom: 0;
+}
+
+.settings-section-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.86rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 12px;
+  background: var(--surface-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.14s ease;
+}
+
+.setting-row:hover {
+  border-color: var(--border-brass);
+}
+
+.setting-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.setting-copy strong {
+  font-size: 0.92rem;
+  color: var(--text-ivory);
+}
+
+.setting-copy span {
+  font-size: 0.74rem;
+  color: var(--text-parchment);
+  line-height: 1.35;
+}
+
+.switch-control {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.switch-control input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-track {
+  width: 48px;
+  height: 27px;
+  border-radius: 999px;
+  background: #3a2b22;
+  border: 1px solid rgba(255, 236, 204, 0.16);
+  position: relative;
+  transition: background-color 0.18s ease, border-color 0.18s ease;
+}
+
+.switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: #cbb89d;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  transition: transform 0.18s ease, background-color 0.18s ease;
+}
+
+.switch-control input:checked + .switch-track {
+  background: linear-gradient(180deg, #e5b34f 0%, #b88022 100%);
+  border-color: #f6d58b;
+}
+
+.switch-control input:checked + .switch-track .switch-thumb {
+  transform: translateX(21px);
+  background: #fff7e2;
+}
+
+.switch-control input:focus-visible + .switch-track {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 2px;
+}
+
+.settings-progress-summary {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-parchment);
+}
+
+.settings-data-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.clear-save-confirm {
+  padding: 12px;
+  background: rgba(142, 54, 44, 0.18);
+  border: 1px solid rgba(235, 118, 105, 0.45);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.clear-save-confirm p {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #ffe5e2;
+}
+
+.clear-save-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .campaign-hint {

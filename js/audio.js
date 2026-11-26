@@ -89,8 +89,8 @@ class SoundEngine {
     this.noiseBuffer = buf;
   }
 
-  toggleMute() {
-    this.sfxMuted = !this.sfxMuted;
+  setSfxMuted(muted) {
+    this.sfxMuted = Boolean(muted);
     localStorage.setItem('towerdechess_muted', this.sfxMuted ? '1' : '0');
     if (this.sfxGain && this.ctx) {
       this.sfxGain.gain.setTargetAtTime(this.sfxMuted ? 0 : 0.95, this.ctx.currentTime, 0.02);
@@ -98,11 +98,19 @@ class SoundEngine {
     return this.sfxMuted;
   }
 
-  toggleMusic() {
-    this.musicMuted = !this.musicMuted;
+  toggleMute() {
+    return this.setSfxMuted(!this.sfxMuted);
+  }
+
+  setMusicMuted(muted) {
+    this.musicMuted = Boolean(muted);
     localStorage.setItem('towerdechess_music_muted', this.musicMuted ? '1' : '0');
     this._updateMusicVolume();
     return this.musicMuted;
+  }
+
+  toggleMusic() {
+    return this.setMusicMuted(!this.musicMuted);
   }
 
   setMusicIntensity(mode) {

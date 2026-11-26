@@ -31,6 +31,7 @@
         <div class="home-actions">
           <button id="btn-open-codex" class="btn btn-secondary" type="button">Piece Codex</button>
           <button id="btn-open-save" class="btn btn-secondary" type="button">Save Data</button>
+          <button id="btn-open-settings" class="btn btn-secondary" type="button">&#9881; Settings</button>
           <button id="btn-install-pwa" class="btn btn-gold hidden" type="button">Install App</button>
         </div>
       </header>
@@ -301,6 +302,67 @@
         <div class="modal-actions">
           <button id="btn-copy-save" class="btn btn-secondary" type="button">Copy Code</button>
           <button id="btn-import-save" class="btn btn-gold" type="button">Restore / Merge</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SETTINGS MODAL ==================== -->
+    <div id="modal-settings" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+      <div class="modal-card settings-card">
+        <div class="codex-header">
+          <div>
+            <span class="modal-kicker">PREFERENCES &amp; DATA</span>
+            <h2 id="settings-modal-title">Settings</h2>
+          </div>
+          <button id="btn-close-settings" class="icon-btn" type="button" aria-label="Close Settings">&#10005;</button>
+        </div>
+
+        <div class="settings-section">
+          <h3 class="settings-section-title">Audio</h3>
+
+          <label class="setting-row" for="toggle-setting-music">
+            <div class="setting-copy">
+              <strong>Battle Music</strong>
+              <span>Dynamic soundtrack during board prep, waves, and Warlord bosses</span>
+            </div>
+            <span class="switch-control">
+              <input type="checkbox" id="toggle-setting-music" />
+              <span class="switch-track"><span class="switch-thumb"></span></span>
+            </span>
+          </label>
+
+          <label class="setting-row" for="toggle-setting-sfx">
+            <div class="setting-copy">
+              <strong>Sound Effects</strong>
+              <span>Tower strikes, armor impacts, promotions, and victory fanfares</span>
+            </div>
+            <span class="switch-control">
+              <input type="checkbox" id="toggle-setting-sfx" />
+              <span class="switch-track"><span class="switch-thumb"></span></span>
+            </span>
+          </label>
+        </div>
+
+        <div class="settings-section">
+          <h3 class="settings-section-title">Campaign Save Data</h3>
+          <p id="settings-progress-summary" class="settings-progress-summary">
+            Currently unlocked up to Level 1 / 18 • ★ 0 Tactical / ★ 0 Grandmaster
+          </p>
+
+          <div class="settings-data-actions">
+            <button id="btn-settings-open-save" class="btn btn-secondary btn-sm" type="button">Backup / Transfer Code</button>
+            <button id="btn-clear-save-init" class="btn btn-danger btn-sm" type="button">Clear Save Data</button>
+          </div>
+
+          <div id="clear-save-confirm" class="clear-save-confirm hidden">
+            <p>Reset all earned stars, best scores, and campaign map progress back to <strong>Chapter I, Level 1</strong>? This cannot be undone.</p>
+            <div class="clear-save-confirm-actions">
+              <button id="btn-clear-save-cancel" class="btn btn-secondary btn-sm" type="button">Cancel</button>
+              <button id="btn-clear-save-confirm" class="btn btn-danger btn-sm" type="button">Yes, Clear Save</button>
+            </div>
+          </div>
+
+          <p id="settings-status-msg" class="save-status-msg"></p>
         </div>
       </div>
     </div>

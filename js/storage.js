@@ -157,12 +157,48 @@ async function readIdb() {
 async function writeIdb(progress) {
   const db = await openDb();
   if (!db) return;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).put(progress, IDB_KEY);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+    } catch {
+      resolve(false);
+    }
+  });
+}
+
+async function deleteIdb() {
+  const db = await openDb();
+  if (!db) return;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).delete(IDB_KEY);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+    } catch {
+      resolve(false);
+    }
+  });
+}
+
+/**
+ * Permanently wipe all saved progress from localStorage (primary + legacy) and IndexedDB.
+ */
+export async function clearProgress() {
+  const fresh = createEmptyProgress();
   try {
-    const tx = db.transaction(IDB_STORE, 'readwrite');
-    tx.objectStore(IDB_STORE).put(progress, IDB_KEY);
+    localStorage.removeItem(PRIMARY_KEY);
+    for (const legacyKey of LEGACY_KEYS) {
+      localStorage.removeItem(legacyKey);
+    }
   } catch {
-    // ignore storage quota errors
+    // ignore storage errors
   }
+  await deleteIdb();
+  return fresh;
 }
 
 /**
@@ -223,7 +259,10 @@ export function saveProgress(progress) {
   return normalized;
 }
 
-export function recordLevelVictory(progress, { levelId, stars, score, difficulty, totalLevels }) {
+export function recordLevelVictory(
+  progress,
+  { levelId, stars, score, difficulty, totalLevels, allowUnlockAdvance = true }
+) {
   const next = normalizeProgress(progress);
   const key = String(levelId);
   const mode = difficulty === 'grandmaster' ? 'grandmaster' : 'standard';
@@ -233,7 +272,7 @@ export function recordLevelVictory(progress, { levelId, stars, score, difficulty
   if (score > 0) {
     next.bestScores[key] = Math.max(next.bestScores[key] || 0, Math.round(score));
   }
-  if (levelId + 1 <= totalLevels) {
+  if (allowUnlockAdvance && levelId <= next.highestUnlocked && levelId + 1 <= totalLevels) {
     next.highestUnlocked = Math.max(next.highestUnlocked, levelId + 1);
   }
   return saveProgress(next);

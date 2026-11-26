@@ -20,6 +20,7 @@ import {
   loadProgressSync,
   hydrateProgressFromBackup,
   recordLevelVictory,
+  clearProgress,
   getStarsForLevel,
   getTotalStars,
   exportSaveCode,
@@ -163,6 +164,20 @@ class TowerDeChessApp {
       saveStatusMsg: document.getElementById('save-status-msg'),
       btnCopySave: document.getElementById('btn-copy-save'),
       btnImportSave: document.getElementById('btn-import-save'),
+
+      // Settings Modal
+      btnOpenSettings: document.getElementById('btn-open-settings'),
+      modalSettings: document.getElementById('modal-settings'),
+      btnCloseSettings: document.getElementById('btn-close-settings'),
+      toggleSettingMusic: document.getElementById('toggle-setting-music'),
+      toggleSettingSfx: document.getElementById('toggle-setting-sfx'),
+      settingsProgressSummary: document.getElementById('settings-progress-summary'),
+      btnSettingsOpenSave: document.getElementById('btn-settings-open-save'),
+      btnClearSaveInit: document.getElementById('btn-clear-save-init'),
+      clearSaveConfirm: document.getElementById('clear-save-confirm'),
+      btnClearSaveCancel: document.getElementById('btn-clear-save-cancel'),
+      btnClearSaveConfirm: document.getElementById('btn-clear-save-confirm'),
+      settingsStatusMsg: document.getElementById('settings-status-msg'),
     };
   }
 
@@ -348,10 +363,53 @@ class TowerDeChessApp {
       this.deferredInstallPrompt = null;
       this.el.btnInstallPwa.classList.add('hidden');
     });
+    // Settings Modal
+    this.el.btnOpenSettings?.addEventListener('click', () => this._openSettings());
+    this.el.btnCloseSettings?.addEventListener('click', () => {
+      this.el.modalSettings.classList.add('hidden');
+    });
+    this.el.modalSettings?.addEventListener('click', (e) => {
+      if (e.target === this.el.modalSettings) this.el.modalSettings.classList.add('hidden');
+    });
+    this.el.toggleSettingMusic?.addEventListener('change', (e) => {
+      sound.unlock();
+      sound.setMusicMuted(!e.target.checked);
+      this._syncMuteIcon();
+      if (!sound.sfxMuted) sound.playSelect();
+    });
+    this.el.toggleSettingSfx?.addEventListener('change', (e) => {
+      sound.unlock();
+      sound.setSfxMuted(!e.target.checked);
+      this._syncMuteIcon();
+      if (!sound.sfxMuted) sound.playSelect();
+    });
+    this.el.btnSettingsOpenSave?.addEventListener('click', () => {
+      this.el.modalSettings.classList.add('hidden');
+      this._openSaveModal();
+    });
+    this.el.btnClearSaveInit?.addEventListener('click', () => {
+      sound.unlock();
+      sound.playSelect();
+      this.el.clearSaveConfirm.classList.remove('hidden');
+      this.el.settingsStatusMsg.textContent = '';
+    });
+    this.el.btnClearSaveCancel?.addEventListener('click', () => {
+      this.el.clearSaveConfirm.classList.add('hidden');
+    });
+    this.el.btnClearSaveConfirm?.addEventListener('click', () => this._handleClearSave());
+
     // Android hardware Back button handling when packaged with Capacitor
     const capApp = window.Capacitor?.Plugins?.App;
     if (capApp?.addListener) {
       capApp.addListener('backButton', () => {
+        if (!this.el.modalSettings?.classList.contains('hidden')) {
+          this.el.modalSettings.classList.add('hidden');
+          return;
+        }
+        if (!this.el.modalSave?.classList.contains('hidden')) {
+          this.el.modalSave.classList.add('hidden');
+          return;
+        }
         if (!this.el.modalCodex.classList.contains('hidden')) {
           this.el.modalCodex.classList.add('hidden');
           return;
@@ -380,6 +438,46 @@ class TowerDeChessApp {
     if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
       navigator.serviceWorker.register('./sw.js').catch(() => {});
     }
+  }
+
+  _openSettings() {
+    sound.unlock();
+    sound.playSelect();
+    this._refreshSettingsUi();
+    this.el.clearSaveConfirm.classList.add('hidden');
+    this.el.settingsStatusMsg.textContent = '';
+    this.el.modalSettings.classList.remove('hidden');
+  }
+
+  _refreshSettingsUi() {
+    if (this.el.toggleSettingMusic) {
+      this.el.toggleSettingMusic.checked = !sound.musicMuted;
+    }
+    if (this.el.toggleSettingSfx) {
+      this.el.toggleSettingSfx.checked = !sound.sfxMuted;
+    }
+    if (this.el.settingsProgressSummary) {
+      const tacStars = getTotalStars(this.progress, 'standard');
+      const gmStars = getTotalStars(this.progress, 'grandmaster');
+      const ch = getChapterForLevel(this.progress.highestUnlocked);
+      this.el.settingsProgressSummary.textContent = `Unlocked up to Level ${this.progress.highestUnlocked} / ${LEVELS.length} (Chapter ${ch.roman}) • ★ ${tacStars} Tactical / ★ ${gmStars} Grandmaster`;
+    }
+  }
+
+  async _handleClearSave() {
+    this.progress = await clearProgress();
+    this.sandboxAll = false;
+    localStorage.removeItem('towerdechess_sandbox');
+    if (this.el.toggleSandbox) this.el.toggleSandbox.checked = false;
+
+    this.selectedMapLevelId = 1;
+    this.justUnlockedLevelId = null;
+
+    this.el.clearSaveConfirm.classList.add('hidden');
+    this._refreshSettingsUi();
+    this._refreshSaveModalStats();
+    this._renderCampaign(true);
+    this.el.settingsStatusMsg.textContent = 'Save cleared! Campaign reset to Chapter I, Level 1.';
   }
 
   _openSaveModal() {
@@ -418,6 +516,12 @@ class TowerDeChessApp {
     if (this.el.btnMusic) {
       this.el.btnMusic.textContent = sound.musicMuted ? '🚫' : '🎵';
       this.el.btnMusic.classList.toggle('active-toggle', sound.musicMuted);
+    }
+    if (this.el.toggleSettingMusic) {
+      this.el.toggleSettingMusic.checked = !sound.musicMuted;
+    }
+    if (this.el.toggleSettingSfx) {
+      this.el.toggleSettingSfx.checked = !sound.sfxMuted;
     }
   }
 

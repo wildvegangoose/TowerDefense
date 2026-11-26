@@ -259,7 +259,8 @@ body {
 .home-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .campaign-shell {
@@ -348,6 +349,155 @@ body {
 
 .save-status-msg.error {
   color: #f07b6e;
+}
+
+/* ==================== SETTINGS MODAL ==================== */
+
+.settings-card {
+  max-width: 500px;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.settings-section:last-of-type {
+  padding-bottom: 0;
+}
+
+.settings-section-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.86rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+}
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 11px 12px;
+  background: var(--surface-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.14s ease;
+}
+
+.setting-row:hover {
+  border-color: var(--border-brass);
+}
+
+.setting-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.setting-copy strong {
+  font-size: 0.92rem;
+  color: var(--text-ivory);
+}
+
+.setting-copy span {
+  font-size: 0.74rem;
+  color: var(--text-parchment);
+  line-height: 1.35;
+}
+
+.switch-control {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.switch-control input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-track {
+  width: 48px;
+  height: 27px;
+  border-radius: 999px;
+  background: #3a2b22;
+  border: 1px solid rgba(255, 236, 204, 0.16);
+  position: relative;
+  transition: background-color 0.18s ease, border-color 0.18s ease;
+}
+
+.switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  background: #cbb89d;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+  transition: transform 0.18s ease, background-color 0.18s ease;
+}
+
+.switch-control input:checked + .switch-track {
+  background: linear-gradient(180deg, #e5b34f 0%, #b88022 100%);
+  border-color: #f6d58b;
+}
+
+.switch-control input:checked + .switch-track .switch-thumb {
+  transform: translateX(21px);
+  background: #fff7e2;
+}
+
+.switch-control input:focus-visible + .switch-track {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: 2px;
+}
+
+.settings-progress-summary {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-parchment);
+}
+
+.settings-data-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.clear-save-confirm {
+  padding: 12px;
+  background: rgba(142, 54, 44, 0.18);
+  border: 1px solid rgba(235, 118, 105, 0.45);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.clear-save-confirm p {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: #ffe5e2;
+}
+
+.clear-save-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .campaign-hint {
@@ -1920,6 +2070,7 @@ body {
         <div class="home-actions">
           <button id="btn-open-codex" class="btn btn-secondary" type="button">Piece Codex</button>
           <button id="btn-open-save" class="btn btn-secondary" type="button">Save Data</button>
+          <button id="btn-open-settings" class="btn btn-secondary" type="button">&#9881; Settings</button>
           <button id="btn-install-pwa" class="btn btn-gold hidden" type="button">Install App</button>
         </div>
       </header>
@@ -2190,6 +2341,67 @@ body {
         <div class="modal-actions">
           <button id="btn-copy-save" class="btn btn-secondary" type="button">Copy Code</button>
           <button id="btn-import-save" class="btn btn-gold" type="button">Restore / Merge</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SETTINGS MODAL ==================== -->
+    <div id="modal-settings" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+      <div class="modal-card settings-card">
+        <div class="codex-header">
+          <div>
+            <span class="modal-kicker">PREFERENCES &amp; DATA</span>
+            <h2 id="settings-modal-title">Settings</h2>
+          </div>
+          <button id="btn-close-settings" class="icon-btn" type="button" aria-label="Close Settings">&#10005;</button>
+        </div>
+
+        <div class="settings-section">
+          <h3 class="settings-section-title">Audio</h3>
+
+          <label class="setting-row" for="toggle-setting-music">
+            <div class="setting-copy">
+              <strong>Battle Music</strong>
+              <span>Dynamic soundtrack during board prep, waves, and Warlord bosses</span>
+            </div>
+            <span class="switch-control">
+              <input type="checkbox" id="toggle-setting-music" />
+              <span class="switch-track"><span class="switch-thumb"></span></span>
+            </span>
+          </label>
+
+          <label class="setting-row" for="toggle-setting-sfx">
+            <div class="setting-copy">
+              <strong>Sound Effects</strong>
+              <span>Tower strikes, armor impacts, promotions, and victory fanfares</span>
+            </div>
+            <span class="switch-control">
+              <input type="checkbox" id="toggle-setting-sfx" />
+              <span class="switch-track"><span class="switch-thumb"></span></span>
+            </span>
+          </label>
+        </div>
+
+        <div class="settings-section">
+          <h3 class="settings-section-title">Campaign Save Data</h3>
+          <p id="settings-progress-summary" class="settings-progress-summary">
+            Currently unlocked up to Level 1 / 18 • ★ 0 Tactical / ★ 0 Grandmaster
+          </p>
+
+          <div class="settings-data-actions">
+            <button id="btn-settings-open-save" class="btn btn-secondary btn-sm" type="button">Backup / Transfer Code</button>
+            <button id="btn-clear-save-init" class="btn btn-danger btn-sm" type="button">Clear Save Data</button>
+          </div>
+
+          <div id="clear-save-confirm" class="clear-save-confirm hidden">
+            <p>Reset all earned stars, best scores, and campaign map progress back to <strong>Chapter I, Level 1</strong>? This cannot be undone.</p>
+            <div class="clear-save-confirm-actions">
+              <button id="btn-clear-save-cancel" class="btn btn-secondary btn-sm" type="button">Cancel</button>
+              <button id="btn-clear-save-confirm" class="btn btn-danger btn-sm" type="button">Yes, Clear Save</button>
+            </div>
+          </div>
+
+          <p id="settings-status-msg" class="save-status-msg"></p>
         </div>
       </div>
     </div>
@@ -3398,8 +3610,8 @@ class SoundEngine {
     this.noiseBuffer = buf;
   }
 
-  toggleMute() {
-    this.sfxMuted = !this.sfxMuted;
+  setSfxMuted(muted) {
+    this.sfxMuted = Boolean(muted);
     localStorage.setItem('towerdechess_muted', this.sfxMuted ? '1' : '0');
     if (this.sfxGain && this.ctx) {
       this.sfxGain.gain.setTargetAtTime(this.sfxMuted ? 0 : 0.95, this.ctx.currentTime, 0.02);
@@ -3407,11 +3619,19 @@ class SoundEngine {
     return this.sfxMuted;
   }
 
-  toggleMusic() {
-    this.musicMuted = !this.musicMuted;
+  toggleMute() {
+    return this.setSfxMuted(!this.sfxMuted);
+  }
+
+  setMusicMuted(muted) {
+    this.musicMuted = Boolean(muted);
     localStorage.setItem('towerdechess_music_muted', this.musicMuted ? '1' : '0');
     this._updateMusicVolume();
     return this.musicMuted;
+  }
+
+  toggleMusic() {
+    return this.setMusicMuted(!this.musicMuted);
   }
 
   setMusicIntensity(mode) {
@@ -4126,12 +4346,48 @@ async function readIdb() {
 async function writeIdb(progress) {
   const db = await openDb();
   if (!db) return;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).put(progress, IDB_KEY);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+    } catch {
+      resolve(false);
+    }
+  });
+}
+
+async function deleteIdb() {
+  const db = await openDb();
+  if (!db) return;
+  return new Promise((resolve) => {
+    try {
+      const tx = db.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).delete(IDB_KEY);
+      tx.oncomplete = () => resolve(true);
+      tx.onerror = () => resolve(false);
+    } catch {
+      resolve(false);
+    }
+  });
+}
+
+/**
+ * Permanently wipe all saved progress from localStorage (primary + legacy) and IndexedDB.
+ */
+async function clearProgress() {
+  const fresh = createEmptyProgress();
   try {
-    const tx = db.transaction(IDB_STORE, 'readwrite');
-    tx.objectStore(IDB_STORE).put(progress, IDB_KEY);
+    localStorage.removeItem(PRIMARY_KEY);
+    for (const legacyKey of LEGACY_KEYS) {
+      localStorage.removeItem(legacyKey);
+    }
   } catch {
-    // ignore storage quota errors
+    // ignore storage errors
   }
+  await deleteIdb();
+  return fresh;
 }
 
 /**
@@ -4190,7 +4446,10 @@ function saveProgress(progress) {
   writeIdb(normalized);
   return normalized;
 }
-function recordLevelVictory(progress, { levelId, stars, score, difficulty, totalLevels }) {
+function recordLevelVictory(
+  progress,
+  { levelId, stars, score, difficulty, totalLevels, allowUnlockAdvance = true }
+) {
   const next = normalizeProgress(progress);
   const key = String(levelId);
   const mode = difficulty === 'grandmaster' ? 'grandmaster' : 'standard';
@@ -4200,7 +4459,7 @@ function recordLevelVictory(progress, { levelId, stars, score, difficulty, total
   if (score > 0) {
     next.bestScores[key] = Math.max(next.bestScores[key] || 0, Math.round(score));
   }
-  if (levelId + 1 <= totalLevels) {
+  if (allowUnlockAdvance && levelId <= next.highestUnlocked && levelId + 1 <= totalLevels) {
     next.highestUnlocked = Math.max(next.highestUnlocked, levelId + 1);
   }
   return saveProgress(next);
@@ -6328,6 +6587,20 @@ class TowerDeChessApp {
       saveStatusMsg: document.getElementById('save-status-msg'),
       btnCopySave: document.getElementById('btn-copy-save'),
       btnImportSave: document.getElementById('btn-import-save'),
+
+      // Settings Modal
+      btnOpenSettings: document.getElementById('btn-open-settings'),
+      modalSettings: document.getElementById('modal-settings'),
+      btnCloseSettings: document.getElementById('btn-close-settings'),
+      toggleSettingMusic: document.getElementById('toggle-setting-music'),
+      toggleSettingSfx: document.getElementById('toggle-setting-sfx'),
+      settingsProgressSummary: document.getElementById('settings-progress-summary'),
+      btnSettingsOpenSave: document.getElementById('btn-settings-open-save'),
+      btnClearSaveInit: document.getElementById('btn-clear-save-init'),
+      clearSaveConfirm: document.getElementById('clear-save-confirm'),
+      btnClearSaveCancel: document.getElementById('btn-clear-save-cancel'),
+      btnClearSaveConfirm: document.getElementById('btn-clear-save-confirm'),
+      settingsStatusMsg: document.getElementById('settings-status-msg'),
     };
   }
 
@@ -6513,10 +6786,53 @@ class TowerDeChessApp {
       this.deferredInstallPrompt = null;
       this.el.btnInstallPwa.classList.add('hidden');
     });
+    // Settings Modal
+    this.el.btnOpenSettings?.addEventListener('click', () => this._openSettings());
+    this.el.btnCloseSettings?.addEventListener('click', () => {
+      this.el.modalSettings.classList.add('hidden');
+    });
+    this.el.modalSettings?.addEventListener('click', (e) => {
+      if (e.target === this.el.modalSettings) this.el.modalSettings.classList.add('hidden');
+    });
+    this.el.toggleSettingMusic?.addEventListener('change', (e) => {
+      sound.unlock();
+      sound.setMusicMuted(!e.target.checked);
+      this._syncMuteIcon();
+      if (!sound.sfxMuted) sound.playSelect();
+    });
+    this.el.toggleSettingSfx?.addEventListener('change', (e) => {
+      sound.unlock();
+      sound.setSfxMuted(!e.target.checked);
+      this._syncMuteIcon();
+      if (!sound.sfxMuted) sound.playSelect();
+    });
+    this.el.btnSettingsOpenSave?.addEventListener('click', () => {
+      this.el.modalSettings.classList.add('hidden');
+      this._openSaveModal();
+    });
+    this.el.btnClearSaveInit?.addEventListener('click', () => {
+      sound.unlock();
+      sound.playSelect();
+      this.el.clearSaveConfirm.classList.remove('hidden');
+      this.el.settingsStatusMsg.textContent = '';
+    });
+    this.el.btnClearSaveCancel?.addEventListener('click', () => {
+      this.el.clearSaveConfirm.classList.add('hidden');
+    });
+    this.el.btnClearSaveConfirm?.addEventListener('click', () => this._handleClearSave());
+
     // Android hardware Back button handling when packaged with Capacitor
     const capApp = window.Capacitor?.Plugins?.App;
     if (capApp?.addListener) {
       capApp.addListener('backButton', () => {
+        if (!this.el.modalSettings?.classList.contains('hidden')) {
+          this.el.modalSettings.classList.add('hidden');
+          return;
+        }
+        if (!this.el.modalSave?.classList.contains('hidden')) {
+          this.el.modalSave.classList.add('hidden');
+          return;
+        }
         if (!this.el.modalCodex.classList.contains('hidden')) {
           this.el.modalCodex.classList.add('hidden');
           return;
@@ -6545,6 +6861,46 @@ class TowerDeChessApp {
     if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
       navigator.serviceWorker.register('./sw.js').catch(() => {});
     }
+  }
+
+  _openSettings() {
+    sound.unlock();
+    sound.playSelect();
+    this._refreshSettingsUi();
+    this.el.clearSaveConfirm.classList.add('hidden');
+    this.el.settingsStatusMsg.textContent = '';
+    this.el.modalSettings.classList.remove('hidden');
+  }
+
+  _refreshSettingsUi() {
+    if (this.el.toggleSettingMusic) {
+      this.el.toggleSettingMusic.checked = !sound.musicMuted;
+    }
+    if (this.el.toggleSettingSfx) {
+      this.el.toggleSettingSfx.checked = !sound.sfxMuted;
+    }
+    if (this.el.settingsProgressSummary) {
+      const tacStars = getTotalStars(this.progress, 'standard');
+      const gmStars = getTotalStars(this.progress, 'grandmaster');
+      const ch = getChapterForLevel(this.progress.highestUnlocked);
+      this.el.settingsProgressSummary.textContent = `Unlocked up to Level ${this.progress.highestUnlocked} / ${LEVELS.length} (Chapter ${ch.roman}) • ★ ${tacStars} Tactical / ★ ${gmStars} Grandmaster`;
+    }
+  }
+
+  async _handleClearSave() {
+    this.progress = await clearProgress();
+    this.sandboxAll = false;
+    localStorage.removeItem('towerdechess_sandbox');
+    if (this.el.toggleSandbox) this.el.toggleSandbox.checked = false;
+
+    this.selectedMapLevelId = 1;
+    this.justUnlockedLevelId = null;
+
+    this.el.clearSaveConfirm.classList.add('hidden');
+    this._refreshSettingsUi();
+    this._refreshSaveModalStats();
+    this._renderCampaign(true);
+    this.el.settingsStatusMsg.textContent = 'Save cleared! Campaign reset to Chapter I, Level 1.';
   }
 
   _openSaveModal() {
@@ -6583,6 +6939,12 @@ class TowerDeChessApp {
     if (this.el.btnMusic) {
       this.el.btnMusic.textContent = sound.musicMuted ? '🚫' : '🎵';
       this.el.btnMusic.classList.toggle('active-toggle', sound.musicMuted);
+    }
+    if (this.el.toggleSettingMusic) {
+      this.el.toggleSettingMusic.checked = !sound.musicMuted;
+    }
+    if (this.el.toggleSettingSfx) {
+      this.el.toggleSettingSfx.checked = !sound.sfxMuted;
     }
   }
 
