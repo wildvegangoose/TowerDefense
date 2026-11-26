@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Crownward — Chess Tower Defense</title>
+  <title>TowerDeChess — Chess Tower Defense</title>
   <style>
 /* ============================================================
-   Crownward — Royal Tabletop Design System
+   TowerDeChess — Royal Tabletop Design System
    Warm Espresso Walnut, Travertine Marble & Brushed Antique Brass
    ============================================================ */
 
@@ -1293,9 +1293,9 @@ body {
     <section id="screen-home" class="screen screen-home active" aria-label="Campaign Menu">
       <header class="home-header">
         <div class="brand-lockup">
-          <img src="data:image/webp;base64,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" alt="Crownward Crest" class="brand-emblem" />
+          <img src="data:image/webp;base64,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" alt="TowerDeChess Crest" class="brand-emblem" />
           <div class="brand-copy">
-            <h1>Crownward</h1>
+            <h1>TowerDeChess</h1>
             <p class="brand-subtitle">Tactical Chess Tower Defense</p>
           </div>
         </div>
@@ -1525,7 +1525,7 @@ async function preloadAssets() {
 
 // === js/data/levels.js ===
 /**
- * Handcrafted 8x8 Chessboard Campaign Levels for Crownward.
+ * Handcrafted 8x8 Chessboard Campaign Levels for TowerDeChess.
  * Rebalanced for tight gold economy, tense wave pressure, and rewarding chess geometry.
  */
 const BOARD_SIZE = 8;
@@ -1719,7 +1719,7 @@ const LEVELS = [
 
 // === js/data/pieces.js ===
 /**
- * Extensible Piece Registry for Crownward.
+ * Extensible Piece Registry for TowerDeChess.
  *
  * Chess pieces (category: 'chess') unlock one per campaign level (Levels 1-6).
  * Non-chess mythic/custom pieces (category: 'mythic') plug into the exact same
@@ -2121,7 +2121,7 @@ function getUnlockedPiecesForLevel(levelNumber) {
 
 // === js/data/enemies.js ===
 /**
- * Enemy Archetypes & Wave Scaling for Crownward.
+ * Enemy Archetypes & Wave Scaling for TowerDeChess.
  * Simulation-verified for tense Tactical play and tough-but-achievable Grandmaster runs.
  */
 const DIFFICULTY_PRESETS = {
@@ -2239,7 +2239,7 @@ function createEnemyConfig(typeId, levelNum, waveIndex, totalWaves, difficultyId
 
 // === js/audio.js ===
 /**
- * Tactile Tower Defense Audio & Dynamic Battle Music Engine for Crownward.
+ * Tactile Tower Defense Audio & Dynamic Battle Music Engine for TowerDeChess.
  *
  * Features:
  * - Punchy, grounded TD combat foley (blades, heavy cannons, stone impacts,
@@ -2260,8 +2260,8 @@ class SoundEngine {
     this.musicGain = null;
     this.noiseBuffer = null;
 
-    this.sfxMuted = localStorage.getItem('crownward_muted') === '1';
-    this.musicMuted = localStorage.getItem('crownward_music_muted') === '1';
+    this.sfxMuted = localStorage.getItem('towerdechess_muted') === '1';
+    this.musicMuted = localStorage.getItem('towerdechess_music_muted') === '1';
     this.lastPlayed = {};
 
     // Dynamic music sequencer state
@@ -2331,7 +2331,7 @@ class SoundEngine {
 
   toggleMute() {
     this.sfxMuted = !this.sfxMuted;
-    localStorage.setItem('crownward_muted', this.sfxMuted ? '1' : '0');
+    localStorage.setItem('towerdechess_muted', this.sfxMuted ? '1' : '0');
     if (this.sfxGain && this.ctx) {
       this.sfxGain.gain.setTargetAtTime(this.sfxMuted ? 0 : 0.95, this.ctx.currentTime, 0.02);
     }
@@ -2340,7 +2340,7 @@ class SoundEngine {
 
   toggleMusic() {
     this.musicMuted = !this.musicMuted;
-    localStorage.setItem('crownward_music_muted', this.musicMuted ? '1' : '0');
+    localStorage.setItem('towerdechess_music_muted', this.musicMuted ? '1' : '0');
     this._updateMusicVolume();
     return this.musicMuted;
   }
@@ -2901,7 +2901,7 @@ const sound = new SoundEngine();
 
 // === js/engine/targeting.js ===
 /**
- * Chess Pattern Geometry & Targeting Engine for Crownward.
+ * Chess Pattern Geometry & Targeting Engine for TowerDeChess.
  * Computes exact threatened tiles for board overlays and real-time enemy checks.
  */
 
@@ -3134,7 +3134,7 @@ function getEnemiesOnRay(tower, stats, dc, dr, enemies) {
 
 // === js/engine/game.js ===
 /**
- * Core 60fps Canvas Simulation & Tabletop Renderer for Crownward.
+ * Core 60fps Canvas Simulation & Tabletop Renderer for TowerDeChess.
  */
 
 
@@ -4844,7 +4844,7 @@ class GameEngine {
 
 // === js/main.js ===
 /**
- * Crownward — Main App Controller, Campaign Progression & Reactive HUD.
+ * TowerDeChess — Main App Controller, Campaign Progression & Reactive HUD.
  */
 
 
@@ -4852,13 +4852,13 @@ class GameEngine {
 
 
 
-const SAVE_KEY = 'crownward_progress_v1';
+const SAVE_KEY = 'towerdechess_progress_v1';
 
-class CrownwardApp {
+class TowerDeChessApp {
   constructor() {
     this.progress = this._loadProgress();
-    this.sandboxAll = localStorage.getItem('crownward_sandbox') === '1';
-    this.difficulty = localStorage.getItem('crownward_difficulty') || 'standard';
+    this.sandboxAll = localStorage.getItem('towerdechess_sandbox') === '1';
+    this.difficulty = localStorage.getItem('towerdechess_difficulty') || 'standard';
     this.currentLevel = null;
     this.engine = null;
     this.bannerTimer = null;
@@ -4992,13 +4992,13 @@ class CrownwardApp {
   _bindGlobalEvents() {
     this.el.toggleSandbox.addEventListener('change', (e) => {
       this.sandboxAll = e.target.checked;
-      localStorage.setItem('crownward_sandbox', this.sandboxAll ? '1' : '0');
+      localStorage.setItem('towerdechess_sandbox', this.sandboxAll ? '1' : '0');
       this._renderCampaign();
     });
 
     const setDiff = (mode) => {
       this.difficulty = mode;
-      localStorage.setItem('crownward_difficulty', mode);
+      localStorage.setItem('towerdechess_difficulty', mode);
       this._syncDifficultyUi();
       this._renderCampaign();
     };
@@ -5529,7 +5529,7 @@ class CrownwardApp {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  new CrownwardApp();
+  new TowerDeChessApp();
 });
 
 })();

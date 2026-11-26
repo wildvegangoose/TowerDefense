@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Builds a single-file, zero-dependency, CSP-safe standalone HTML version of Crownward
+Builds a single-file, zero-dependency, CSP-safe standalone HTML version of TowerDeChess
 with all CSS, JS modules, and WebP miniature sprites inlined.
 """
 
@@ -12,7 +12,7 @@ import re
 from PIL import Image
 
 REPO_DIR = "/home/antigravity/wildvegangoose/TowerDefense"
-OUT_PATH = os.path.join(REPO_DIR, "dist", "crownward-standalone.html")
+OUT_PATH = os.path.join(REPO_DIR, "dist", "towerdechess-standalone.html")
 
 SPRITE_KEYS = [
     "piece_pawn",
@@ -116,7 +116,7 @@ async function preloadAssets() {{
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>Crownward — Chess Tower Defense</title>
+  <title>TowerDeChess — Chess Tower Defense</title>
   <style>
 {css}
   </style>

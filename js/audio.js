@@ -1,5 +1,5 @@
 /**
- * Tactile Tower Defense Audio & Dynamic Battle Music Engine for Crownward.
+ * Tactile Tower Defense Audio & Dynamic Battle Music Engine for TowerDeChess.
  *
  * Features:
  * - Punchy, grounded TD combat foley (blades, heavy cannons, stone impacts,
@@ -20,8 +20,8 @@ class SoundEngine {
     this.musicGain = null;
     this.noiseBuffer = null;
 
-    this.sfxMuted = localStorage.getItem('crownward_muted') === '1';
-    this.musicMuted = localStorage.getItem('crownward_music_muted') === '1';
+    this.sfxMuted = localStorage.getItem('towerdechess_muted') === '1';
+    this.musicMuted = localStorage.getItem('towerdechess_music_muted') === '1';
     this.lastPlayed = {};
 
     // Dynamic music sequencer state
@@ -91,7 +91,7 @@ class SoundEngine {
 
   toggleMute() {
     this.sfxMuted = !this.sfxMuted;
-    localStorage.setItem('crownward_muted', this.sfxMuted ? '1' : '0');
+    localStorage.setItem('towerdechess_muted', this.sfxMuted ? '1' : '0');
     if (this.sfxGain && this.ctx) {
       this.sfxGain.gain.setTargetAtTime(this.sfxMuted ? 0 : 0.95, this.ctx.currentTime, 0.02);
     }
@@ -100,7 +100,7 @@ class SoundEngine {
 
   toggleMusic() {
     this.musicMuted = !this.musicMuted;
-    localStorage.setItem('crownward_music_muted', this.musicMuted ? '1' : '0');
+    localStorage.setItem('towerdechess_music_muted', this.musicMuted ? '1' : '0');
     this._updateMusicVolume();
     return this.musicMuted;
   }

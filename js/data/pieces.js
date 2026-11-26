@@ -1,5 +1,5 @@
 /**
- * Extensible Piece Registry for Crownward.
+ * Extensible Piece Registry for TowerDeChess.
  *
  * Chess pieces (category: 'chess') unlock one per campaign level (Levels 1-6).
  * Non-chess mythic/custom pieces (category: 'mythic') plug into the exact same

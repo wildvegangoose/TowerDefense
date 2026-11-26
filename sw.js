@@ -1,10 +1,10 @@
 /**
- * Network-first Service Worker for Crownward PWA.
+ * Network-first Service Worker for TowerDeChess PWA.
  * Ensures fast web iteration always pulls latest updates when online,
  * while still supporting offline play on Android home screen.
  */
 
-const CACHE_NAME = 'crownward-v6';
+const CACHE_NAME = 'towerdechess-v7';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

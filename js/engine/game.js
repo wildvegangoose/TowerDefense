@@ -1,5 +1,5 @@
 /**
- * Core 60fps Canvas Simulation & Tabletop Renderer for Crownward.
+ * Core 60fps Canvas Simulation & Tabletop Renderer for TowerDeChess.
  */
 
 import { BOARD_SIZE, expandWaypoints } from '../data/levels.js';

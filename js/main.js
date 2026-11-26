@@ -1,5 +1,5 @@
 /**
- * Crownward — Main App Controller, Campaign Progression & Reactive HUD.
+ * TowerDeChess — Main App Controller, Campaign Progression & Reactive HUD.
  */
 
 import { preloadAssets, getSpriteUrl } from './assets.js';
@@ -17,13 +17,13 @@ import {
 import { ENEMY_TYPES } from './data/enemies.js';
 import { GameEngine } from './engine/game.js';
 
-const SAVE_KEY = 'crownward_progress_v1';
+const SAVE_KEY = 'towerdechess_progress_v1';
 
-class CrownwardApp {
+class TowerDeChessApp {
   constructor() {
     this.progress = this._loadProgress();
-    this.sandboxAll = localStorage.getItem('crownward_sandbox') === '1';
-    this.difficulty = localStorage.getItem('crownward_difficulty') || 'standard';
+    this.sandboxAll = localStorage.getItem('towerdechess_sandbox') === '1';
+    this.difficulty = localStorage.getItem('towerdechess_difficulty') || 'standard';
     this.currentLevel = null;
     this.engine = null;
     this.bannerTimer = null;
@@ -157,13 +157,13 @@ class CrownwardApp {
   _bindGlobalEvents() {
     this.el.toggleSandbox.addEventListener('change', (e) => {
       this.sandboxAll = e.target.checked;
-      localStorage.setItem('crownward_sandbox', this.sandboxAll ? '1' : '0');
+      localStorage.setItem('towerdechess_sandbox', this.sandboxAll ? '1' : '0');
       this._renderCampaign();
     });
 
     const setDiff = (mode) => {
       this.difficulty = mode;
-      localStorage.setItem('crownward_difficulty', mode);
+      localStorage.setItem('towerdechess_difficulty', mode);
       this._syncDifficultyUi();
       this._renderCampaign();
     };
@@ -694,5 +694,5 @@ class CrownwardApp {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-  new CrownwardApp();
+  new TowerDeChessApp();
 });

@@ -101,7 +101,7 @@ def main():
             os.path.join(d, "ic_launcher_foreground.png"), "PNG", optimize=True
         )
 
-    # 4. Replace every Capacitor splash.png with Crownward walnut splash
+    # 4. Replace every Capacitor splash.png with TowerDeChess walnut splash
     for root, _, files in os.walk(RES_DIR):
         if "splash.png" in files:
             sp_path = os.path.join(root, "splash.png")

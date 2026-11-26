@@ -1,9 +1,9 @@
-# Crownward — Chess Tower Defense
+# TowerDeChess — Chess Tower Defense
 
 A mobile-first **Android Progressive Web App (PWA)** & web tower defense game where every campaign level unlocks a new Chess piece with authentic board-geometry attack patterns — escalating to mythic **non-chess relics** beyond the board.
 
 ## Play on Android (No APK Required)
-Because Crownward is built as a lightweight HTML5 / Canvas / ES Modules PWA:
+Because TowerDeChess is built as a lightweight HTML5 / Canvas / ES Modules PWA:
 - Open the hosted URL (e.g., **GitHub Pages** or local dev server) in **Chrome on Android**.
 - Tap **Menu → Add to Home screen** (or the in-app **Install App** button) to launch fullscreen like a native Android game — zero APK sideloading needed.
 

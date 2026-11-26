@@ -1,6 +1,6 @@
 {
-  "appId": "io.github.wildvegangoose.crownward",
-  "appName": "Crownward",
+  "appId": "io.github.wildvegangoose.towerdechess",
+  "appName": "TowerDeChess",
   "webDir": "www",
   "backgroundColor": "#1a120d",
   "android": {

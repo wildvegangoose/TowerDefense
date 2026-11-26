@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Crownward</string>
-    <string name="title_activity_main">Crownward</string>
-    <string name="package_name">io.github.wildvegangoose.crownward</string>
-    <string name="custom_url_scheme">io.github.wildvegangoose.crownward</string>
+    <string name="app_name">TowerDeChess</string>
+    <string name="title_activity_main">TowerDeChess</string>
+    <string name="package_name">io.github.wildvegangoose.towerdechess</string>
+    <string name="custom_url_scheme">io.github.wildvegangoose.towerdechess</string>
 </resources>

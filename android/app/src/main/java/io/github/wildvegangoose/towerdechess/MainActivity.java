@@ -1,4 +1,4 @@
-package io.github.wildvegangoose.crownward;
+package io.github.wildvegangoose.towerdechess;
 
 import com.getcapacitor.BridgeActivity;
 

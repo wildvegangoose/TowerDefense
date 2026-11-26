@@ -1,5 +1,5 @@
 /**
- * Chess Pattern Geometry & Targeting Engine for Crownward.
+ * Chess Pattern Geometry & Targeting Engine for TowerDeChess.
  * Computes exact threatened tiles for board overlays and real-time enemy checks.
  */
 

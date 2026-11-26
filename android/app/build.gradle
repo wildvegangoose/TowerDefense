@@ -13,10 +13,10 @@ def releaseKeyPassword = System.getenv("ANDROID_KEY_PASSWORD") ?: keystoreProps.
 def hasReleaseSigning = releaseStoreFile && releaseStorePassword && releaseKeyAlias && releaseKeyPassword
 
 android {
-    namespace "io.github.wildvegangoose.crownward"
+    namespace "io.github.wildvegangoose.towerdechess"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "io.github.wildvegangoose.crownward"
+        applicationId "io.github.wildvegangoose.towerdechess"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

@@ -1,5 +1,5 @@
 /**
- * Sprite asset loader for Crownward.
+ * Sprite asset loader for TowerDeChess.
  * Preloads all 3D miniature PNG sprites with clean fallback handling.
  */
 

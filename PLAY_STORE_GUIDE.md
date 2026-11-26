@@ -1,13 +1,13 @@
-# Google Play Store Release Guide — Crownward
+# Google Play Store Release Guide — TowerDeChess
 
-Everything required to publish **Crownward — Chess Tower Defense** (`io.github.wildvegangoose.crownward`) to the Google Play Store is configured in this repository.
+Everything required to publish **TowerDeChess — Chess Tower Defense** (`io.github.wildvegangoose.towerdechess`) to the Google Play Store is configured in this repository.
 
 ---
 
 ## 1. Ready-to-Upload Store Listing Copy
 
-- **App Name:** `Crownward: Chess Tower Defense`
-- **Package ID:** `io.github.wildvegangoose.crownward`
+- **App Name:** `TowerDeChess: Chess Tower Defense`
+- **Package ID:** `io.github.wildvegangoose.towerdechess`
 - **Category:** Games → Strategy
 - **Pricing:** Free (No Ads, No In-App Purchases)
 - **Privacy Policy URL (already live on GitHub Pages):**
@@ -17,7 +17,7 @@ Everything required to publish **Crownward — Chess Tower Defense** (`io.github
 > Defend the board with chess pieces! Unlock new pieces each level & battle foes.
 
 ### Full Description
-> Command a handcrafted royal chess army in **Crownward**, a tactical 2.5D diagonal-aerial tower defense game where authentic chess geometry decides every battle.
+> Command a handcrafted royal chess army in **TowerDeChess**, a tactical 2.5D diagonal-aerial tower defense game where authentic chess geometry decides every battle.
 >
 > **UNLOCK A NEW PIECE EVERY LEVEL**
 > - **Level 1 — Pawn:** Steadfast frontline defender dealing bonus Critical Thrusts on its 4 diagonal capture squares.
@@ -72,9 +72,9 @@ Everything required to publish **Crownward — Chess Tower Defense** (`io.github
 ### Step A — Generate Your Upload Keystore (One Time)
 ```bash
 keytool -genkey -v \
-  -keystore crownward-upload.jks \
+  -keystore towerdechess-upload.jks \
   -keyalg RSA -keysize 2048 -validity 10000 \
-  -alias crownward
+  -alias towerdechess
 ```
 
 ### Step B — Build the Signed `.aab` (Choose Local OR GitHub Actions)
@@ -82,14 +82,14 @@ keytool -genkey -v \
 #### Option 1: Build Automatically via GitHub Actions (No Local Android Studio Needed!)
 1. Base64-encode your keystore:
    ```bash
-   base64 -w 0 crownward-upload.jks
+   base64 -w 0 towerdechess-upload.jks
    ```
 2. In your GitHub repo **Settings → Secrets and variables → Actions**, add 4 repository secrets:
    - `ANDROID_KEYSTORE_BASE64` — base64 output from step 1
    - `ANDROID_KEYSTORE_PASSWORD` — your keystore password
-   - `ANDROID_KEY_ALIAS` — `crownward`
+   - `ANDROID_KEY_ALIAS` — `towerdechess`
    - `ANDROID_KEY_PASSWORD` — your key password
-3. Open the **Actions** tab → **Android Play Store Build (.aab)** → **Run workflow**, then download the signed `crownward-play-store-aab` artifact!
+3. Open the **Actions** tab → **Android Play Store Build (.aab)** → **Run workflow**, then download the signed `towerdechess-play-store-aab` artifact!
 
 #### Option 2: Build Locally
 1. Copy `android/keystore.properties.example` to `android/keystore.properties` and fill in your keystore path & passwords.

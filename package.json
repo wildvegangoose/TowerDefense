@@ -1,7 +1,7 @@
 {
-  "name": "crownward-tower-defense",
+  "name": "towerdechess-tower-defense",
   "version": "1.0.0",
-  "description": "Crownward — 2.5D Isometric Chess Tower Defense for Android & Web",
+  "description": "TowerDeChess — 2.5D Isometric Chess Tower Defense for Android & Web",
   "private": true,
   "scripts": {
     "prepare:web": "node scripts/sync_web.mjs",

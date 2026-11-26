@@ -1,5 +1,5 @@
 /**
- * Enemy Archetypes & Wave Scaling for Crownward.
+ * Enemy Archetypes & Wave Scaling for TowerDeChess.
  * Simulation-verified for tense Tactical play and tough-but-achievable Grandmaster runs.
  */
 

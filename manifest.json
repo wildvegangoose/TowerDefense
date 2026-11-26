@@ -1,6 +1,6 @@
 {
-  "name": "Crownward — Chess Tower Defense",
-  "short_name": "Crownward",
+  "name": "TowerDeChess — Chess Tower Defense",
+  "short_name": "TowerDeChess",
   "description": "Tactical chess tower defense where each level unlocks a new chess piece — and mythic relics beyond the board.",
   "start_url": "./index.html",
   "display": "standalone",

@@ -1,5 +1,5 @@
 /**
- * Handcrafted 8x8 Chessboard Campaign Levels for Crownward.
+ * Handcrafted 8x8 Chessboard Campaign Levels for TowerDeChess.
  * Rebalanced for tight gold economy, tense wave pressure, and rewarding chess geometry.
  */
 

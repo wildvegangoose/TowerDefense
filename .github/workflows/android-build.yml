@@ -47,8 +47,8 @@ jobs:
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           if [ -n "$ANDROID_KEYSTORE_BASE64" ]; then
-            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > crownward-upload.jks
-            export ANDROID_KEYSTORE_PATH="crownward-upload.jks"
+            echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > towerdechess-upload.jks
+            export ANDROID_KEYSTORE_PATH="towerdechess-upload.jks"
           fi
           chmod +x gradlew
           ./gradlew bundleRelease
@@ -56,6 +56,6 @@ jobs:
       - name: Upload Play Store .aab artifact
         uses: actions/upload-artifact@v4
         with:
-          name: crownward-play-store-aab
+          name: towerdechess-play-store-aab
           path: android/app/build/outputs/bundle/release/*.aab
           retention-days: 30
