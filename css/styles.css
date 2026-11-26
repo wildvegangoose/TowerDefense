@@ -576,25 +576,25 @@ body {
   flex: 1;
   min-height: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: stretch;
   padding: 8px;
   position: relative;
 }
 
 .board-wrapper {
   position: relative;
+  flex: 1;
   width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  min-height: 0;
+  overflow: hidden;
 }
 
 #game-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
   display: block;
-  border-radius: 10px;
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.68);
   cursor: pointer;
   touch-action: none;
 }
@@ -1202,8 +1202,8 @@ body {
   }
 
   .level-badge strong {
-    font-size: 0.84rem;
-    max-width: 155px;
+    font-size: 0.8rem;
+    max-width: 122px;
   }
 
   .stat-chip {
@@ -1214,8 +1214,15 @@ body {
   }
 
   .icon-btn {
-    min-width: 36px;
-    height: 36px;
+    min-width: 32px;
+    height: 34px;
+    font-size: 0.88rem;
+    padding: 0 5px;
+  }
+
+  .text-btn {
+    min-width: 34px;
+    font-size: 0.76rem;
   }
 
   /* When inspecting a tower on compact mobile screens, hide roster cleanly to keep board huge! */

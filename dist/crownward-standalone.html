@@ -583,25 +583,25 @@ body {
   flex: 1;
   min-height: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
+  align-items: stretch;
+  justify-content: stretch;
   padding: 8px;
   position: relative;
 }
 
 .board-wrapper {
   position: relative;
+  flex: 1;
   width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  min-height: 0;
+  overflow: hidden;
 }
 
 #game-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
   display: block;
-  border-radius: 10px;
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.68);
   cursor: pointer;
   touch-action: none;
 }
@@ -1209,8 +1209,8 @@ body {
   }
 
   .level-badge strong {
-    font-size: 0.84rem;
-    max-width: 155px;
+    font-size: 0.8rem;
+    max-width: 122px;
   }
 
   .stat-chip {
@@ -1221,8 +1221,15 @@ body {
   }
 
   .icon-btn {
-    min-width: 36px;
-    height: 36px;
+    min-width: 32px;
+    height: 34px;
+    font-size: 0.88rem;
+    padding: 0 5px;
+  }
+
+  .text-btn {
+    min-width: 34px;
+    font-size: 0.76rem;
   }
 
   /* When inspecting a tower on compact mobile screens, hide roster cleanly to keep board huge! */
@@ -3181,12 +3188,35 @@ class GameEngine {
     this.rafId = null;
     this.lastFrameTime = 0;
 
-    // Layout metrics (computed on resize)
-    this.boardSizePx = 0;
-    this.framePad = 0;
-    this.tileSize = 0;
+    // Layout metrics for 2.5D Diagonal Aerial Isometric projection
+    this.canvasW = 0;
+    this.canvasH = 0;
+    this.tileW = 64;
+    this.tileH = 36;
+    this.isoRatio = 0.56;
+    this.elevScale = 36;
+    this.originX = 0;
+    this.originY = 0;
 
     this._bindEvents();
+  }
+
+  boardToScreen(u, v, z = 0) {
+    return {
+      x: this.originX + (u - v) * (this.tileW * 0.5),
+      y: this.originY + (u + v) * (this.tileH * 0.5) - z * this.elevScale,
+    };
+  }
+
+  screenToBoard(sx, sy) {
+    // Pick slightly elevated tile top surface (z = 0.10 midpoint) for crisp finger accuracy
+    const adjY = sy + 0.1 * this.elevScale;
+    const dx = (sx - this.originX) / (this.tileW * 0.5);
+    const dy = (adjY - this.originY) / (this.tileH * 0.5);
+    return {
+      u: (dx + dy) * 0.5,
+      v: (dy - dx) * 0.5,
+    };
   }
 
   _bindEvents() {
@@ -3236,22 +3266,33 @@ class GameEngine {
     const style = window.getComputedStyle(stage);
     const padX = (parseFloat(style.paddingLeft) || 0) + (parseFloat(style.paddingRight) || 0);
     const padY = (parseFloat(style.paddingTop) || 0) + (parseFloat(style.paddingBottom) || 0);
-    const availW = stage.clientWidth - padX;
-    const availH = stage.clientHeight - padY;
+    const availW = Math.floor(stage.clientWidth - padX);
+    const availH = Math.floor(stage.clientHeight - padY);
     if (availW <= 0 || availH <= 0) return;
 
-    const cssSize = Math.max(220, Math.floor(Math.min(availW, availH)));
     const dpr = Math.min(window.devicePixelRatio || 1, 2.5);
-
-    this.canvas.style.width = `${cssSize}px`;
-    this.canvas.style.height = `${cssSize}px`;
-    this.canvas.width = Math.round(cssSize * dpr);
-    this.canvas.height = Math.round(cssSize * dpr);
+    this.canvas.style.width = `${availW}px`;
+    this.canvas.style.height = `${availH}px`;
+    this.canvas.width = Math.round(availW * dpr);
+    this.canvas.height = Math.round(availH * dpr);
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    this.boardSizePx = cssSize;
-    this.framePad = Math.round(cssSize * FRAME_PAD_RATIO);
-    this.tileSize = (cssSize - this.framePad * 2) / BOARD_SIZE;
+    this.canvasW = availW;
+    this.canvasH = availH;
+
+    // Fit full 8x8 diamond + 0.58-tile walnut bezel + top sprite headroom + 3D front slab thickness
+    const bezelSpan = BOARD_SIZE + 1.25; // horizontal diamond width in tileW units
+    const verticalSpan = (BOARD_SIZE + 1.25) * this.isoRatio + 1.05; // height in tileW units
+    const tileW = Math.min((availW - 8) / bezelSpan, (availH - 8) / verticalSpan);
+
+    this.tileW = Math.max(30, tileW);
+    this.tileH = this.tileW * this.isoRatio;
+    this.elevScale = this.tileH * 0.95;
+
+    // Center diamond cleanly with slightly more top headroom for tall chess crowns
+    const boardDiamondH = BOARD_SIZE * this.tileH;
+    this.originX = availW * 0.5;
+    this.originY = (availH - boardDiamondH) * 0.5 + this.tileH * 0.22;
   }
 
   loadLevel(level, difficulty = 'standard') {
@@ -3557,10 +3598,11 @@ class GameEngine {
 
   _clientToTile(clientX, clientY) {
     const rect = this.canvas.getBoundingClientRect();
-    const x = clientX - rect.left - this.framePad;
-    const y = clientY - rect.top - this.framePad;
-    const col = Math.floor(x / this.tileSize);
-    const row = Math.floor(y / this.tileSize);
+    const sx = clientX - rect.left;
+    const sy = clientY - rect.top;
+    const { u, v } = this.screenToBoard(sx, sy);
+    const col = Math.floor(u);
+    const row = Math.floor(v);
     if (col < 0 || col >= BOARD_SIZE || row < 0 || row >= BOARD_SIZE) return null;
     return { col, row };
   }
@@ -3642,7 +3684,7 @@ class GameEngine {
       }
 
       // Move along waypoints
-      const slowResist = e.isBoss ? 0.6 : 1.0;
+      const slowResist = e.isBoss ? 0.55 : 1.0;
       const effSlow = e.slowAmount * slowResist;
       const moveSpeed = e.staggerTimer > 0 ? e.speed * 0.15 : e.speed * (1 - effSlow);
       const stepDist = moveSpeed * dt;
@@ -3664,7 +3706,11 @@ class GameEngine {
         } else {
           e.x += (dx / dist) * remaining;
           e.y += (dy / dist) * remaining;
-          e.facing = dx < -0.05 ? -1 : dx > 0.05 ? 1 : e.facing;
+          // Isometric screen X direction is proportional to (dx - dy)
+          const screenDx = dx - dy;
+          if (Math.abs(screenDx) > 0.05) {
+            e.facing = screenDx < 0 ? -1 : 1;
+          }
           remaining = 0;
         }
       }
@@ -3730,13 +3776,14 @@ class GameEngine {
     for (const pt of this.particles) {
       pt.x += pt.vx * dt;
       pt.y += pt.vy * dt;
-      pt.vy += 2.2 * dt;
+      pt.z = Math.max(0, (pt.z || 0) + (pt.vz || 0) * dt);
+      pt.vz = (pt.vz || 0) - 6.5 * dt;
       pt.life -= dt;
     }
     this.particles = this.particles.filter((pt) => pt.life > 0);
 
     for (const ft of this.floatTexts) {
-      ft.y -= 0.75 * dt;
+      ft.z = (ft.z || 0.9) + 1.15 * dt;
       ft.life -= dt;
     }
     this.floatTexts = this.floatTexts.filter((ft) => ft.life > 0);
@@ -3927,12 +3974,14 @@ class GameEngine {
     }
 
     if (stats.attackType === 'aura_smite') {
-      // King Sovereign Smite
+      // King Sovereign Smite descending vertically from the sky in 3D!
       this.beams.push({
         x1: target.x,
-        y1: target.y - 2.1,
+        y1: target.y,
+        z1: 3.6,
         x2: target.x,
         y2: target.y,
+        z2: 0.2,
         color: '#ffe078',
         glowColor: 'rgba(255, 200, 72, 0.65)',
         width: 6,
@@ -4082,22 +4131,24 @@ class GameEngine {
   _spawnDustBurst(x, y, color, count = 8) {
     for (let i = 0; i < count; i++) {
       const ang = (Math.PI * 2 * i) / count + Math.random() * 0.5;
-      const spd = 0.8 + Math.random() * 2.2;
+      const spd = 0.7 + Math.random() * 1.9;
       this.particles.push({
         x,
         y,
+        z: 0.22,
         vx: Math.cos(ang) * spd,
-        vy: Math.sin(ang) * spd - 0.8,
-        size: 2.2 + Math.random() * 2.8,
+        vy: Math.sin(ang) * spd,
+        vz: 1.8 + Math.random() * 2.2,
+        size: 2.2 + Math.random() * 2.6,
         color,
-        life: 0.32 + Math.random() * 0.24,
-        maxLife: 0.56,
+        life: 0.34 + Math.random() * 0.24,
+        maxLife: 0.58,
       });
     }
   }
 
   _spawnFloatText(x, y, text, color) {
-    this.floatTexts.push({ x, y, text, color, life: 0.95, maxLife: 0.95 });
+    this.floatTexts.push({ x, y, z: 0.95, text, color, life: 0.95, maxLife: 0.95 });
   }
 
   _emitBanner(msg) {
@@ -4125,23 +4176,84 @@ class GameEngine {
     });
   }
 
-  // ==================== CANVAS RENDERER ====================
+  // ==================== 2.5D ISOMETRIC TABLETOP RENDERER ====================
+
+  _traceIsoQuad(ctx, u1, v1, u2, v2, z = 0) {
+    const p0 = this.boardToScreen(u1, v1, z);
+    const p1 = this.boardToScreen(u2, v1, z);
+    const p2 = this.boardToScreen(u2, v2, z);
+    const p3 = this.boardToScreen(u1, v2, z);
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.lineTo(p3.x, p3.y);
+    ctx.closePath();
+  }
+
+  _drawIsoExtrudedBox(ctx, u1, v1, u2, v2, zTop, zBot, topFill, leftWallFill, rightWallFill) {
+    const t0 = this.boardToScreen(u1, v1, zTop); // North
+    const t1 = this.boardToScreen(u2, v1, zTop); // East
+    const t2 = this.boardToScreen(u2, v2, zTop); // South
+    const t3 = this.boardToScreen(u1, v2, zTop); // West
+
+    const b1 = this.boardToScreen(u2, v1, zBot);
+    const b2 = this.boardToScreen(u2, v2, zBot);
+    const b3 = this.boardToScreen(u1, v2, zBot);
+
+    // Front-Left vertical face (West -> South, lit by warm upper-left light)
+    if (leftWallFill) {
+      ctx.beginPath();
+      ctx.moveTo(t3.x, t3.y);
+      ctx.lineTo(t2.x, t2.y);
+      ctx.lineTo(b2.x, b2.y);
+      ctx.lineTo(b3.x, b3.y);
+      ctx.closePath();
+      ctx.fillStyle = leftWallFill;
+      ctx.fill();
+    }
+
+    // Front-Right vertical face (South -> East, deeper shadow side)
+    if (rightWallFill) {
+      ctx.beginPath();
+      ctx.moveTo(t2.x, t2.y);
+      ctx.lineTo(t1.x, t1.y);
+      ctx.lineTo(b1.x, b1.y);
+      ctx.lineTo(b2.x, b2.y);
+      ctx.closePath();
+      ctx.fillStyle = rightWallFill;
+      ctx.fill();
+    }
+
+    // Top diamond surface
+    if (topFill) {
+      ctx.beginPath();
+      ctx.moveTo(t0.x, t0.y);
+      ctx.lineTo(t1.x, t1.y);
+      ctx.lineTo(t2.x, t2.y);
+      ctx.lineTo(t3.x, t3.y);
+      ctx.closePath();
+      ctx.fillStyle = topFill;
+      ctx.fill();
+    }
+  }
 
   render() {
     const ctx = this.ctx;
-    const size = this.boardSizePx;
-    if (!size || !this.level) return;
+    if (!this.canvasW || !this.level) return;
 
+    ctx.clearRect(0, 0, this.canvasW, this.canvasH);
     ctx.save();
+
     // Subtle screen shake on cannon booms & warlord arrival
     if (this.shakeTime > 0) {
       const mag = this.shakeIntensity * (this.shakeTime / 0.3);
       ctx.translate((Math.random() - 0.5) * mag * 2, (Math.random() - 0.5) * mag * 2);
     }
 
-    this._drawWoodFrame(ctx, size);
-    this._drawChessTiles(ctx);
-    this._drawRoadPath(ctx);
+    this._drawWalnutSlab(ctx);
+    this._drawIsoBoardTiles(ctx);
+    this._drawRoadRibbonAndRift(ctx);
     this._drawPatternOverlay(ctx);
     this._drawKingTethers(ctx);
     this._drawEntitiesSorted(ctx);
@@ -4151,139 +4263,201 @@ class GameEngine {
     ctx.restore();
   }
 
-  _drawWoodFrame(ctx, size) {
-    // Rich dark walnut tabletop border
-    const grad = ctx.createLinearGradient(0, 0, size, size);
-    grad.addColorStop(0, '#462e1d');
-    grad.addColorStop(0.5, '#332013');
-    grad.addColorStop(1, '#26170e');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, size, size);
+  _drawWalnutSlab(ctx) {
+    const b = 0.56; // Walnut frame overhang in tiles
+    const slabTop = 0.06;
+    const slabBot = -0.58;
 
-    // Outer & inner brushed antique brass inlay borders
-    ctx.strokeStyle = '#b98f4a';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(2, 2, size - 4, size - 4);
+    // 1. Soft grounded drop shadow beneath the entire 3D diamond tabletop board
+    ctx.save();
+    this._traceIsoQuad(ctx, -b + 0.12, -b + 0.16, BOARD_SIZE + b + 0.12, BOARD_SIZE + b + 0.16, slabBot - 0.18);
+    ctx.fillStyle = 'rgba(6, 3, 1, 0.55)';
+    ctx.fill();
+    ctx.restore();
 
-    ctx.strokeStyle = 'rgba(218, 179, 106, 0.65)';
-    ctx.lineWidth = 1.5;
-    ctx.strokeRect(
-      this.framePad - 2,
-      this.framePad - 2,
-      this.tileSize * BOARD_SIZE + 4,
-      this.tileSize * BOARD_SIZE + 4
+    // 2. Sculpted 3D Walnut Tabletop Slab with warm directional shading
+    const pTopN = this.boardToScreen(-b, -b, slabTop);
+    const pTopS = this.boardToScreen(BOARD_SIZE + b, BOARD_SIZE + b, slabTop);
+    const topGrad = ctx.createLinearGradient(pTopN.x, pTopN.y, pTopS.x, pTopS.y);
+    topGrad.addColorStop(0, '#503421');
+    topGrad.addColorStop(0.5, '#3a2416');
+    topGrad.addColorStop(1, '#2a190f');
+
+    this._drawIsoExtrudedBox(
+      ctx,
+      -b,
+      -b,
+      BOARD_SIZE + b,
+      BOARD_SIZE + b,
+      slabTop,
+      slabBot,
+      topGrad,
+      '#462c1b', // Lit front-left walnut side
+      '#24140b'  // Shaded front-right walnut side
     );
 
-    // Gilded chess coordinates A-H and 8-1
-    const fontSize = Math.max(9, Math.round(this.framePad * 0.46));
-    ctx.fillStyle = 'rgba(232, 204, 152, 0.72)';
-    ctx.font = `600 ${fontSize}px Cinzel, Georgia, serif`;
+    // 3. Gleaming antique brass inlay band running around the 3D vertical slab wall
+    const bandZ = -0.24;
+    const wL = this.boardToScreen(-b, BOARD_SIZE + b, bandZ);
+    const wS = this.boardToScreen(BOARD_SIZE + b, BOARD_SIZE + b, bandZ);
+    const wR = this.boardToScreen(BOARD_SIZE + b, -b, bandZ);
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(wL.x, wL.y);
+    ctx.lineTo(wS.x, wS.y);
+    ctx.lineTo(wR.x, wR.y);
+    ctx.strokeStyle = 'rgba(222, 180, 102, 0.65)';
+    ctx.lineWidth = Math.max(1.8, this.tileW * 0.032);
+    ctx.stroke();
+
+    // Outer top rim brass bevel
+    this._traceIsoQuad(ctx, -b, -b, BOARD_SIZE + b, BOARD_SIZE + b, slabTop);
+    ctx.strokeStyle = 'rgba(218, 178, 104, 0.52)';
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+
+    // Inner inlaid brass frame hugging the 8x8 playing field
+    this._traceIsoQuad(ctx, -0.04, -0.04, BOARD_SIZE + 0.04, BOARD_SIZE + 0.04, slabTop + 0.01);
+    ctx.strokeStyle = 'rgba(232, 194, 118, 0.72)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+
+    // 4. Gilded chess coordinates along front-left (A-H) and front-right (8-1) walnut bevels
+    const fontSize = Math.max(8, Math.round(this.tileW * 0.16));
+    ctx.save();
+    ctx.fillStyle = 'rgba(236, 206, 152, 0.78)';
+    ctx.font = `700 ${fontSize}px Cinzel, Georgia, serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-
     const files = 'ABCDEFGH';
+
     for (let i = 0; i < BOARD_SIZE; i++) {
-      const cx = this.framePad + (i + 0.5) * this.tileSize;
-      const cy = this.framePad + (i + 0.5) * this.tileSize;
-      ctx.fillText(files[i], cx, size - this.framePad * 0.5);
-      ctx.fillText(files[i], cx, this.framePad * 0.5);
-      ctx.fillText(String(8 - i), this.framePad * 0.5, cy);
-      ctx.fillText(String(8 - i), size - this.framePad * 0.5, cy);
+      // A-H along front-left edge (v = 8.28)
+      const pf = this.boardToScreen(i + 0.5, BOARD_SIZE + 0.28, slabTop);
+      ctx.fillText(files[i], pf.x, pf.y);
+      // 8-1 along front-right edge (u = 8.28)
+      const pr = this.boardToScreen(BOARD_SIZE + 0.28, i + 0.5, slabTop);
+      ctx.fillText(String(8 - i), pr.x, pr.y);
     }
+    ctx.restore();
   }
 
-  _drawChessTiles(ctx) {
-    const ts = this.tileSize;
-    const pad = this.framePad;
+  _drawIsoBoardTiles(ctx) {
+    const elevatedZ = 0.16;
+    const roadZ = 0.0;
 
+    // Back-to-front painter's order guarantees vertical stone lips occlude recessed road tiles cleanly!
     for (let r = 0; r < BOARD_SIZE; r++) {
       for (let c = 0; c < BOARD_SIZE; c++) {
-        const x = pad + c * ts;
-        const y = pad + r * ts;
+        const isRoad = this.pathSet.has(`${c},${r}`);
         const isLight = (r + c) % 2 === 0;
 
-        // Warm travertine marble vs sage-walnut stone
-        ctx.fillStyle = isLight ? '#e4d6be' : '#968369';
-        ctx.fillRect(x, y, ts + 0.4, ts + 0.4);
+        if (isRoad) {
+          // Recessed dark obsidian basalt cobblestone trench!
+          this._traceIsoQuad(ctx, c, r, c + 1, r + 1, roadZ);
+          ctx.fillStyle = isLight ? '#403833' : '#352e2a';
+          ctx.fill();
+          ctx.strokeStyle = 'rgba(18, 12, 8, 0.5)';
+          ctx.lineWidth = 1;
+          ctx.stroke();
 
-        // Subtle sculpted bevel highlight (top-left) and shadow (bottom-right)
-        ctx.fillStyle = isLight ? 'rgba(255,250,240,0.34)' : 'rgba(255,244,224,0.12)';
-        ctx.fillRect(x, y, ts, 2);
-        ctx.fillRect(x, y, 2, ts);
-        ctx.fillStyle = 'rgba(30, 18, 10, 0.14)';
-        ctx.fillRect(x, y + ts - 2, ts, 2);
-        ctx.fillRect(x + ts - 2, y, 2, ts);
+          // Subtle carved inner cobblestone flagstone highlight
+          this._traceIsoQuad(ctx, c + 0.12, r + 0.12, c + 0.88, r + 0.88, roadZ);
+          ctx.fillStyle = 'rgba(255, 224, 175, 0.045)';
+          ctx.fill();
+        } else {
+          // Elevated sculpted travertine & walnut marble block!
+          const topFill = isLight ? '#e8dac2' : '#9c886d';
+          const leftWall = isLight ? '#bfa989' : '#78664e';
+          const rightWall = isLight ? '#968062' : '#594a38';
+
+          // Draw extruded stone block from roadZ up to elevatedZ
+          this._drawIsoExtrudedBox(
+            ctx,
+            c + 0.015,
+            r + 0.015,
+            c + 0.985,
+            r + 0.985,
+            elevatedZ,
+            roadZ,
+            topFill,
+            leftWall,
+            rightWall
+          );
+
+          // Crisp sunlit marble edge highlight along North-West & North-East bevel
+          const tN = this.boardToScreen(c + 0.02, r + 0.02, elevatedZ);
+          const tE = this.boardToScreen(c + 0.98, r + 0.02, elevatedZ);
+          const tW = this.boardToScreen(c + 0.02, r + 0.98, elevatedZ);
+          ctx.beginPath();
+          ctx.moveTo(tW.x, tW.y);
+          ctx.lineTo(tN.x, tN.y);
+          ctx.lineTo(tE.x, tE.y);
+          ctx.strokeStyle = isLight ? 'rgba(255, 252, 244, 0.45)' : 'rgba(255, 245, 226, 0.18)';
+          ctx.lineWidth = 1.1;
+          ctx.stroke();
+        }
       }
     }
   }
 
-  _drawRoadPath(ctx) {
-    const ts = this.tileSize;
-    const pad = this.framePad;
-
-    // 1. Sunken basalt cobblestone road tiles
-    for (let i = 0; i < this.pathTiles.length; i++) {
-      const [c, r] = this.pathTiles[i];
-      const x = pad + c * ts;
-      const y = pad + r * ts;
-      const isLight = (r + c) % 2 === 0;
-
-      ctx.fillStyle = isLight ? '#403935' : '#352f2c';
-      ctx.fillRect(x, y, ts + 0.5, ts + 0.5);
-
-      // Carved stone inset border
-      ctx.strokeStyle = 'rgba(20, 14, 10, 0.45)';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(x + 1, y + 1, ts - 2, ts - 2);
-
-      // Subtle inner stone flagstone lines
-      ctx.fillStyle = 'rgba(255, 224, 175, 0.04)';
-      ctx.fillRect(x + ts * 0.12, y + ts * 0.12, ts * 0.76, ts * 0.76);
-    }
-
-    // 2. Smooth golden-ember directional path ribbon connecting centers
+  _drawRoadRibbonAndRift(ctx) {
+    // 1. Golden-ember directional path ribbon flush inside the recessed road trench
     ctx.save();
     ctx.beginPath();
     for (let i = 0; i < this.pathTiles.length; i++) {
       const [c, r] = this.pathTiles[i];
-      const px = pad + (c + 0.5) * ts;
-      const py = pad + (r + 0.5) * ts;
-      if (i === 0) ctx.moveTo(px, py);
-      else ctx.lineTo(px, py);
+      const p = this.boardToScreen(c + 0.5, r + 0.5, 0.01);
+      if (i === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
     }
-    ctx.strokeStyle = 'rgba(217, 148, 72, 0.22)';
-    ctx.lineWidth = Math.max(2, ts * 0.14);
+    ctx.strokeStyle = 'rgba(217, 148, 72, 0.24)';
+    ctx.lineWidth = Math.max(2.5, this.tileW * 0.11);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.stroke();
 
-    // Animated marching dashes along road
-    ctx.setLineDash([ts * 0.18, ts * 0.34]);
-    ctx.lineDashOffset = -this.time * ts * 0.55;
-    ctx.strokeStyle = 'rgba(242, 184, 96, 0.42)';
-    ctx.lineWidth = Math.max(1.5, ts * 0.06);
+    // Animated marching dashes flowing down the isometric trench
+    const dashLen = this.tileW * 0.16;
+    ctx.setLineDash([dashLen, dashLen * 1.6]);
+    ctx.lineDashOffset = -this.time * this.tileW * 0.55;
+    ctx.strokeStyle = 'rgba(246, 192, 102, 0.5)';
+    ctx.lineWidth = Math.max(1.5, this.tileW * 0.048);
     ctx.stroke();
     ctx.restore();
 
-    // 3. Dark Rift Spawn Portal at start square
+    // 2. Elliptical glowing Dark Rift Spawn Portal lying flat on the start diamond
     const [sc, sr] = this.pathTiles[0];
-    const spx = pad + (sc + 0.5) * ts;
-    const spy = pad + (sr + 0.5) * ts;
-    const pulse = 0.85 + 0.15 * Math.sin(this.time * 4);
-    const riftGrad = ctx.createRadialGradient(spx, spy, 2, spx, spy, ts * 0.44 * pulse);
-    riftGrad.addColorStop(0, 'rgba(255, 110, 74, 0.92)');
-    riftGrad.addColorStop(0.45, 'rgba(165, 32, 24, 0.75)');
+    const sp = this.boardToScreen(sc + 0.5, sr + 0.5, 0.02);
+    const pulse = 0.88 + 0.12 * Math.sin(this.time * 4.2);
+    const rx = this.tileW * 0.34 * pulse;
+    const ry = rx * this.isoRatio;
+
+    ctx.save();
+    ctx.translate(sp.x, sp.y);
+    ctx.scale(1, this.isoRatio);
+    const riftGrad = ctx.createRadialGradient(0, 0, 1, 0, 0, rx);
+    riftGrad.addColorStop(0, 'rgba(255, 130, 86, 0.95)');
+    riftGrad.addColorStop(0.45, 'rgba(180, 34, 24, 0.78)');
     riftGrad.addColorStop(1, 'rgba(40, 10, 10, 0)');
     ctx.fillStyle = riftGrad;
     ctx.beginPath();
-    ctx.arc(spx, spy, ts * 0.44 * pulse, 0, Math.PI * 2);
+    ctx.arc(0, 0, rx, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
+
+    // Subtle swirling crimson inner ring
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 160, 110, 0.55)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.ellipse(sp.x, sp.y, rx * 0.55, ry * 0.55, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
   }
 
   _drawPatternOverlay(ctx) {
-    const ts = this.tileSize;
-    const pad = this.framePad;
-
     let originCol = null;
     let originRow = null;
     let stats = null;
@@ -4307,45 +4481,45 @@ class GameEngine {
     if (originCol === null || !stats) return;
 
     const tiles = getPatternTiles(originCol, originRow, stats);
-    const ox = pad + (originCol + 0.5) * ts;
-    const oy = pad + (originRow + 0.5) * ts;
+    const originP = this.boardToScreen(originCol + 0.5, originRow + 0.5, 0.25);
 
-    // Highlight every threatened square in the piece's authentic chess pattern!
+    // Highlight every threatened square as a glowing isometric diamond!
     for (const t of tiles) {
-      const x = pad + t.col * ts;
-      const y = pad + t.row * ts;
       const onRoad = this.pathSet.has(`${t.col},${t.row}`);
+      const z = onRoad ? 0.02 : 0.175;
+      this._traceIsoQuad(ctx, t.col + 0.04, t.row + 0.04, t.col + 0.96, t.row + 0.96, z);
 
       if (t.kind === 'frost') {
-        ctx.fillStyle = onRoad ? 'rgba(92, 194, 242, 0.36)' : 'rgba(92, 194, 242, 0.16)';
+        ctx.fillStyle = onRoad ? 'rgba(92, 194, 242, 0.4)' : 'rgba(92, 194, 242, 0.18)';
       } else if (t.kind === 'aura') {
-        ctx.fillStyle = onRoad ? 'rgba(240, 192, 80, 0.36)' : 'rgba(240, 192, 80, 0.22)';
+        ctx.fillStyle = onRoad ? 'rgba(240, 192, 80, 0.38)' : 'rgba(240, 192, 80, 0.24)';
       } else if (t.kind === 'crit') {
-        ctx.fillStyle = onRoad ? 'rgba(255, 200, 64, 0.46)' : 'rgba(255, 200, 64, 0.24)';
+        ctx.fillStyle = onRoad ? 'rgba(255, 200, 64, 0.48)' : 'rgba(255, 200, 64, 0.26)';
       } else {
-        ctx.fillStyle = onRoad ? 'rgba(240, 184, 72, 0.42)' : 'rgba(240, 184, 72, 0.18)';
+        ctx.fillStyle = onRoad ? 'rgba(240, 184, 72, 0.44)' : 'rgba(240, 184, 72, 0.2)';
       }
-      ctx.fillRect(x + 2, y + 2, ts - 4, ts - 4);
+      ctx.fill();
 
-      // Crisp corner marker on road-intersecting kill squares
       if (onRoad || t.kind === 'jump' || t.kind === 'crit') {
         ctx.strokeStyle =
-          t.kind === 'frost' ? 'rgba(130, 220, 255, 0.85)' : 'rgba(255, 218, 112, 0.88)';
+          t.kind === 'frost' ? 'rgba(136, 224, 255, 0.9)' : 'rgba(255, 220, 118, 0.92)';
         ctx.lineWidth = onRoad ? 2 : 1.25;
-        ctx.strokeRect(x + 3, y + 3, ts - 6, ts - 6);
+        ctx.stroke();
       }
 
-      // Draw graceful L-jump arc lines for Knight so its chess jump is unmistakable!
+      // 3D graceful L-jump preview arcs for Knight
       if (t.kind === 'jump') {
-        const tx = x + ts * 0.5;
-        const ty = y + ts * 0.5;
+        const destP = this.boardToScreen(t.col + 0.5, t.row + 0.5, z + 0.02);
+        const midP = this.boardToScreen(
+          (originCol + t.col) * 0.5 + 0.5,
+          (originRow + t.row) * 0.5 + 0.5,
+          1.35
+        );
         ctx.save();
         ctx.beginPath();
-        ctx.moveTo(ox, oy);
-        const mx = (ox + tx) * 0.5;
-        const my = (oy + ty) * 0.5 - ts * 0.35;
-        ctx.quadraticCurveTo(mx, my, tx, ty);
-        ctx.strokeStyle = onRoad ? 'rgba(255, 218, 112, 0.72)' : 'rgba(255, 218, 112, 0.28)';
+        ctx.moveTo(originP.x, originP.y);
+        ctx.quadraticCurveTo(midP.x, midP.y, destP.x, destP.y);
+        ctx.strokeStyle = onRoad ? 'rgba(255, 220, 118, 0.78)' : 'rgba(255, 220, 118, 0.3)';
         ctx.lineWidth = onRoad ? 2 : 1.2;
         ctx.setLineDash([4, 4]);
         ctx.stroke();
@@ -4353,44 +4527,42 @@ class GameEngine {
       }
     }
 
-    // Highlight origin square
+    // Highlight origin diamond
+    this._traceIsoQuad(ctx, originCol + 0.03, originRow + 0.03, originCol + 0.97, originRow + 0.97, 0.18);
     ctx.strokeStyle = isPreview ? '#6be09a' : '#ffe082';
-    ctx.lineWidth = 2.6;
-    ctx.strokeRect(pad + originCol * ts + 2, pad + originRow * ts + 2, ts - 4, ts - 4);
+    ctx.lineWidth = 2.4;
+    ctx.stroke();
 
-    // Ghost miniature preview when placing
+    // Translucent 3D miniature ghost when previewing placement
     if (isPreview) {
       const sprite = SPRITES[stats.sprite];
       if (sprite) {
+        const gp = this.boardToScreen(originCol + 0.5, originRow + 0.5, 0.16);
+        const drawSize = this.tileW * 0.96;
         ctx.save();
         ctx.globalAlpha = 0.76;
-        const drawSize = ts * 1.18;
-        ctx.drawImage(sprite, ox - drawSize * 0.5, oy - drawSize * 0.62, drawSize, drawSize);
+        ctx.drawImage(sprite, gp.x - drawSize * 0.5, gp.y - drawSize * 0.76, drawSize, drawSize);
         ctx.restore();
       }
     }
   }
 
   _drawKingTethers(ctx) {
-    const ts = this.tileSize;
-    const pad = this.framePad;
     const kings = this.towers.filter((t) => t.pieceId === 'king');
     if (kings.length === 0) return;
 
     ctx.save();
     for (const king of kings) {
-      const kx = pad + (king.col + 0.5) * ts;
-      const ky = pad + (king.row + 0.5) * ts;
+      const kp = this.boardToScreen(king.col + 0.5, king.row + 0.5, 0.22);
       for (const other of this.towers) {
         if (other.id === king.id || !other.buffedByKing) continue;
         if (Math.abs(other.col - king.col) <= 1 && Math.abs(other.row - king.row) <= 1) {
-          const ox = pad + (other.col + 0.5) * ts;
-          const oy = pad + (other.row + 0.5) * ts;
+          const op = this.boardToScreen(other.col + 0.5, other.row + 0.5, 0.22);
           ctx.beginPath();
-          ctx.moveTo(kx, ky);
-          ctx.lineTo(ox, oy);
-          ctx.strokeStyle = 'rgba(247, 206, 98, 0.42)';
-          ctx.lineWidth = 2;
+          ctx.moveTo(kp.x, kp.y);
+          ctx.lineTo(op.x, op.y);
+          ctx.strokeStyle = 'rgba(247, 206, 98, 0.48)';
+          ctx.lineWidth = 2.2;
           ctx.stroke();
         }
       }
@@ -4399,35 +4571,31 @@ class GameEngine {
   }
 
   _drawEntitiesSorted(ctx) {
-    const ts = this.tileSize;
-    const pad = this.framePad;
-
-    // Combine Citadel Gate, placed Towers, and marching Enemies sorted by Y for crisp 2.5D overlap!
+    // True Isometric Painter's Algorithm: sort strictly by depth (u + v)!
     const drawList = [];
 
     const [gc, gr] = this.pathTiles[this.pathTiles.length - 1];
-    drawList.push({ sortY: gr + 0.55, kind: 'gate', col: gc, row: gr });
+    drawList.push({ depth: gc + gr + 1.05, kind: 'gate', col: gc, row: gr });
 
     for (const tower of this.towers) {
-      drawList.push({ sortY: tower.row + 0.5, kind: 'tower', obj: tower });
+      drawList.push({ depth: tower.col + tower.row + 1.0, kind: 'tower', obj: tower });
     }
     for (const enemy of this.enemies) {
       if (enemy.alive) {
-        drawList.push({ sortY: enemy.y, kind: 'enemy', obj: enemy });
+        drawList.push({ depth: enemy.x + enemy.y, kind: 'enemy', obj: enemy });
       }
     }
 
-    drawList.sort((a, b) => a.sortY - b.sortY);
+    drawList.sort((a, b) => a.depth - b.depth);
 
     for (const item of drawList) {
       if (item.kind === 'gate') {
-        const gx = pad + (item.col + 0.5) * ts;
-        const gy = pad + (item.row + 0.5) * ts;
-        this._drawShadow(ctx, gx, gy + ts * 0.24, ts * 0.44);
+        const gp = this.boardToScreen(item.col + 0.5, item.row + 0.5, 0.02);
+        this._drawIsoShadow(ctx, gp.x, gp.y + this.tileH * 0.06, this.tileW * 0.38);
         const gateSprite = SPRITES.citadel_gate;
         if (gateSprite) {
-          const sz = ts * 1.28;
-          ctx.drawImage(gateSprite, gx - sz * 0.5, gy - sz * 0.62, sz, sz);
+          const sz = this.tileW * 1.12;
+          ctx.drawImage(gateSprite, gp.x - sz * 0.5, gp.y - sz * 0.74, sz, sz);
         }
       } else if (item.kind === 'tower') {
         this._drawTower(ctx, item.obj);
@@ -4438,54 +4606,53 @@ class GameEngine {
   }
 
   _drawTower(ctx, tower) {
-    const ts = this.tileSize;
-    const pad = this.framePad;
     const stats = getPieceStats(tower.pieceId, tower.tier);
-    const cx = pad + (tower.col + 0.5) * ts;
-    const cy = pad + (tower.row + 0.5) * ts;
+    const baseZ = 0.16;
+    const bounceZ = tower.placeAnim > 0 ? Math.sin(tower.placeAnim * Math.PI) * 0.55 : 0;
+    const groundP = this.boardToScreen(tower.col + 0.5, tower.row + 0.5, baseZ);
+    const pieceP = this.boardToScreen(tower.col + 0.5, tower.row + 0.5, baseZ + bounceZ);
 
-    // Drop shadow grounded on tile
-    this._drawShadow(ctx, cx, cy + ts * 0.24, ts * 0.38);
+    // Grounded isometric elliptical shadow
+    this._drawIsoShadow(ctx, groundP.x, groundP.y + this.tileH * 0.06, this.tileW * 0.31);
 
-    // King aura glow ring under buffed defenders
+    // King Royal Court aura ellipse under buffed defenders
     if (tower.buffedByKing) {
       ctx.save();
-      ctx.strokeStyle = 'rgba(247, 206, 98, 0.72)';
+      ctx.strokeStyle = 'rgba(247, 206, 98, 0.82)';
       ctx.lineWidth = 2;
+      const rx = this.tileW * 0.34;
       ctx.beginPath();
-      ctx.ellipse(cx, cy + ts * 0.22, ts * 0.4, ts * 0.22, 0, 0, Math.PI * 2);
+      ctx.ellipse(groundP.x, groundP.y + this.tileH * 0.04, rx, rx * this.isoRatio, 0, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
     }
 
-    // Bounce + recoil animation
-    const bounceY = tower.placeAnim > 0 ? -Math.sin(tower.placeAnim * Math.PI) * ts * 0.35 : 0;
     const recoilScale = 1 + tower.recoil * 0.08;
-    const drawSize = ts * 1.18 * recoilScale;
+    const drawSize = this.tileW * 0.96 * recoilScale;
 
     const sprite = SPRITES[stats.sprite];
     if (sprite) {
       ctx.drawImage(
         sprite,
-        cx - drawSize * 0.5,
-        cy - drawSize * 0.62 + bounceY,
+        pieceP.x - drawSize * 0.5,
+        pieceP.y - drawSize * 0.76,
         drawSize,
         drawSize
       );
     }
 
-    // Promotion Tier pips (Tier 2 = 2 gold pips, Tier 3 = 3 radiant pips)
+    // Promotion Tier pips nestled cleanly at the front of the walnut plinth
     if (tower.tier > 1) {
       const pipCount = tower.tier;
-      const pipSpacing = Math.max(6, ts * 0.14);
-      const startX = cx - ((pipCount - 1) * pipSpacing) / 2;
-      const pipY = cy + ts * 0.36;
+      const pipSpacing = Math.max(5.5, this.tileW * 0.11);
+      const startX = groundP.x - ((pipCount - 1) * pipSpacing) / 2;
+      const pipY = groundP.y + this.tileH * 0.22;
       for (let i = 0; i < pipCount; i++) {
         ctx.fillStyle = tower.tier === 3 ? '#ffe066' : '#e6b24c';
         ctx.strokeStyle = '#2a1a0e';
         ctx.lineWidth = 1.2;
         ctx.beginPath();
-        ctx.arc(startX + i * pipSpacing, pipY, Math.max(2.6, ts * 0.055), 0, Math.PI * 2);
+        ctx.arc(startX + i * pipSpacing, pipY, Math.max(2.4, this.tileW * 0.042), 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
       }
@@ -4493,33 +4660,32 @@ class GameEngine {
   }
 
   _drawEnemy(ctx, enemy) {
-    const ts = this.tileSize;
-    const pad = this.framePad;
-    const ex = pad + enemy.x * ts;
-    const ey = pad + enemy.y * ts;
-    const bob = Math.abs(Math.sin(this.time * 7 * enemy.speed + enemy.bobPhase)) * ts * 0.07;
+    const bobZ = Math.abs(Math.sin(this.time * 7 * enemy.speed + enemy.bobPhase)) * 0.11;
+    const groundP = this.boardToScreen(enemy.x, enemy.y, 0.02);
+    const bodyP = this.boardToScreen(enemy.x, enemy.y, 0.02 + bobZ);
 
-    this._drawShadow(ctx, ex, ey + ts * 0.22, ts * 0.32 * enemy.scale);
+    this._drawIsoShadow(ctx, groundP.x, groundP.y + this.tileH * 0.05, this.tileW * 0.26 * enemy.scale);
 
-    // Glacial chill frost ring grounded under enemy (no rectangular box artifact!)
+    // Isometric glacial chill ring lying flat on the basalt trench
     if (enemy.slowTimer > 0) {
       ctx.save();
-      ctx.strokeStyle = 'rgba(116, 216, 255, 0.85)';
-      ctx.fillStyle = 'rgba(92, 194, 242, 0.22)';
-      ctx.lineWidth = 2;
+      ctx.strokeStyle = 'rgba(116, 216, 255, 0.88)';
+      ctx.fillStyle = 'rgba(92, 194, 242, 0.24)';
+      ctx.lineWidth = 1.8;
+      const rx = this.tileW * 0.3 * enemy.scale;
       ctx.beginPath();
-      ctx.ellipse(ex, ey + ts * 0.2, ts * 0.36 * enemy.scale, ts * 0.18 * enemy.scale, 0, 0, Math.PI * 2);
+      ctx.ellipse(groundP.x, groundP.y + this.tileH * 0.04, rx, rx * this.isoRatio, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
       ctx.restore();
     }
 
     const hitScale = 1 + enemy.hitFlash * 0.08;
-    const drawSize = ts * 1.02 * enemy.scale * hitScale;
+    const drawSize = this.tileW * 0.84 * enemy.scale * hitScale;
     const sprite = SPRITES[enemy.sprite];
 
     ctx.save();
-    ctx.translate(ex, ey - bob);
+    ctx.translate(bodyP.x, bodyP.y);
     if (enemy.facing < 0) {
       ctx.scale(-1, 1);
     }
@@ -4529,19 +4695,19 @@ class GameEngine {
       ctx.filter = 'hue-rotate(155deg) saturate(1.25) brightness(1.08)';
     }
     if (sprite) {
-      ctx.drawImage(sprite, -drawSize * 0.5, -drawSize * 0.62, drawSize, drawSize);
+      ctx.drawImage(sprite, -drawSize * 0.5, -drawSize * 0.76, drawSize, drawSize);
     }
     ctx.filter = 'none';
     ctx.restore();
 
-    // Crisp HP bar above enemy
-    const barW = ts * (enemy.isBoss ? 0.85 : 0.62);
-    const barH = Math.max(4, ts * (enemy.isBoss ? 0.11 : 0.08));
-    const bx = ex - barW * 0.5;
-    const by = ey - drawSize * 0.66 - bob;
+    // Crisp HP bar floating cleanly above the miniature's head
+    const barW = this.tileW * (enemy.isBoss ? 0.68 : 0.48);
+    const barH = Math.max(3.5, this.tileW * (enemy.isBoss ? 0.085 : 0.065));
+    const bx = bodyP.x - barW * 0.5;
+    const by = bodyP.y - drawSize * 0.82;
     const hpRatio = Math.max(0, enemy.hp / enemy.maxHp);
 
-    ctx.fillStyle = 'rgba(20, 14, 10, 0.82)';
+    ctx.fillStyle = 'rgba(20, 14, 10, 0.84)';
     ctx.fillRect(bx - 1, by - 1, barW + 2, barH + 2);
     ctx.fillStyle = enemy.isBoss ? '#f05442' : enemy.slowTimer > 0 ? '#5ec2f0' : '#d9483b';
     ctx.fillRect(bx, by, barW * hpRatio, barH);
@@ -4550,116 +4716,111 @@ class GameEngine {
     if (enemy.sunderTimer > 0) {
       ctx.fillStyle = '#f7c148';
       ctx.beginPath();
-      ctx.arc(bx + barW + 4, by + barH * 0.5, 3, 0, Math.PI * 2);
+      ctx.arc(bx + barW + 4, by + barH * 0.5, 2.8, 0, Math.PI * 2);
       ctx.fill();
     }
   }
 
-  _drawShadow(ctx, cx, cy, rx) {
+  _drawIsoShadow(ctx, cx, cy, rx) {
     ctx.save();
-    ctx.fillStyle = 'rgba(24, 15, 8, 0.34)';
+    ctx.fillStyle = 'rgba(18, 10, 5, 0.38)';
     ctx.beginPath();
-    ctx.ellipse(cx, cy, rx, rx * 0.44, 0, 0, Math.PI * 2);
+    ctx.ellipse(cx, cy, rx, rx * this.isoRatio, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
 
   _drawProjectilesAndVfx(ctx) {
-    const ts = this.tileSize;
-    const pad = this.framePad;
-
-    // 1. Expanding AoE / Frost / Upgrade rings
+    // 1. Isometric ground-plane rings (Frost Nova, Knight shockwave, Rook blast, Cleric heal)
     for (const r of this.rings) {
       const progress = 1 - r.life / r.maxLife;
-      const rad = r.maxRadius * ts * (0.25 + progress * 0.75);
+      const center = this.boardToScreen(r.x, r.y, 0.08);
+      const rx = r.maxRadius * this.tileW * 0.68 * (0.25 + progress * 0.75);
+      const ry = rx * this.isoRatio;
       ctx.save();
       ctx.globalAlpha = Math.max(0, 1 - progress);
       ctx.strokeStyle = r.color;
-      ctx.lineWidth = Math.max(1.5, 4 * (1 - progress));
+      ctx.lineWidth = Math.max(1.5, 3.8 * (1 - progress));
       ctx.beginPath();
-      ctx.arc(pad + r.x * ts, pad + r.y * ts, rad, 0, Math.PI * 2);
+      ctx.ellipse(center.x, center.y, rx, ry, 0, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
     }
 
-    // 2. Beams (Bishop diagonal sunbeam, Queen ricochet bolts, Pawn spear flash, King smite)
+    // 2. 3D Elevated Beams (Bishop diagonal sunbeam, Queen ricochet, Pawn spear, King vertical smite)
     for (const b of this.beams) {
       const alpha = Math.max(0, b.life / b.maxLife);
-      const x1 = pad + b.x1 * ts;
-      const y1 = pad + b.y1 * ts;
-      const x2 = pad + b.x2 * ts;
-      const y2 = pad + b.y2 * ts;
+      const p1 = this.boardToScreen(b.x1, b.y1, b.z1 ?? 0.62);
+      const p2 = this.boardToScreen(b.x2, b.y2, b.z2 ?? 0.36);
 
       ctx.save();
       ctx.lineCap = 'round';
       if (b.glowColor) {
         ctx.globalAlpha = alpha * 0.8;
         ctx.strokeStyle = b.glowColor;
-        ctx.lineWidth = b.width * 2.4;
+        ctx.lineWidth = b.width * 2.3;
         ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
         ctx.stroke();
       }
       ctx.globalAlpha = alpha;
       ctx.strokeStyle = b.color;
       ctx.lineWidth = b.width;
       ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
       ctx.stroke();
       ctx.restore();
     }
 
-    // 3. Projectiles (Knight golden L-leap orb, Rook cannonball)
+    // 3. 3D Arcing Projectiles (Knight golden comet & Rook bronze cannonball)
     for (const p of this.projectiles) {
       const px = p.x1 + (p.x2 - p.x1) * p.t;
       const py = p.y1 + (p.y2 - p.y1) * p.t;
-      const arc = Math.sin(p.t * Math.PI) * p.arcHeight;
-      const sx = pad + px * ts;
-      const sy = pad + (py - arc) * ts;
+      const baseZ = 0.62 * (1 - p.t) + 0.25 * p.t;
+      const arcZ = Math.sin(p.t * Math.PI) * (p.kind === 'knight_arc' ? 2.1 : 0.45);
 
-      // Ground shadow under arcing projectile
-      this._drawShadow(ctx, pad + px * ts, pad + py * ts + ts * 0.1, ts * 0.14);
+      const groundP = this.boardToScreen(px, py, 0.05);
+      const airP = this.boardToScreen(px, py, baseZ + arcZ);
+
+      this._drawIsoShadow(ctx, groundP.x, groundP.y, this.tileW * 0.12);
 
       ctx.save();
       if (p.kind === 'knight_arc') {
-        // Golden shockwave comet
         ctx.fillStyle = '#ffe28a';
         ctx.shadowColor = '#f0a830';
         ctx.shadowBlur = 10;
         ctx.beginPath();
-        ctx.arc(sx, sy, Math.max(5, ts * 0.14), 0, Math.PI * 2);
+        ctx.arc(airP.x, airP.y, Math.max(4.5, this.tileW * 0.11), 0, Math.PI * 2);
         ctx.fill();
       } else {
-        // Heavy bronze cannonball
         ctx.fillStyle = '#332820';
         ctx.strokeStyle = '#d49a4a';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(sx, sy, Math.max(4.5, ts * 0.12), 0, Math.PI * 2);
+        ctx.arc(airP.x, airP.y, Math.max(4, this.tileW * 0.095), 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
       }
       ctx.restore();
     }
 
-    // 4. Particles
+    // 4. 3D Particles popping off the marble board
     for (const pt of this.particles) {
+      const sp = this.boardToScreen(pt.x, pt.y, pt.z || 0.1);
       ctx.save();
       ctx.globalAlpha = Math.max(0, pt.life / pt.maxLife);
       ctx.fillStyle = pt.color;
       ctx.beginPath();
-      ctx.arc(pad + pt.x * ts, pad + pt.y * ts, pt.size, 0, Math.PI * 2);
+      ctx.arc(sp.x, sp.y, pt.size, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
   }
 
   _drawFloatTexts(ctx) {
-    const ts = this.tileSize;
-    const pad = this.framePad;
-    const fontSize = Math.max(11, Math.round(ts * 0.25));
+    const fontSize = Math.max(11, Math.round(this.tileW * 0.21));
 
     ctx.save();
     ctx.font = `700 ${fontSize}px "Plus Jakarta Sans", system-ui, sans-serif`;
@@ -4668,18 +4829,18 @@ class GameEngine {
 
     for (const ft of this.floatTexts) {
       const alpha = Math.min(1, (ft.life / ft.maxLife) * 1.4);
-      const sx = pad + ft.x * ts;
-      const sy = pad + ft.y * ts;
+      const sp = this.boardToScreen(ft.x, ft.y, ft.z || 0.95);
       ctx.globalAlpha = alpha;
       ctx.lineWidth = 3;
       ctx.strokeStyle = 'rgba(24, 15, 8, 0.85)';
-      ctx.strokeText(ft.text, sx, sy);
+      ctx.strokeText(ft.text, sp.x, sp.y);
       ctx.fillStyle = ft.color;
-      ctx.fillText(ft.text, sx, sy);
+      ctx.fillText(ft.text, sp.x, sp.y);
     }
     ctx.restore();
   }
 }
+
 
 
 // === js/main.js ===
