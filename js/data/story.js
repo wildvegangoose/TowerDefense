@@ -1,6 +1,10 @@
 /**
- * Narrative Lore, Villains, Enemy Bestiary, Level Dispatches & Motion-Comic Cutscenes
+ * Narrative Lore, Villains, Enemy Bestiary, Level Dispatches & Cutscenes
  * for TowerDeChess: "The Shattered Gambit".
+ *
+ * A cutscene with a `video` key plays `assets/videos/<video>.mp4` with its own audio, showing each
+ * slide's caption from its `videoStart` (seconds). Its painted slides remain the fallback if the
+ * video cannot load. Cutscenes without `video` play as Ken Burns motion-comic slideshows.
  */
 
 export const CUTSCENES = {
@@ -9,7 +13,7 @@ export const CUTSCENES = {
     title: 'The Shattered Gambit',
     chapterLabel: 'PROLOGUE • CHAPTER I',
     unlockLevel: 1,
-    musicSuiteIndex: 0, // March of the Ivory Crown
+    video: 'prologue', // Veo cinematic: 3 shots cut at 10.08s and 20.12s
     musicMode: 'prep',
     particleTheme: 'gold',
     thumbScene: 'scene_prologue_1',
@@ -18,6 +22,7 @@ export const CUTSCENES = {
       {
         scene: 'scene_prologue_1',
         duration: 7.5,
+        videoStart: 0,
         particleTheme: 'gold',
         kb: { s0: 1.02, s1: 1.12, x0: -1.5, x1: 1.5, y0: 0.5, y1: -1.0 },
         speaker: 'CHRONICLE OF AETHELGARD',
@@ -27,6 +32,7 @@ export const CUTSCENES = {
       {
         scene: 'scene_prologue_2',
         duration: 8.5,
+        videoStart: 10.08,
         particleTheme: 'ember',
         kb: { s0: 1.12, s1: 1.02, x0: 1.5, x1: -1.5, y0: -1.0, y1: 1.0 },
         speaker: 'MALAKOR, THE UNBOUND KING',
@@ -36,6 +42,7 @@ export const CUTSCENES = {
       {
         scene: 'scene_prologue_1',
         duration: 7.0,
+        videoStart: 20.12,
         particleTheme: 'gold',
         kb: { s0: 1.06, s1: 1.14, x0: 0, x1: -2.0, y0: 1.0, y1: -0.5 },
         speaker: 'ROYAL VANGUARD DISPATCH',
@@ -50,7 +57,6 @@ export const CUTSCENES = {
     title: 'Beyond the Sixty-Four',
     chapterLabel: 'CHAPTER II • THE GLACIAL RIFT',
     unlockLevel: 7,
-    musicSuiteIndex: 1, // Nocturne of the Obsidian Rift
     musicMode: 'prep',
     particleTheme: 'snow',
     thumbScene: 'scene_chapter2_1',
@@ -82,7 +88,6 @@ export const CUTSCENES = {
     title: 'Crown of Ash',
     chapterLabel: 'CHAPTER III • THE CRIMSON CITADEL',
     unlockLevel: 13,
-    musicSuiteIndex: 2, // Siege of the Crimson Citadel
     musicMode: 'boss',
     particleTheme: 'ember',
     thumbScene: 'scene_chapter3_1',
@@ -105,7 +110,6 @@ export const CUTSCENES = {
     title: 'Checkmate & Dawn',
     chapterLabel: 'EPILOGUE • THE ACCORD RESTORED',
     unlockLevel: 19, // Unlocked upon conquering Level 18
-    musicSuiteIndex: 0,
     musicMode: 'prep',
     particleTheme: 'dawn',
     thumbScene: 'scene_epilogue_1',

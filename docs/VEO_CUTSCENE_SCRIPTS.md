@@ -15,7 +15,7 @@ You can use these in two ways:
 - **Aspect Ratio:** `16:9`
 - **Duration:** `8s` per shot (`24 fps`)
 - **Resolution:** `720p` (lean for mobile PWA/APK) or `1080p`
-- **Audio:** Native Veo audio **On** for standalone trailers/cinematics, or **Off** (`--no-audio`) if you want TowerDeChess's procedural orchestral suites to play exclusively over the video.
+- **Audio:** Native Veo audio **On** — the game plays the video's own audio and rests the soundtrack during video cutscenes. Use **Off** (`--no-audio`) only for silent drafts.
 
 **Global Style Suffix (automatically appended by `generate_veo_cutscenes.py`):**
 > Hand-painted epic dark-fantasy oil painting come to life, tactile carved ivory and dark obsidian chess figurines at monumental architectural scale, dramatic volumetric lighting, subtle film grain, 24fps cinematic anamorphic lens, rich warm espresso walnut and brushed antique brass color palette. No modern elements, no on-screen text, no UI overlays, no watermarks.

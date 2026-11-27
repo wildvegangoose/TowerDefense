@@ -2426,6 +2426,43 @@ body {
   opacity: 0;
 }
 
+.cutscene-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: #0d0805;
+}
+
+.cutscene-sound-hint {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 5;
+  padding: 6px 12px;
+  border-radius: 99px;
+  border: 1px solid rgba(223, 169, 68, 0.55);
+  background: rgba(14, 9, 6, 0.78);
+  color: var(--gold-bright);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.55);
+  animation: cutscene-hint-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes cutscene-hint-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.62;
+  }
+}
+
 .cutscene-fx-canvas {
   position: absolute;
   inset: 0;

@@ -16,7 +16,7 @@ Every defender attacks strictly according to authentic chess board geometry on a
 3. [Defenders & Promotion Ranks](#defenders--promotion-ranks)
 4. [The Obsidian Legion (Enemies & Bosses)](#the-obsidian-legion-enemies--bosses)
 5. [18-Level Campaign & 3 Chapter Biomes](#18-level-campaign--3-chapter-biomes)
-6. [Motion-Comic Cutscenes & Audio](#motion-comic-cutscenes--audio)
+6. [Cinematic Cutscenes & Audio](#cinematic-cutscenes--audio)
 7. [Save Data & Settings](#save-data--settings)
 8. [Repository Structure](#repository-structure)
 9. [Development, Builds & Extending the Game](#development-builds--extending-the-game)
@@ -145,25 +145,23 @@ Each chapter transforms the **2.5D battle board slab, tile materials, road trenc
 
 ---
 
-## Motion-Comic Cutscenes & Audio
+## Cinematic Cutscenes & Audio
 
-### Illustrated Motion-Comic Cutscenes (`js/cutscene.js`, `assets/scenes/`)
-Four widescreen (`16:9`) motion-comic cinematics use custom-painted illustrations with smooth Ken Burns camera motion, live `<canvas>` particle effects (`gold`, `snow`, `ember`, `dawn`), captions, progress bar, and Next/Skip controls:
-1. **Prologue — *The Shattered Gambit*** (auto-plays on a brand-new campaign or after Clear Save)
+### Cinematic Cutscenes (`js/cutscene.js`, `assets/videos/`, `assets/scenes/`)
+Four widescreen (`16:9`) cinematics with captions, progress bar, and Next/Skip controls:
+- **Video cinematics** (`assets/videos/<id>.mp4`) play with their own score & foley while the soundtrack rests. Captions follow each shot's `videoStart` cue in `js/data/story.js`, and **Next Scene** jumps to the next shot. If sound autoplay is blocked, the video starts muted with a **Tap for sound** prompt; if the video can't load (or in the standalone build), the painted slides play instead.
+- **Motion-comic slideshows** use custom-painted illustrations with smooth Ken Burns camera motion and live `<canvas>` particle effects (`gold`, `snow`, `ember`, `dawn`), scored with the soundtrack.
+
+1. **Prologue — *The Shattered Gambit*** — Veo video cinematic (auto-plays on a brand-new campaign or after Clear Save)
 2. **Chapter II — *Beyond the Sixty-Four*** (auto-plays upon first entering Level 7)
 3. **Chapter III — *Crown of Ash*** (auto-plays upon first entering Level 13)
 4. **Epilogue — *Checkmate & Dawn*** (auto-plays upon conquering Level 18)
 
 All unlocked cinematics can be replayed anytime via the **🎬 Story** button on the Campaign Map toolbar or inside **Codex & Lore → Chronicles**.
 
-### Procedural Web Audio Engine (`js/audio.js`)
-Zero external audio files required — all music and SFX are synthesized live through a stereo concert-hall `ConvolverNode` reverb bus:
-- **3 Alternating Cinematographic Orchestral Suites:**
-  1. *March of the Ivory Crown* (`D Minor` — Heroic Cinematic Strings & Brass)
-  2. *Nocturne of the Obsidian Rift* (`F# Minor` — Brooding Cello & Low Brass)
-  3. *Siege of the Crimson Citadel* (`C Minor` — Driving 3+3+2 Action Score)
-- Suites automatically alternate across levels/waves, dynamically shift intensity (`prep` → `combat` → `boss`), and can also be cycled manually in **⚙ Settings**.
-- **Tactile SFX:** Wooden chess clack placement, blade/beam/cannon/frost/smite combat impacts, and layered brass **War Horn** calls on Rank II / Rank III troop promotions.
+### Soundtrack & Web Audio SFX Engine (`js/audio.js`, `assets/audio/`)
+- **Soundtrack — *Before the Gates Break*** (`assets/audio/before_the_gates_break.mp3`): streamed on a looping media element routed through the Web Audio graph. It restarts at each level, swells with intensity (`prep` → `battle` → `boss`), ducks while paused, fades out with the Music toggle, and pauses whenever the app is backgrounded.
+- **Tactile SFX** (synthesized live): Wooden chess clack placement, blade/beam/cannon/frost/smite combat impacts, and layered brass **War Horn** calls with a stereo concert-hall `ConvolverNode` reverb tail on Rank II / Rank III troop promotions.
 
 ### 4-Way Directional Animated Sprite Sheets (`assets/sheets/`)
 All 5 enemies and 7 defenders use custom `4×2` (8-frame) chroma-keyed animation sprite sheets (`Row 0`: front-3/4 motion/aiming, `Row 1`: back-3/4 motion/aiming, horizontally mirrored for all 4 isometric facings). Enemies animate along their exact travel vector, and towers dynamically turn to face and aim at their live combat target.
@@ -175,7 +173,7 @@ All 5 enemies and 7 defenders use custom `4×2` (8-frame) chroma-keyed animation
 - **Dual Durable Persistence (`js/storage.js`):** Campaign progress (unlocked level, Tactical & Grandmaster stars per level, best scores, and seen cutscenes) is automatically saved to **both** `localStorage` (`towerdechess_progress_v1`) and `IndexedDB` (`TowerDeChessDB`) so saves survive accidental browser cache clears.
 - **⚙ Settings Modal:**
   - Independent **Battle Music** and **Sound Effects** switches (also mirrored in the gameplay topbar).
-  - **Next Suite** button to cycle orchestral tracks.
+  - **Soundtrack** row showing the current music track.
   - **Backup / Transfer Code** modal (copy/paste base64 save codes to transfer progress between Web and Android).
   - Two-step **Clear Save Data** button wiping both `localStorage` and `IndexedDB` cleanly back to Chapter I, Level 1.
 
@@ -199,8 +197,8 @@ TowerDefense/
 ├── js/
 │   ├── main.js                   # App controller: Campaign Map, HUD, Inspector, 4-tab Royal Archives, Settings & Capacitor Back button
 │   ├── assets.js                 # Asset manifest, sprite/sheet metadata, preloader & scene URL resolver
-│   ├── audio.js                  # Web Audio API synth: 3 orchestral suites + hall reverb + War Horn & combat SFX
-│   ├── cutscene.js               # Illustrated Motion-Comic CutscenePlayer (Ken Burns dolly + Canvas particles + audio sync)
+│   ├── audio.js                  # Streamed soundtrack (intensity/duck/mute via Web Audio) + synthesized War Horn & combat SFX
+│   ├── cutscene.js               # CutscenePlayer: video cinematics with timed captions + Ken Burns motion-comic slideshows
 │   ├── storage.js                # Dual localStorage + IndexedDB progress persistence, merge logic & export/import save codes
 │   ├── data/
 │   │   ├── levels.js             # 18 Campaign levels, 3 Chapter definitions, waypoints & wave compositions
@@ -215,6 +213,8 @@ TowerDefense/
 │   ├── sprites/                  # Static transparent PNG miniatures (UI icons, HUD cards, Codex, Citadel Gate)
 │   ├── sheets/                   # 12 custom 4×2 (8-frame) directional animation sprite sheets (enemies + defenders)
 │   ├── scenes/                   # 6 widescreen (16:9) painted cutscene illustrations (JPEG)
+│   ├── videos/                   # Cinematic cutscene videos (H.264/AAC MP4, faststart) — prologue.mp4
+│   ├── audio/                    # Soundtrack (before_the_gates_break.mp3)
 │   └── icons/                    # App/PWA icons (icon-192.png, icon-512.png)
 │
 ├── scripts/
@@ -248,7 +248,7 @@ python3 -m http.server 4173
 ```
 
 ### Build Single-File Standalone HTML
-Inlines all CSS, ES modules, sprites, animation sheets, and cutscene paintings as compact WebP data URIs into `dist/towerdechess-standalone.html`:
+Inlines all CSS, ES modules, sprites, animation sheets, and cutscene paintings as compact WebP data URIs, plus a 96 kbps copy of the soundtrack (re-encoded with `ffmpeg` when available), into `dist/towerdechess-standalone.html`. Cutscene videos are too large to inline, so the standalone build plays the painted slides instead:
 ```bash
 npm run build:standalone
 # or: python3 scripts/build_standalone.py

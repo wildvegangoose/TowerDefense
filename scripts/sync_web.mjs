@@ -11,7 +11,16 @@ const ROOT = process.cwd();
 const WWW = path.join(ROOT, 'www');
 
 const FILES = ['index.html', 'manifest.json', 'privacy-policy.html'];
-const DIRS = ['css', 'js', 'assets/sprites', 'assets/sheets', 'assets/scenes', 'assets/icons'];
+const DIRS = [
+  'css',
+  'js',
+  'assets/sprites',
+  'assets/sheets',
+  'assets/scenes',
+  'assets/videos',
+  'assets/audio',
+  'assets/icons',
+];
 
 fs.rmSync(WWW, { recursive: true, force: true });
 fs.mkdirSync(WWW, { recursive: true });

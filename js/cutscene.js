@@ -1,10 +1,15 @@
 /**
- * Illustrated Motion-Comic Cutscene Player for TowerDeChess.
- * Renders widescreen painted scenes with smooth Ken Burns pan/zoom, live Canvas atmosphere
- * particles (sun motes, blizzard snow, rising embers, dawn light), captions, and orchestral score.
+ * Cinematic Cutscene Player for TowerDeChess.
+ *
+ * Two presentation modes:
+ * - Video: plays a cinematic (`assets/videos/<id>.mp4`) with its own score & foley, overlaying each
+ *   slide's caption from its `videoStart` cue. The soundtrack rests while the video plays.
+ * - Slides: illustrated motion-comic with smooth Ken Burns pan/zoom, live Canvas atmosphere
+ *   particles (sun motes, blizzard snow, rising embers, dawn light), captions, and the soundtrack.
+ * Video cutscenes fall back to their painted slides if the video cannot load.
  */
 
-import { getSceneUrl } from './assets.js';
+import { getSceneUrl, getVideoUrl } from './assets.js';
 import { sound } from './audio.js';
 import { CUTSCENES } from './data/story.js';
 
@@ -13,7 +18,9 @@ export class CutscenePlayer {
     this.el = {
       modal: document.getElementById('modal-cutscene'),
       img: document.getElementById('cutscene-img'),
+      video: document.getElementById('cutscene-video'),
       canvas: document.getElementById('cutscene-fx-canvas'),
+      soundHint: document.getElementById('btn-cutscene-sound'),
       chapter: document.getElementById('cutscene-chapter'),
       title: document.getElementById('cutscene-title'),
       speaker: document.getElementById('cutscene-speaker'),
@@ -26,13 +33,16 @@ export class CutscenePlayer {
 
     this.ctx = this.el.canvas ? this.el.canvas.getContext('2d') : null;
     this.activeCutscene = null;
+    this.mode = 'slides'; // 'slides' | 'video'
     this.slideIndex = 0;
     this.slideElapsed = 0;
+    this.cueStarts = [];
+    this.videoNeedsTap = false;
     this.rafId = null;
     this.lastTime = 0;
     this.particles = [];
     this.onComplete = null;
-    this.wasPlayingMusic = false;
+    this.prevMusicIntensity = 'off';
 
     this._bindEvents();
   }
@@ -43,13 +53,40 @@ export class CutscenePlayer {
       this.stop(true);
     });
     this.el.btnNext?.addEventListener('click', () => this._advanceSlide());
+    this.el.soundHint?.addEventListener('click', () => this._resumeVideoWithSound());
     this.el.modal?.addEventListener('pointerdown', () => {
       if (!this.activeCutscene) return;
       sound.unlock();
+      if (this.mode === 'video') {
+        this._resumeVideoWithSound();
+        return;
+      }
       if (!sound.musicMuted && sound.musicIntensity !== 'off') {
         sound.setMusicIntensity(this.activeCutscene.musicMode || 'prep');
       }
     });
+
+    const video = this.el.video;
+    video?.addEventListener('ended', () => {
+      if (this.activeCutscene && this.mode === 'video') this.stop(true);
+    });
+    video?.addEventListener('error', () => {
+      // Missing/unsupported video (offline, old WebView): continue with the painted slides
+      if (this.activeCutscene && this.mode === 'video') {
+        this._teardownVideo();
+        this._startSlides();
+      }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (!this.activeCutscene || this.mode !== 'video') return;
+      if (document.hidden) {
+        video?.pause();
+      } else if (!this.videoNeedsTap) {
+        this._playVideo();
+      }
+    });
+
     window.addEventListener('resize', () => {
       if (this.activeCutscene) this._resizeCanvas();
     });
@@ -66,6 +103,13 @@ export class CutscenePlayer {
       return;
     }
 
+    if (this.activeCutscene) {
+      this._teardownVideo();
+    } else {
+      // Restore whatever the soundtrack was doing once the cinematic closes
+      this.prevMusicIntensity = sound.musicIntensity;
+    }
+
     this.activeCutscene = data;
     this.slideIndex = 0;
     this.slideElapsed = 0;
@@ -75,15 +119,14 @@ export class CutscenePlayer {
     this.el.title.textContent = data.title;
     this.el.modal.classList.remove('hidden');
 
-    // Sync cinematographic orchestral score with the cutscene chapter
-    this.wasPlayingMusic = sound.musicIntensity !== 'off';
-    sound.trackIndex = data.musicSuiteIndex ?? 0;
-    sound.stepIndex = 0;
-    sound.setMusicDucked(false);
-    sound.setMusicIntensity(data.musicMode || 'prep');
-
     this._resizeCanvas();
-    this._loadSlide(0);
+
+    const videoUrl = data.video && this.el.video ? getVideoUrl(data.video) : '';
+    if (videoUrl) {
+      this._startVideo(videoUrl);
+    } else {
+      this._startSlides();
+    }
 
     this.lastTime = performance.now();
     if (this.rafId) cancelAnimationFrame(this.rafId);
@@ -106,12 +149,26 @@ export class CutscenePlayer {
     const cb = this.onComplete;
     this.activeCutscene = null;
     this.onComplete = null;
+    this._teardownVideo();
+    this.mode = 'slides';
     this.el.modal?.classList.add('hidden');
 
-    if (!this.wasPlayingMusic) {
-      sound.setMusicIntensity('off');
-    }
+    sound.setMusicIntensity(this.prevMusicIntensity || 'off');
     if (triggerCallback && cb) cb();
+  }
+
+  // ==================== SLIDESHOW MODE ====================
+
+  _startSlides() {
+    this.mode = 'slides';
+    this.el.img?.classList.remove('hidden');
+
+    // Score the motion-comic with the soundtrack from its opening bars
+    sound.restartMusic();
+    sound.setMusicDucked(false);
+    sound.setMusicIntensity(this.activeCutscene.musicMode || 'prep');
+
+    this._loadSlide(0);
   }
 
   _resizeCanvas() {
@@ -139,10 +196,7 @@ export class CutscenePlayer {
     this.el.img.src = url;
     this.el.img.alt = this.activeCutscene.title;
 
-    this.el.speaker.textContent = slide.speaker || '';
-    this.el.caption.textContent = slide.caption || '';
-    this.el.slideCounter.textContent = `${idx + 1} / ${slides.length}`;
-    this.el.btnNext.textContent = idx === slides.length - 1 ? 'Continue →' : 'Next Scene →';
+    this._showCaption(idx);
 
     this._seedParticles(slide.particleTheme || this.activeCutscene.particleTheme || 'gold');
     this._applyKenBurns(slide, 0);
@@ -152,17 +206,152 @@ export class CutscenePlayer {
     });
   }
 
+  _showCaption(idx) {
+    const slides = this.activeCutscene.slides;
+    const slide = slides[idx];
+    this.slideIndex = idx;
+    this.el.speaker.textContent = slide?.speaker || '';
+    this.el.caption.textContent = slide?.caption || '';
+    this.el.slideCounter.textContent = `${idx + 1} / ${slides.length}`;
+    this.el.btnNext.textContent = idx === slides.length - 1 ? 'Continue →' : 'Next Scene →';
+  }
+
   _advanceSlide() {
     sound.unlock();
     if (!this.activeCutscene) return;
-    if (this.slideIndex + 1 < this.activeCutscene.slides.length) {
-      sound.playSelect();
-      this._loadSlide(this.slideIndex + 1);
-    } else {
-      sound.playSelect();
+    const isLast = this.slideIndex + 1 >= this.activeCutscene.slides.length;
+    sound.playSelect();
+    if (isLast) {
       this.stop(true);
+    } else if (this.mode === 'video') {
+      this._seekToCue(this.slideIndex + 1);
+    } else {
+      this._loadSlide(this.slideIndex + 1);
     }
   }
+
+  // ==================== VIDEO MODE ====================
+
+  _startVideo(url) {
+    const video = this.el.video;
+    const data = this.activeCutscene;
+    this.mode = 'video';
+    this.videoNeedsTap = false;
+
+    // Caption cue start times (seconds); default to back-to-back slide durations
+    let t = 0;
+    this.cueStarts = data.slides.map((slide) => {
+      const start = Number.isFinite(slide.videoStart) ? slide.videoStart : t;
+      t = start + (slide.duration || 7.5);
+      return start;
+    });
+
+    // The video carries its own score & foley — rest the soundtrack underneath it
+    sound.setMusicIntensity('off');
+
+    this.el.img?.classList.add('hidden');
+    this.particles = [];
+    this.ctx?.clearRect(0, 0, this.el.canvas.width, this.el.canvas.height);
+    if (this.el.progressBar) this.el.progressBar.style.width = '0%';
+
+    const firstScene = data.slides[0]?.scene;
+    video.poster = firstScene ? getSceneUrl(firstScene) : '';
+    video.setAttribute('aria-label', data.title);
+    video.classList.remove('hidden');
+    video.src = url;
+
+    this._showCaption(0);
+    this._playVideo();
+  }
+
+  _videoShouldBeMuted() {
+    // The cinematic mixes score and battle foley: silence it only if both are switched off
+    return sound.musicMuted && sound.sfxMuted;
+  }
+
+  _playVideo() {
+    const video = this.el.video;
+    if (!video || !this.activeCutscene || this.mode !== 'video') return;
+    // Ignore rejections from interrupted plays or a video that has since been torn down
+    const stillPlaying = (err) => err?.name !== 'AbortError' && this.activeCutscene && this.mode === 'video';
+
+    video.muted = this._videoShouldBeMuted();
+    video.play()?.catch((err) => {
+      if (!stillPlaying(err)) return;
+      if (video.muted) {
+        this._setSoundHint(true, '▶ Tap to play');
+        return;
+      }
+      // Autoplay with sound is blocked until the first tap: start muted and offer sound
+      this._setSoundHint(true, '🔈 Tap for sound');
+      video.muted = true;
+      video.play()?.catch((retryErr) => {
+        if (stillPlaying(retryErr)) this._setSoundHint(true, '▶ Tap to play');
+      });
+    });
+  }
+
+  _resumeVideoWithSound() {
+    if (!this.videoNeedsTap || this.mode !== 'video') return;
+    const video = this.el.video;
+    this._setSoundHint(false);
+    video.muted = this._videoShouldBeMuted();
+    if (video.paused && !video.ended) {
+      video.play()?.catch(() => {});
+    }
+  }
+
+  _setSoundHint(visible, label = '') {
+    this.videoNeedsTap = visible;
+    if (!this.el.soundHint) return;
+    if (label) this.el.soundHint.textContent = label;
+    this.el.soundHint.classList.toggle('hidden', !visible);
+  }
+
+  _cueIndexAt(time) {
+    let idx = 0;
+    for (let i = 0; i < this.cueStarts.length; i++) {
+      if (time + 0.001 >= this.cueStarts[i]) idx = i;
+    }
+    return idx;
+  }
+
+  _seekToCue(idx) {
+    const video = this.el.video;
+    const start = this.cueStarts[idx] ?? 0;
+    try {
+      video.currentTime = start;
+    } catch {
+      // Seeking before metadata loads is a no-op; the caption still advances
+    }
+    this._showCaption(idx);
+  }
+
+  _teardownVideo() {
+    const video = this.el.video;
+    this._setSoundHint(false);
+    this.el.img?.classList.remove('hidden');
+    if (!video) return;
+    video.pause();
+    if (video.hasAttribute('src')) {
+      video.removeAttribute('src');
+      video.load(); // Release the decoder & network stream
+    }
+    video.classList.add('hidden');
+  }
+
+  _tickVideo() {
+    const video = this.el.video;
+    const time = video.currentTime || 0;
+    const idx = this._cueIndexAt(time);
+    if (idx !== this.slideIndex) this._showCaption(idx);
+    if (this.el.progressBar && Number.isFinite(video.duration) && video.duration > 0) {
+      const overall = Math.min(1, time / video.duration);
+      this.el.progressBar.style.width = `${(overall * 100).toFixed(2)}%`;
+    }
+  }
+
+  // ==================== MOTION-COMIC RENDERING ====================
 
   _applyKenBurns(slide, t) {
     const kb = slide.kb || { s0: 1.02, s1: 1.12, x0: 0, x1: 0, y0: 0, y1: 0 };
@@ -222,6 +411,11 @@ export class CutscenePlayer {
   }
 
   _tick(dt) {
+    if (this.mode === 'video') {
+      this._tickVideo();
+      return;
+    }
+
     const slides = this.activeCutscene.slides;
     const slide = slides[this.slideIndex];
     if (!slide) return;

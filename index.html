@@ -312,10 +312,9 @@
 
           <div class="setting-row">
             <div class="setting-copy">
-              <strong>Orchestral Suite (Auto-Alternates)</strong>
-              <span id="settings-track-name">March of the Ivory Crown • D Minor</span>
+              <strong>Soundtrack</strong>
+              <span id="settings-track-name">Before the Gates Break • Main Theme</span>
             </div>
-            <button id="btn-next-track" class="btn btn-secondary btn-sm" type="button">Next Suite &#9197;</button>
           </div>
         </div>
 
@@ -343,7 +342,7 @@
       </div>
     </div>
 
-    <!-- ==================== MOTION-COMIC CINEMATIC CUTSCENE OVERLAY ==================== -->
+    <!-- ==================== CINEMATIC CUTSCENE OVERLAY (VIDEO + MOTION-COMIC) ==================== -->
     <div id="modal-cutscene" class="cutscene-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="cutscene-title">
       <div class="cutscene-theater">
         <div class="cutscene-topbar">
@@ -356,8 +355,19 @@
 
         <div class="cutscene-stage">
           <img id="cutscene-img" src="" alt="" class="cutscene-img" />
+          <video
+            id="cutscene-video"
+            class="cutscene-video hidden"
+            playsinline
+            webkit-playsinline
+            preload="auto"
+            disablepictureinpicture
+            disableremoteplayback
+            controlslist="nodownload nofullscreen noplaybackrate"
+          ></video>
           <canvas id="cutscene-fx-canvas" class="cutscene-fx-canvas"></canvas>
           <div class="cutscene-vignette"></div>
+          <button id="btn-cutscene-sound" class="cutscene-sound-hint hidden" type="button">&#128264; Tap for sound</button>
           <div class="cutscene-caption-box">
             <span id="cutscene-speaker" class="cutscene-speaker">CHRONICLE OF AETHELGARD</span>
             <p id="cutscene-caption" class="cutscene-caption"></p>
