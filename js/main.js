@@ -1067,10 +1067,11 @@ class TowerDeChessApp {
     const effRate = (stats.fireRate * tower.buffRateMult).toFixed(2);
     const refund = Math.round(tower.invested * 0.75);
 
+    const rankBadges = { 1: '▲ Rank I', 2: '▲▲ Rank II', 3: '♛ Rank III' };
     this.el.inspSprite.src = getSpriteUrl(stats.sprite);
     this.el.inspSprite.alt = stats.displayName;
     this.el.inspName.textContent = stats.displayName;
-    this.el.inspTier.textContent = `Tier ${tower.tier}/3`;
+    this.el.inspTier.textContent = rankBadges[tower.tier] || `Rank ${tower.tier}`;
     this.el.inspPattern.textContent = stats.patternLabel;
     this.el.inspDmg.textContent = tower.buffedByKing ? `${effDmg} ↑` : `${effDmg}`;
     this.el.inspRate.textContent = `${effRate}/s`;
@@ -1082,13 +1083,14 @@ class TowerDeChessApp {
       : '—';
 
     if (nextUpg) {
+      const nextIcon = tower.tier === 2 ? '♛' : '▲▲';
       this.el.inspUpgradeDesc.textContent = `Promote → ${nextUpg.name}: ${nextUpg.desc}`;
       this.el.btnUpgradeTower.disabled = state.gold < nextUpg.cost;
-      this.el.btnUpgradeTower.textContent = `Promote (${nextUpg.cost}g)`;
+      this.el.btnUpgradeTower.textContent = `${nextIcon} Promote (${nextUpg.cost}g)`;
     } else {
       this.el.inspUpgradeDesc.textContent = 'Maximum Promotion reached — Royal Masterpiece!';
       this.el.btnUpgradeTower.disabled = true;
-      this.el.btnUpgradeTower.textContent = 'Max Tier';
+      this.el.btnUpgradeTower.textContent = '♛ Max Rank';
     }
 
     const modeLabels = { first: 'First', strongest: 'Strong', closest: 'Close', last: 'Last' };

@@ -378,15 +378,101 @@ class SoundEngine {
     this._tone(340, 260, 0.028, 'triangle', 0.08);
   }
 
-  playUpgrade() {
-    if (!this._canPlay('upgrade', 80)) return;
-    // Stately forged steel + brass fanfare triad (D - F# - A - D)
-    this._noiseBurst(0.05, 'highpass', 3600, 2200, 0.1, 1.2);
-    const notes = [587.33, 739.99, 880, 1174.66];
-    notes.forEach((f, i) => {
-      this._tone(f, f, 0.22, 'triangle', 0.13, i * 0.055, 2800);
-      this._tone(f * 0.5, f * 0.5, 0.22, 'sawtooth', 0.045, i * 0.055, 1600);
-    });
+  playUpgrade(tier = 2) {
+    if (!this._canPlay('upgrade', 120)) return;
+    if (!this.ctx || !this.sfxGain) return;
+
+    const now = this.ctx.currentTime;
+    const isGrand = tier >= 3;
+
+    // Helper to blow a resonant brass war horn voice with breath attack & filter flare
+    const blowHorn = (freq, startOffset, duration, peakGain) => {
+      const t0 = now + startOffset;
+      const tEnd = t0 + duration;
+
+      // Two slightly detuned brassy sawtooths + warm sub-triangle body
+      const osc1 = this.ctx.createOscillator();
+      const osc2 = this.ctx.createOscillator();
+      const sub = this.ctx.createOscillator();
+      osc1.type = 'sawtooth';
+      osc2.type = 'sawtooth';
+      sub.type = 'triangle';
+
+      // Slight upward pitch scoop on breath onset like a real blown horn
+      osc1.frequency.setValueAtTime(freq * 0.94, t0);
+      osc1.frequency.exponentialRampToValueAtTime(freq, t0 + 0.085);
+      osc1.frequency.setValueAtTime(freq, tEnd - 0.16);
+      osc1.frequency.exponentialRampToValueAtTime(freq * 0.988, tEnd);
+
+      osc2.frequency.setValueAtTime(freq * 0.943, t0);
+      osc2.frequency.exponentialRampToValueAtTime(freq * 1.005, t0 + 0.09);
+
+      sub.frequency.setValueAtTime(freq * 0.5, t0);
+
+      // Subtle slow vibrato on sustained horn blast
+      const lfo = this.ctx.createOscillator();
+      const lfoGain = this.ctx.createGain();
+      lfo.type = 'sine';
+      lfo.frequency.setValueAtTime(4.8, t0);
+      lfoGain.gain.setValueAtTime(freq * 0.008, t0);
+      lfo.connect(lfoGain);
+      lfoGain.connect(osc1.frequency);
+
+      // Brass bell filter swell (dark -> bright brassy flare -> warm settle)
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.Q.setValueAtTime(2.6, t0);
+      filter.frequency.setValueAtTime(260, t0);
+      filter.frequency.exponentialRampToValueAtTime(1450, t0 + 0.16);
+      filter.frequency.exponentialRampToValueAtTime(620, tEnd);
+
+      const env = this.ctx.createGain();
+      env.gain.setValueAtTime(0.0001, t0);
+      env.gain.linearRampToValueAtTime(peakGain, t0 + 0.11);
+      env.gain.setValueAtTime(peakGain * 0.92, tEnd - 0.24);
+      env.gain.exponentialRampToValueAtTime(0.0001, tEnd);
+
+      const subGain = this.ctx.createGain();
+      subGain.gain.setValueAtTime(0.42, t0);
+
+      osc1.connect(filter);
+      osc2.connect(filter);
+      sub.connect(subGain);
+      subGain.connect(filter);
+      filter.connect(env);
+
+      // Dry battlefield punch + echoing hall reverb tail
+      env.connect(this.sfxGain);
+      if (this.reverbNode) {
+        const wetSend = this.ctx.createGain();
+        wetSend.gain.setValueAtTime(0.55, t0);
+        env.connect(wetSend);
+        wetSend.connect(this.reverbNode);
+      }
+
+      osc1.start(t0);
+      osc2.start(t0);
+      sub.start(t0);
+      lfo.start(t0);
+      osc1.stop(tEnd + 0.04);
+      osc2.stop(tEnd + 0.04);
+      sub.stop(tEnd + 0.04);
+      lfo.stop(tEnd + 0.04);
+    };
+
+    // Breathy air rush at horn mouthpiece attack
+    this._noiseBurst(0.14, 'bandpass', 540, 820, 0.09, 2.2, 0);
+
+    if (isGrand) {
+      // Rank III: Heroic two-call Royal War Horn (D3 -> triumphant A3 + D4 octave)
+      blowHorn(146.83, 0.0, 0.36, 0.24);
+      blowHorn(220.0, 0.24, 0.72, 0.22);
+      blowHorn(293.66, 0.26, 0.68, 0.14);
+    } else {
+      // Rank II: Deep resonant Battlefield War Horn (D3 + warm A3 fifth)
+      blowHorn(146.83, 0.0, 0.72, 0.25);
+      blowHorn(220.0, 0.05, 0.66, 0.15);
+    }
   }
 
   playSell() {

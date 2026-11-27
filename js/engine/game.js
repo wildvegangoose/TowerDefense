@@ -426,10 +426,11 @@ export class GameEngine {
     tower.invested += next.cost;
     tower.placeAnim = 0.7;
     this._recomputeKingAuras();
-    sound.playUpgrade();
+    sound.playUpgrade(tower.tier);
     this._spawnRing(tower.col + 0.5, tower.row + 0.5, 0.9, '#f0c050', 0.45);
     this._spawnDustBurst(tower.col + 0.5, tower.row + 0.5, '#f7d97e', 14);
-    this._spawnFloatText(tower.col + 0.5, tower.row + 0.2, `Tier ${tower.tier}!`, '#f7d97e');
+    const rankLabel = tower.tier >= 3 ? `♛ Rank III — ${next.name}!` : `▲▲ Rank II — ${next.name}!`;
+    this._spawnFloatText(tower.col + 0.5, tower.row + 0.18, rankLabel, '#ffe078');
     this._emitHud();
     return true;
   }
@@ -1724,22 +1725,94 @@ export class GameEngine {
       }
     }
 
-    // Promotion Tier pips nestled cleanly at the front of the walnut plinth
+    // Heraldic Military Rank Insignia Badge nestled at the front of the plinth
     if (tower.tier > 1) {
-      const pipCount = tower.tier;
-      const pipSpacing = Math.max(5.5, this.tileW * 0.11);
-      const startX = groundP.x - ((pipCount - 1) * pipSpacing) / 2;
-      const pipY = groundP.y + this.tileH * 0.22;
-      for (let i = 0; i < pipCount; i++) {
-        ctx.fillStyle = tower.tier === 3 ? '#ffe066' : '#e6b24c';
-        ctx.strokeStyle = '#2a1a0e';
-        ctx.lineWidth = 1.2;
-        ctx.beginPath();
-        ctx.arc(startX + i * pipSpacing, pipY, Math.max(2.4, this.tileW * 0.042), 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      }
+      this._drawRankInsignia(ctx, groundP.x, groundP.y + this.tileH * 0.24, tower.tier);
     }
+  }
+
+  _drawRankInsignia(ctx, cx, cy, tier) {
+    const s = Math.max(7.5, this.tileW * 0.145);
+    const isMax = tier >= 3;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    // Subtle warm golden glow behind Rank III Royal crest
+    if (isMax) {
+      ctx.shadowColor = 'rgba(255, 214, 92, 0.72)';
+      ctx.shadowBlur = 7;
+    }
+
+    // Heraldic shield silhouette
+    const w = s * 1.15;
+    const h = s * 1.28;
+    ctx.beginPath();
+    ctx.moveTo(0, -h * 0.62);
+    ctx.lineTo(w * 0.68, -h * 0.38);
+    ctx.lineTo(w * 0.58, h * 0.22);
+    ctx.lineTo(0, h * 0.66);
+    ctx.lineTo(-w * 0.58, h * 0.22);
+    ctx.lineTo(-w * 0.68, -h * 0.38);
+    ctx.closePath();
+
+    const grad = ctx.createLinearGradient(0, -h * 0.6, 0, h * 0.66);
+    if (isMax) {
+      grad.addColorStop(0, '#6e1c16');
+      grad.addColorStop(1, '#2b0b09');
+    } else {
+      grad.addColorStop(0, '#3d2a1b');
+      grad.addColorStop(1, '#1c120b');
+    }
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = Math.max(1.2, s * 0.14);
+    ctx.strokeStyle = isMax ? '#ffe066' : '#dfa944';
+    ctx.stroke();
+
+    // Upward military chevrons (2 for Rank II, 3 + crown star for Rank III)
+    const chevrons = isMax ? 3 : 2;
+    const chevW = w * 0.38;
+    const chevH = h * 0.16;
+    const spacing = h * 0.2;
+    const baseY = isMax ? h * 0.36 : h * 0.22;
+
+    ctx.strokeStyle = isMax ? '#ffe680' : '#f2c15a';
+    ctx.lineWidth = Math.max(1.4, s * 0.16);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    for (let i = 0; i < chevrons; i++) {
+      const y = baseY - i * spacing;
+      ctx.beginPath();
+      ctx.moveTo(-chevW, y);
+      ctx.lineTo(0, y - chevH);
+      ctx.lineTo(chevW, y);
+      ctx.stroke();
+    }
+
+    // Golden Crown Star above chevrons for Rank III
+    if (isMax) {
+      const sy = -h * 0.28;
+      const rOut = s * 0.26;
+      const rIn = rOut * 0.45;
+      ctx.fillStyle = '#fff0a8';
+      ctx.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const ang = -Math.PI / 2 + (i * Math.PI) / 5;
+        const r = i % 2 === 0 ? rOut : rIn;
+        const px = Math.cos(ang) * r;
+        const py = sy + Math.sin(ang) * r;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    ctx.restore();
   }
 
   _drawEnemy(ctx, enemy) {
