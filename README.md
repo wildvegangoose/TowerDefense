@@ -222,7 +222,12 @@ TowerDefense/
 │   ├── sync_web.mjs              # Copies lean runtime web assets into ./www for Capacitor Android builds
 │   ├── process_assets.py         # Chroma-key + trim pipeline for static 3D miniature sprites
 │   ├── process_sheets.py         # 4×2 sprite sheet slicer, chroma-keyer, foot-anchor normalizer & PNG packer
-│   └── generate_android_assets.py# Generates Android mipmap launcher icons & splash screens
+│   ├── generate_android_assets.py# Generates Android mipmap launcher icons & splash screens
+│   ├── generate_veo_cutscenes.py # Google Veo (google-genai) image-to-video cutscene generator & ffmpeg stitcher
+│   └── veo_shots.json            # Shot-by-shot Veo prompts, keyframes, negative prompts & captions for all 4 cutscenes
+│
+├── docs/
+│   └── VEO_CUTSCENE_SCRIPTS.md   # Copy-paste Veo 3.1 director screenplay & prompt book for all 4 story cutscenes
 │
 ├── dist/
 │   └── towerdechess-standalone.html  # Zero-dependency single-file HTML build
