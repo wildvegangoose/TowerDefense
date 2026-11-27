@@ -5,7 +5,7 @@
 import { preloadAssets, getSpriteUrl, getSceneUrl } from './assets.js';
 import { sound } from './audio.js';
 import { CutscenePlayer } from './cutscene.js';
-import { LEVELS, CHAPTERS, getChapterForLevel, expandWaypoints } from './data/levels.js';
+import { LEVELS, CHAPTERS, getChapterForLevel } from './data/levels.js';
 import {
   PIECE_REGISTRY,
   PIECE_ORDER,
@@ -39,7 +39,7 @@ import {
 class TowerDeChessApp {
   constructor() {
     this.progress = loadProgressSync();
-    this.sandboxAll = localStorage.getItem('towerdechess_sandbox') === '1';
+    localStorage.removeItem('towerdechess_sandbox');
     this.difficulty = localStorage.getItem('towerdechess_difficulty') || 'standard';
     this.selectedMapLevelId = Math.min(LEVELS.length, this.progress.highestUnlocked || 1);
     this.justUnlockedLevelId = null;
@@ -68,28 +68,9 @@ class TowerDeChessApp {
       btnJumpFrontier: document.getElementById('btn-jump-frontier'),
       campaignMapViewport: document.getElementById('campaign-map-viewport'),
       campaignMapCanvas: document.getElementById('campaign-map-canvas'),
-      stageKicker: document.getElementById('stage-kicker'),
-      stageTitle: document.getElementById('stage-title'),
-      stageSubtitle: document.getElementById('stage-subtitle'),
-      stageStars: document.getElementById('stage-stars'),
-      stageDispatch: document.getElementById('stage-dispatch'),
-      stageMinimap: document.getElementById('stage-minimap'),
-      stageWaves: document.getElementById('stage-waves'),
-      stageGold: document.getElementById('stage-gold'),
-      stageLives: document.getElementById('stage-lives'),
-      stageBestScore: document.getElementById('stage-best-score'),
-      stagePieceBox: document.getElementById('stage-piece-box'),
-      stagePieceImg: document.getElementById('stage-piece-img'),
-      stagePieceBadge: document.getElementById('stage-piece-badge'),
-      stagePieceName: document.getElementById('stage-piece-name'),
-      stagePiecePattern: document.getElementById('stage-piece-pattern'),
-      stageDesc: document.getElementById('stage-desc'),
-      btnStageDeploy: document.getElementById('btn-stage-deploy'),
-      toggleSandbox: document.getElementById('toggle-sandbox'),
       btnDiffStandard: document.getElementById('btn-diff-standard'),
       btnDiffGrandmaster: document.getElementById('btn-diff-grandmaster'),
       btnOpenCodex: document.getElementById('btn-open-codex'),
-      btnOpenSave: document.getElementById('btn-open-save'),
       btnGameCodex: document.getElementById('btn-game-codex'),
       btnInstallPwa: document.getElementById('btn-install-pwa'),
 
@@ -198,7 +179,6 @@ class TowerDeChessApp {
   }
 
   async _init() {
-    this.el.toggleSandbox.checked = this.sandboxAll;
     this._syncDifficultyUi();
     this._syncMuteIcon();
     this._renderCampaign(true);
@@ -246,16 +226,6 @@ class TowerDeChessApp {
   }
 
   _bindGlobalEvents() {
-    this.el.toggleSandbox.addEventListener('change', (e) => {
-      this.sandboxAll = e.target.checked;
-      localStorage.setItem('towerdechess_sandbox', this.sandboxAll ? '1' : '0');
-      const maxAllowed = this.sandboxAll ? LEVELS.length : Math.min(LEVELS.length, this.progress.highestUnlocked);
-      if (this.selectedMapLevelId > maxAllowed) {
-        this.selectedMapLevelId = maxAllowed;
-      }
-      this._renderCampaign(false);
-    });
-
     this.el.btnPlayChapterStory?.addEventListener('click', () => {
       sound.unlock();
       sound.playSelect();
@@ -270,12 +240,6 @@ class TowerDeChessApp {
       const frontierId = Math.min(LEVELS.length, this.progress.highestUnlocked || 1);
       this._selectMapLevel(frontierId);
       this._scrollToMapNode(frontierId, true);
-    });
-
-    this.el.btnStageDeploy?.addEventListener('click', () => {
-      sound.unlock();
-      sound.playSelect();
-      this._startLevel(this.selectedMapLevelId, false);
     });
 
     const setDiff = (mode) => {
@@ -303,7 +267,6 @@ class TowerDeChessApp {
       if (e.target === this.el.modalCodex) this.el.modalCodex.classList.add('hidden');
     });
 
-    this.el.btnOpenSave.addEventListener('click', () => this._openSaveModal());
     this.el.btnCloseSave.addEventListener('click', () => {
       this.el.modalSave.classList.add('hidden');
     });
@@ -528,9 +491,7 @@ class TowerDeChessApp {
 
   async _handleClearSave() {
     this.progress = await clearProgress();
-    this.sandboxAll = false;
     localStorage.removeItem('towerdechess_sandbox');
-    if (this.el.toggleSandbox) this.el.toggleSandbox.checked = false;
 
     this.selectedMapLevelId = 1;
     this.justUnlockedLevelId = null;
@@ -598,7 +559,7 @@ class TowerDeChessApp {
     const maxStars = LEVELS.length * 3;
     const modeStars = getTotalStars(this.progress, this.difficulty);
     const frontierId = Math.min(LEVELS.length, this.progress.highestUnlocked || 1);
-    const revealedMax = this.sandboxAll ? LEVELS.length : frontierId;
+    const revealedMax = frontierId;
 
     if (this.el.campaignTotalStars) {
       const modeTag = this.difficulty === 'grandmaster' ? 'GM ' : '';
@@ -849,17 +810,8 @@ class TowerDeChessApp {
       btn.addEventListener('click', () => {
         sound.unlock();
         sound.playSelect();
-        if (this.selectedMapLevelId === lvl.id) {
-          // Clicking an already-selected node scrolls the deploy panel cleanly or launches on desktop double-tap
-          this._renderStagePanel(lvl.id);
-        } else {
-          this._selectMapLevel(lvl.id);
-        }
-      });
-
-      btn.addEventListener('dblclick', () => {
-        sound.unlock();
-        this._startLevel(lvl.id, false);
+        this._selectMapLevel(lvl.id);
+        this._startLevel(lvl.id, true);
       });
 
       canvas.appendChild(btn);
@@ -884,7 +836,7 @@ class TowerDeChessApp {
       }, 1000);
     }
 
-    this._renderStagePanel(this.selectedMapLevelId);
+    this._syncRealmIndicator(this.selectedMapLevelId);
 
     if (scrollToFrontier) {
       requestAnimationFrame(() => this._scrollToMapNode(this.selectedMapLevelId, false));
@@ -897,7 +849,17 @@ class TowerDeChessApp {
     for (const node of nodes) {
       node.classList.toggle('selected', Number(node.dataset.levelId) === levelId);
     }
-    this._renderStagePanel(levelId);
+    this._syncRealmIndicator(levelId);
+  }
+
+  _syncRealmIndicator(levelId) {
+    const ch = getChapterForLevel(levelId || 1);
+    if (this.el.mapRealmIndicator) {
+      this.el.mapRealmIndicator.textContent = `Chapter ${ch.roman} • ${ch.name}`;
+    }
+    if (this.el.btnPlayChapterStory) {
+      this.el.btnPlayChapterStory.title = `Watch Chapter ${ch.roman} Cinematic`;
+    }
   }
 
   _scrollToMapNode(levelId, smooth = true) {
@@ -906,96 +868,6 @@ class TowerDeChessApp {
     if (!vp || y === undefined) return;
     const targetTop = Math.max(0, y - vp.clientHeight * 0.5);
     vp.scrollTo({ top: targetTop, behavior: smooth ? 'smooth' : 'auto' });
-  }
-
-  _renderStagePanel(levelId) {
-    const lvl = LEVELS.find((l) => l.id === levelId) || LEVELS[0];
-    if (!lvl) return;
-
-    const ch = getChapterForLevel(lvl.id);
-    const goldMult = this.difficulty === 'grandmaster' ? 0.9 : 1.0;
-    const displayGold = Math.round(lvl.startingGold * goldMult);
-    const earnedStars = getStarsForLevel(this.progress, lvl.id, this.difficulty);
-    const bestScore = this.progress.bestScores?.[String(lvl.id)] || 0;
-    const pieceId = lvl.unlocksPiece || lvl.featuredPiece || 'pawn';
-    const piece = PIECE_REGISTRY[pieceId];
-    const isMythic = piece?.category === 'mythic';
-
-    if (this.el.mapRealmIndicator) {
-      this.el.mapRealmIndicator.textContent = `Chapter ${ch.roman} • ${ch.name}`;
-    }
-    if (this.el.btnPlayChapterStory) {
-      this.el.btnPlayChapterStory.title = `Watch Chapter ${ch.roman} Cinematic`;
-    }
-    this.el.stageKicker.textContent = `CHAPTER ${ch.roman} • LEVEL ${lvl.id}${lvl.isChapterBoss ? ' • FINALE' : ''}`;
-    this.el.stageTitle.textContent = lvl.name;
-    this.el.stageSubtitle.textContent = `${ch.name} — ${lvl.subtitle}`;
-    this.el.stageStars.innerHTML = [1, 2, 3]
-      .map((n) => `<span class="${n <= earnedStars ? '' : 'star-empty'}">★</span>`)
-      .join('');
-    this.el.stageStars.setAttribute('aria-label', `${earnedStars} of 3 stars`);
-
-    if (this.el.stageDispatch) {
-      this.el.stageDispatch.textContent = LEVEL_DISPATCHES[lvl.id] || '';
-    }
-
-    this.el.stageWaves.textContent = `${lvl.waves.length}`;
-    this.el.stageGold.textContent = `${displayGold}g`;
-    this.el.stageLives.textContent = `${lvl.startingLives} ♥`;
-    this.el.stageBestScore.textContent = bestScore > 0 ? bestScore.toLocaleString() : '—';
-
-    this.el.stagePieceBox.classList.toggle('mythic', isMythic);
-    this.el.stagePieceImg.src = getSpriteUrl(piece.sprite);
-    this.el.stagePieceImg.alt = piece.name;
-    this.el.stagePieceBadge.textContent = lvl.unlocksPiece
-      ? isMythic
-        ? 'UNLOCKS NON-CHESS RELIC'
-        : lvl.id === 1
-        ? 'STARTING CHESS PIECE'
-        : 'UNLOCKS CHESS PIECE'
-      : 'RECOMMENDED COMMANDER';
-    this.el.stagePieceName.textContent = `${piece.name} — ${piece.title}`;
-    this.el.stagePiecePattern.textContent = piece.patternLabel;
-    this.el.stageDesc.textContent = lvl.description;
-
-    const diffLabel = this.difficulty === 'grandmaster' ? ' (Grandmaster)' : '';
-    this.el.btnStageDeploy.textContent = `Deploy to Level ${lvl.id}${diffLabel} →`;
-    this.el.stageMinimap.innerHTML = this._renderMiniBoardSvg(lvl);
-  }
-
-  _renderMiniBoardSvg(lvl) {
-    const tiles = expandWaypoints(lvl.waypoints);
-    const pathSet = new Set(tiles.map(([c, r]) => `${c},${r}`));
-    const start = tiles[0];
-    const end = tiles[tiles.length - 1];
-    const rects = [];
-
-    const palettes = {
-      1: { light: '#d8c4a2', dark: '#9c7d56', path: '#2b2320', line: 'rgba(245, 202, 109, 0.58)', rift: '#63d48e' },
-      2: { light: '#d2e4ee', dark: '#6d8ea4', path: '#162533', line: 'rgba(116, 212, 255, 0.68)', rift: '#7ee6ff' },
-      3: { light: '#b89a8c', dark: '#4f3833', path: '#1e0e0c', line: 'rgba(255, 118, 72, 0.72)', rift: '#ff7b4a' },
-    };
-    const pal = palettes[lvl.chapter] || palettes[1];
-
-    for (let r = 0; r < 8; r++) {
-      for (let c = 0; c < 8; c++) {
-        const isPath = pathSet.has(`${c},${r}`);
-        const isLight = (c + r) % 2 === 0;
-        let fill = isLight ? pal.light : pal.dark;
-        if (isPath) fill = pal.path;
-        rects.push(`<rect x="${c * 10}" y="${r * 10}" width="10" height="10" fill="${fill}"/>`);
-      }
-    }
-
-    const pts = tiles.map(([c, r]) => `${c * 10 + 5},${r * 10 + 5}`).join(' ');
-    return `
-      <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-        ${rects.join('')}
-        <polyline points="${pts}" fill="none" stroke="${pal.line}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="${start[0] * 10 + 5}" cy="${start[1] * 10 + 5}" r="3.2" fill="${pal.rift}" stroke="#18120d" stroke-width="1"/>
-        <circle cx="${end[0] * 10 + 5}" cy="${end[1] * 10 + 5}" r="3.5" fill="#f5ca6d" stroke="#8a281e" stroke-width="1.4"/>
-      </svg>
-    `;
   }
 
   _startLevel(levelId, showBriefing = true) {
@@ -1459,7 +1331,6 @@ class TowerDeChessApp {
     const cards = CUTSCENE_ORDER.map((id) => {
       const c = CUTSCENES[id];
       const unlocked =
-        this.sandboxAll ||
         this.progress.seenCutscenes?.includes(id) ||
         (id === 'epilogue' ? beatFinal : this.progress.highestUnlocked >= c.unlockLevel);
 

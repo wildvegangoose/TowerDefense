@@ -639,7 +639,7 @@ body {
 
 .campaign-map-viewport {
   position: relative;
-  height: 320px;
+  height: min(64dvh, 560px);
   overflow-y: auto;
   overflow-x: hidden;
   scroll-behavior: smooth;
@@ -1228,13 +1228,7 @@ body {
   }
 
   .campaign-map-viewport {
-    height: min(65dvh, 580px);
-  }
-
-  .map-stage-panel {
-    width: 348px;
-    flex-shrink: 0;
-    justify-content: space-between;
+    height: min(68dvh, 640px);
   }
 }
 
