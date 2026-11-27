@@ -42,10 +42,33 @@ JS_FILES_IN_ORDER = [
 ]
 
 
+SHEET_META = {
+    "enemy_footman": {"cols": 4, "rows": 2, "frontFacesRight": True, "backFacesRight": True, "fps": 7.5},
+    "enemy_lancer": {"cols": 4, "rows": 2, "frontFacesRight": True, "backFacesRight": True, "fps": 10.5},
+    "enemy_bastion": {"cols": 4, "rows": 2, "frontFacesRight": True, "backFacesRight": True, "fps": 5.2},
+    "enemy_cleric": {"cols": 4, "rows": 2, "frontFacesRight": True, "backFacesRight": False, "fps": 6.2},
+    "enemy_warlord": {"cols": 4, "rows": 2, "frontFacesRight": True, "backFacesRight": True, "fps": 5.5},
+    "piece_pawn": {"cols": 4, "rows": 2, "frontFacesRight": True, "backFacesRight": False, "isTower": True},
+    "piece_knight": {"cols": 4, "rows": 2, "frontFacesRight": True, "backFacesRight": True, "isTower": True},
+    "piece_bishop": {"cols": 4, "rows": 2, "frontFacesRight": True, "backFacesRight": True, "isTower": True},
+    "piece_rook": {"cols": 4, "rows": 2, "frontFacesRight": True, "backFacesRight": True, "isTower": True},
+    "piece_queen": {"cols": 4, "rows": 2, "frontFacesRight": True, "backFacesRight": False, "isTower": True},
+    "piece_king": {"cols": 4, "rows": 2, "frontFacesRight": True, "backFacesRight": True, "isTower": True},
+    "piece_obelisk": {"cols": 4, "rows": 2, "radial": True, "fps": 5.5, "isTower": True},
+}
+
+
 def encode_webp_data_uri(path: str, size: int = 96, quality: int = 82) -> str:
     im = Image.open(path).convert("RGBA").resize((size, size), Image.Resampling.LANCZOS)
     buf = io.BytesIO()
     im.save(buf, format="WEBP", quality=quality, method=6)
+    return "data:image/webp;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
+
+
+def encode_sheet_webp_data_uri(path: str, width: int = 416, height: int = 208, quality: int = 76) -> str:
+    im = Image.open(path).convert("RGBA").resize((width, height), Image.Resampling.LANCZOS)
+    buf = io.BytesIO()
+    im.save(buf, format="WEBP", quality=quality, method=4)
     return "data:image/webp;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
 
 
@@ -63,6 +86,12 @@ def build() -> str:
         inline_sprites[key] = encode_webp_data_uri(
             os.path.join(REPO_DIR, "assets", "sprites", f"{key}.png"), size=96, quality=82
         )
+    inline_sheets = {}
+    for key in SHEET_META.keys():
+        sheet_path = os.path.join(REPO_DIR, "assets", "sheets", f"{key}.png")
+        if os.path.exists(sheet_path):
+            inline_sheets[key] = encode_sheet_webp_data_uri(sheet_path, width=416, height=208, quality=76)
+
     app_icon_uri = encode_webp_data_uri(
         os.path.join(REPO_DIR, "assets", "icons", "icon-192.png"), size=96, quality=82
     )
@@ -82,21 +111,27 @@ def build() -> str:
     # Inline assets.js replacement backed by base64 data URIs
     assets_js = f"""
 const INLINE_SPRITE_URIS = {json.dumps(inline_sprites)};
+const INLINE_SHEET_URIS = {json.dumps(inline_sheets)};
+const SHEET_META = {json.dumps(SHEET_META)};
 const SPRITES = {{}};
+const SHEETS = {{}};
 function getSpriteUrl(key) {{
   return INLINE_SPRITE_URIS[key] || '';
 }}
+function getSheetUrl(key) {{
+  return INLINE_SHEET_URIS[key] || '';
+}}
 async function preloadAssets() {{
-  const tasks = Object.entries(INLINE_SPRITE_URIS).map(
+  const loadInto = (map, dict) => Object.entries(map).map(
     ([key, uri]) =>
       new Promise((resolve) => {{
         const img = new Image();
-        img.onload = () => {{ SPRITES[key] = img; resolve(true); }};
+        img.onload = () => {{ dict[key] = img; resolve(true); }};
         img.onerror = () => resolve(false);
         img.src = uri;
       }})
   );
-  await Promise.all(tasks);
+  await Promise.all([...loadInto(INLINE_SPRITE_URIS, SPRITES), ...loadInto(INLINE_SHEET_URIS, SHEETS)]);
   return SPRITES;
 }}
 """

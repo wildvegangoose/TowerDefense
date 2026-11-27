@@ -5,7 +5,7 @@
 import { BOARD_SIZE, expandWaypoints } from '../data/levels.js';
 import { PIECE_REGISTRY, getPieceStats, getUpgradeInfo } from '../data/pieces.js';
 import { createEnemyConfig, DIFFICULTY_PRESETS } from '../data/enemies.js';
-import { SPRITES } from '../assets.js';
+import { SPRITES, SHEETS, SHEET_META } from '../assets.js';
 import { sound } from '../audio.js';
 import { getPatternTiles, selectTarget, getEnemiesOnRay } from './targeting.js';
 
@@ -194,6 +194,7 @@ export class GameEngine {
     this.previewTile = null;
     this.selectedTowerId = null;
 
+    sound.selectTrackForLevel(level.id);
     sound.setMusicDucked(false);
     sound.setMusicIntensity('prep');
 
@@ -294,6 +295,20 @@ export class GameEngine {
       return false;
     }
 
+    // Auto-orient the newly placed defender toward the nearest road tile in its pattern
+    let initAimX = 1;
+    let initAimBack = false;
+    const initPattern = getPatternTiles(col, row, getPieceStats(pieceId, 1));
+    const roadMatch = initPattern.find((t) => this.pathSet.has(`${t.col},${t.row}`));
+    if (roadMatch) {
+      const dx = roadMatch.col - col;
+      const dy = roadMatch.row - row;
+      const sDx = dx - dy;
+      const sDy = dx + dy;
+      if (Math.abs(sDx) > 0.05) initAimX = sDx < 0 ? -1 : 1;
+      initAimBack = sDy < -0.05;
+    }
+
     this.gold -= def.cost;
     const tower = {
       id: this.nextEntityId++,
@@ -308,6 +323,10 @@ export class GameEngine {
       damageDealt: 0,
       placeAnim: 1.0,
       recoil: 0,
+      attackAnim: 0,
+      aimX: initAimX,
+      aimBack: initAimBack,
+      idlePhase: Math.random() * Math.PI * 2,
       buffDamageMult: 1,
       buffRateMult: 1,
       buffedByKing: false,
@@ -552,11 +571,12 @@ export class GameEngine {
         }
       }
 
-      // Move along waypoints
+      // Move along waypoints & advance true walk/gallop animation proportional to actual speed
       const slowResist = e.isBoss ? 0.55 : 1.0;
       const effSlow = e.slowAmount * slowResist;
       const moveSpeed = e.staggerTimer > 0 ? e.speed * 0.15 : e.speed * (1 - effSlow);
       const stepDist = moveSpeed * dt;
+      e.animTime += dt * (moveSpeed / Math.max(0.45, e.speed));
 
       let remaining = stepDist;
       while (remaining > 0 && e.tileIdx < this.pathTiles.length - 1) {
@@ -567,6 +587,18 @@ export class GameEngine {
         const dy = targetY - e.y;
         const dist = Math.hypot(dx, dy);
 
+        if (dist > 0.001) {
+          // Isometric screen motion: screenDx = dx - dy (L/R), screenDy = dx + dy (Back/Front)
+          const screenDx = dx - dy;
+          const screenDy = dx + dy;
+          if (Math.abs(screenDx) > 0.02) {
+            e.facingX = screenDx < 0 ? -1 : 1;
+          }
+          if (Math.abs(screenDy) > 0.02) {
+            e.facingBack = screenDy < 0;
+          }
+        }
+
         if (dist <= remaining) {
           e.x = targetX;
           e.y = targetY;
@@ -575,11 +607,6 @@ export class GameEngine {
         } else {
           e.x += (dx / dist) * remaining;
           e.y += (dy / dist) * remaining;
-          // Isometric screen X direction is proportional to (dx - dy)
-          const screenDx = dx - dy;
-          if (Math.abs(screenDx) > 0.05) {
-            e.facing = screenDx < 0 ? -1 : 1;
-          }
           remaining = 0;
         }
       }
@@ -606,21 +633,32 @@ export class GameEngine {
       }
     }
 
-    // 3. Update towers & attacks
+    // 3. Update towers, 4-way target aiming & animated attacks
     for (const tower of this.towers) {
       if (tower.placeAnim > 0) tower.placeAnim = Math.max(0, tower.placeAnim - dt * 3.8);
       if (tower.recoil > 0) tower.recoil = Math.max(0, tower.recoil - dt * 6.0);
+      if (tower.attackAnim > 0) tower.attackAnim = Math.max(0, tower.attackAnim - dt * 2.45);
 
       const stats = getPieceStats(tower.pieceId, tower.tier);
       tower.cooldown -= dt;
-      if (tower.cooldown > 0) continue;
 
-      const selected = selectTarget(tower, stats, this.enemies);
-      if (!selected) continue;
+      const selected = this.enemies.length > 0 ? selectTarget(tower, stats, this.enemies) : null;
+      if (selected) {
+        // Continuously turn & aim toward the active target in 4 isometric quadrants!
+        const dx = selected.enemy.x - (tower.col + 0.5);
+        const dy = selected.enemy.y - (tower.row + 0.5);
+        const sDx = dx - dy;
+        const sDy = dx + dy;
+        if (Math.abs(sDx) > 0.08) tower.aimX = sDx < 0 ? -1 : 1;
+        if (Math.abs(sDy) > 0.08) tower.aimBack = sDy < 0;
+      }
+
+      if (tower.cooldown > 0 || !selected) continue;
 
       const effectiveRate = stats.fireRate * tower.buffRateMult;
       tower.cooldown = 1 / effectiveRate;
       tower.recoil = 1.0;
+      tower.attackAnim = 1.0;
 
       this._executeTowerAttack(tower, stats, selected.enemy, selected.hit);
     }
@@ -676,6 +714,12 @@ export class GameEngine {
       this.difficulty
     );
     const [sx, sy] = this.pathTiles[0];
+    const nextIdx = Math.min(this.pathTiles.length - 1, (customPos ? customPos.tileIdx : 0) + 1);
+    const initDx = this.pathTiles[nextIdx][0] - (customPos ? Math.floor(customPos.x) : sx);
+    const initDy = this.pathTiles[nextIdx][1] - (customPos ? Math.floor(customPos.y) : sy);
+    const initScreenDx = initDx - initDy;
+    const initScreenDy = initDx + initDy;
+
     const enemy = {
       id: this.nextEntityId++,
       ...cfg,
@@ -684,7 +728,9 @@ export class GameEngine {
       y: customPos ? customPos.y : sy + 0.5,
       tileIdx: customPos ? customPos.tileIdx : 0,
       pathProgress: customPos ? customPos.pathProgress : 0,
-      facing: 1,
+      facingX: initScreenDx < 0 ? -1 : 1,
+      facingBack: initScreenDy < 0,
+      animTime: Math.random() * 1.6,
       alive: true,
       hitFlash: 0,
       slowAmount: 0,
@@ -1494,18 +1540,69 @@ export class GameEngine {
       ctx.restore();
     }
 
-    const recoilScale = 1 + tower.recoil * 0.08;
-    const drawSize = this.tileW * 0.96 * recoilScale;
+    const recoilScale = 1 + tower.recoil * 0.04;
+    const drawSize = this.tileW * 1.12 * recoilScale;
+    const sheet = SHEETS[stats.sprite];
+    const meta = SHEET_META[stats.sprite];
 
-    const sprite = SPRITES[stats.sprite];
-    if (sprite) {
+    if (sheet && meta) {
+      const fw = sheet.width / meta.cols;
+      const fh = sheet.height / meta.rows;
+      let row = 0;
+      let col = 0;
+      let flipX = false;
+
+      if (meta.radial) {
+        // Frost Obelisk: continuous floating crystal idle (row 0), Frost Nova burst on attack (row 1)
+        if (tower.attackAnim > 0) {
+          row = 1;
+          const p = 1 - tower.attackAnim; // 0 -> 1
+          col = Math.min(3, Math.floor(p * 4));
+        } else {
+          row = 0;
+          col = Math.floor((this.time * (meta.fps || 5.5) + (tower.idlePhase || 0)) % 4);
+        }
+      } else {
+        row = tower.aimBack ? 1 : 0;
+        const nativeRight = row === 0 ? meta.frontFacesRight : meta.backFacesRight;
+        flipX = (tower.aimX > 0) !== nativeRight;
+
+        if (tower.attackAnim > 0) {
+          // 4-frame attack sequence: windup (1) -> climax strike/blast (2) -> settle (3) -> ready (0)
+          const p = 1 - tower.attackAnim;
+          col = p < 0.22 ? 1 : p < 0.62 ? 2 : p < 0.88 ? 3 : 0;
+        } else {
+          col = 0;
+        }
+      }
+
+      ctx.save();
+      ctx.translate(pieceP.x, pieceP.y);
+      if (flipX) ctx.scale(-1, 1);
       ctx.drawImage(
-        sprite,
-        pieceP.x - drawSize * 0.5,
-        pieceP.y - drawSize * 0.76,
+        sheet,
+        col * fw,
+        row * fh,
+        fw,
+        fh,
+        -drawSize * 0.5,
+        -drawSize * 0.82,
         drawSize,
         drawSize
       );
+      ctx.restore();
+    } else {
+      const sprite = SPRITES[stats.sprite];
+      if (sprite) {
+        const fallbackSize = this.tileW * 0.96 * recoilScale;
+        ctx.drawImage(
+          sprite,
+          pieceP.x - fallbackSize * 0.5,
+          pieceP.y - fallbackSize * 0.76,
+          fallbackSize,
+          fallbackSize
+        );
+      }
     }
 
     // Promotion Tier pips nestled cleanly at the front of the walnut plinth
@@ -1527,11 +1624,11 @@ export class GameEngine {
   }
 
   _drawEnemy(ctx, enemy) {
-    const bobZ = Math.abs(Math.sin(this.time * 7 * enemy.speed + enemy.bobPhase)) * 0.11;
     const groundP = this.boardToScreen(enemy.x, enemy.y, 0.02);
-    const bodyP = this.boardToScreen(enemy.x, enemy.y, 0.02 + bobZ);
+    const sheet = SHEETS[enemy.sprite];
+    const meta = SHEET_META[enemy.sprite];
 
-    this._drawIsoShadow(ctx, groundP.x, groundP.y + this.tileH * 0.05, this.tileW * 0.26 * enemy.scale);
+    this._drawIsoShadow(ctx, groundP.x, groundP.y + this.tileH * 0.05, this.tileW * 0.27 * enemy.scale);
 
     // Isometric glacial chill ring lying flat on the basalt trench
     if (enemy.slowTimer > 0) {
@@ -1547,31 +1644,52 @@ export class GameEngine {
       ctx.restore();
     }
 
-    const hitScale = 1 + enemy.hitFlash * 0.08;
-    const drawSize = this.tileW * 0.84 * enemy.scale * hitScale;
-    const sprite = SPRITES[enemy.sprite];
+    const hitScale = 1 + enemy.hitFlash * 0.07;
+    const drawSize = this.tileW * (sheet ? 0.98 : 0.84) * enemy.scale * hitScale;
 
     ctx.save();
-    ctx.translate(bodyP.x, bodyP.y);
-    if (enemy.facing < 0) {
-      ctx.scale(-1, 1);
-    }
+    ctx.translate(groundP.x, groundP.y);
     if (enemy.hitFlash > 0.15) {
       ctx.filter = `brightness(${1 + enemy.hitFlash * 0.75})`;
     } else if (enemy.slowTimer > 0) {
       ctx.filter = 'hue-rotate(155deg) saturate(1.25) brightness(1.08)';
     }
-    if (sprite) {
-      ctx.drawImage(sprite, -drawSize * 0.5, -drawSize * 0.76, drawSize, drawSize);
+
+    if (sheet && meta) {
+      const fw = sheet.width / meta.cols;
+      const fh = sheet.height / meta.rows;
+      const row = enemy.facingBack ? 1 : 0;
+      const frameIdx = Math.floor((enemy.animTime || 0) * (meta.fps || 7)) % meta.cols;
+      const nativeRight = row === 0 ? meta.frontFacesRight : meta.backFacesRight;
+      const flipX = (enemy.facingX > 0) !== nativeRight;
+
+      if (flipX) ctx.scale(-1, 1);
+      ctx.drawImage(
+        sheet,
+        frameIdx * fw,
+        row * fh,
+        fw,
+        fh,
+        -drawSize * 0.5,
+        -drawSize * 0.84,
+        drawSize,
+        drawSize
+      );
+    } else {
+      const sprite = SPRITES[enemy.sprite];
+      if (enemy.facingX < 0) ctx.scale(-1, 1);
+      if (sprite) {
+        ctx.drawImage(sprite, -drawSize * 0.5, -drawSize * 0.76, drawSize, drawSize);
+      }
     }
     ctx.filter = 'none';
     ctx.restore();
 
-    // Crisp HP bar floating cleanly above the miniature's head
+    // Crisp HP bar floating cleanly above the animated character's head
     const barW = this.tileW * (enemy.isBoss ? 0.68 : 0.48);
     const barH = Math.max(3.5, this.tileW * (enemy.isBoss ? 0.085 : 0.065));
-    const bx = bodyP.x - barW * 0.5;
-    const by = bodyP.y - drawSize * 0.82;
+    const bx = groundP.x - barW * 0.5;
+    const by = groundP.y - drawSize * 0.86;
     const hpRatio = Math.max(0, enemy.hp / enemy.maxHp);
 
     ctx.fillStyle = 'rgba(20, 14, 10, 0.84)';

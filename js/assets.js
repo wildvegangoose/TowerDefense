@@ -1,6 +1,6 @@
 /**
- * Sprite asset loader for TowerDeChess.
- * Preloads all 3D miniature PNG sprites with clean fallback handling.
+ * Sprite & Directional Animation Sheet Asset Loader for TowerDeChess.
+ * Preloads all 3D miniature icons (`SPRITES`) and 4x2 animated directional sprite sheets (`SHEETS`).
  */
 
 const SPRITE_KEYS = [
@@ -19,29 +19,54 @@ const SPRITE_KEYS = [
   'citadel_gate',
 ];
 
+export const SHEET_META = {
+  enemy_footman: { cols: 4, rows: 2, frontFacesRight: true, backFacesRight: true, fps: 7.5 },
+  enemy_lancer: { cols: 4, rows: 2, frontFacesRight: true, backFacesRight: true, fps: 10.5 },
+  enemy_bastion: { cols: 4, rows: 2, frontFacesRight: true, backFacesRight: true, fps: 5.2 },
+  enemy_cleric: { cols: 4, rows: 2, frontFacesRight: true, backFacesRight: false, fps: 6.2 },
+  enemy_warlord: { cols: 4, rows: 2, frontFacesRight: true, backFacesRight: true, fps: 5.5 },
+
+  piece_pawn: { cols: 4, rows: 2, frontFacesRight: true, backFacesRight: false, isTower: true },
+  piece_knight: { cols: 4, rows: 2, frontFacesRight: true, backFacesRight: true, isTower: true },
+  piece_bishop: { cols: 4, rows: 2, frontFacesRight: true, backFacesRight: true, isTower: true },
+  piece_rook: { cols: 4, rows: 2, frontFacesRight: true, backFacesRight: true, isTower: true },
+  piece_queen: { cols: 4, rows: 2, frontFacesRight: true, backFacesRight: false, isTower: true },
+  piece_king: { cols: 4, rows: 2, frontFacesRight: true, backFacesRight: true, isTower: true },
+  piece_obelisk: { cols: 4, rows: 2, radial: true, fps: 5.5, isTower: true },
+};
+
 export const SPRITES = {};
+export const SHEETS = {};
 
 export function getSpriteUrl(key) {
   return `assets/sprites/${key}.png`;
 }
 
+export function getSheetUrl(key) {
+  return `assets/sheets/${key}.png`;
+}
+
+function loadImage(url) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.decoding = 'async';
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+
 export async function preloadAssets() {
-  const tasks = SPRITE_KEYS.map(
-    (key) =>
-      new Promise((resolve) => {
-        const img = new Image();
-        img.decoding = 'async';
-        img.onload = () => {
-          SPRITES[key] = img;
-          resolve(true);
-        };
-        img.onerror = () => {
-          console.warn(`[Assets] Failed to load sprite: ${key}`);
-          resolve(false);
-        };
-        img.src = getSpriteUrl(key);
-      })
-  );
-  await Promise.all(tasks);
+  const spriteTasks = SPRITE_KEYS.map(async (key) => {
+    const img = await loadImage(getSpriteUrl(key));
+    if (img) SPRITES[key] = img;
+  });
+
+  const sheetTasks = Object.keys(SHEET_META).map(async (key) => {
+    const img = await loadImage(getSheetUrl(key));
+    if (img) SHEETS[key] = img;
+  });
+
+  await Promise.all([...spriteTasks, ...sheetTasks]);
   return SPRITES;
 }
