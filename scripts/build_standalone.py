@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """
 Builds a single-file, zero-dependency, CSP-safe standalone HTML version of TowerDeChess
-with all CSS, JS modules, and WebP miniature sprites inlined.
+with all CSS, JS modules, WebP miniature sprites and a compact copy of the soundtrack inlined.
+
+Cinematic videos are too large to inline, so video cutscenes fall back to their painted slides.
+The soundtrack is re-encoded to a lighter MP3 when ffmpeg is on PATH (otherwise inlined as-is).
 """
 
 import base64
@@ -9,10 +12,16 @@ import io
 import json
 import os
 import re
+import shutil
+import subprocess
+import tempfile
 from PIL import Image
 
-REPO_DIR = "/home/antigravity/wildvegangoose/TowerDefense"
+REPO_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_PATH = os.path.join(REPO_DIR, "dist", "towerdechess-standalone.html")
+
+MUSIC_KEY = "before_the_gates_break"
+STANDALONE_MUSIC_BITRATE = "96k"
 
 SPRITE_KEYS = [
     "piece_pawn",
@@ -90,6 +99,23 @@ def encode_scene_webp_data_uri(path: str, width: int = 640, height: int = 360, q
     return "data:image/webp;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
 
 
+def encode_music_base64(path: str, bitrate: str = STANDALONE_MUSIC_BITRATE) -> str:
+    """Returns the soundtrack as base64 MP3, downsized with ffmpeg when available."""
+    ffmpeg = shutil.which("ffmpeg")
+    if ffmpeg:
+        with tempfile.TemporaryDirectory() as tmp:
+            out = os.path.join(tmp, "music.mp3")
+            subprocess.run(
+                [ffmpeg, "-y", "-loglevel", "error", "-i", path, "-map", "0:a", "-c:a", "libmp3lame",
+                 "-b:a", bitrate, "-map_metadata", "-1", out],
+                check=True,
+            )
+            with open(out, "rb") as f:
+                return base64.b64encode(f.read()).decode("ascii")
+    with open(path, "rb") as f:
+        return base64.b64encode(f.read()).decode("ascii")
+
+
 def strip_es_modules(js: str) -> str:
     # Remove import statements (single or multi-line)
     js = re.sub(r"^\s*import\s+[\s\S]*?from\s+['\"][^'\"]+['\"];?\s*$", "", js, flags=re.MULTILINE)
@@ -114,6 +140,9 @@ def build() -> str:
         scene_path = os.path.join(REPO_DIR, "assets", "scenes", f"{key}.jpg")
         if os.path.exists(scene_path):
             inline_scenes[key] = encode_scene_webp_data_uri(scene_path, width=640, height=360, quality=74)
+
+    music_path = os.path.join(REPO_DIR, "assets", "audio", f"{MUSIC_KEY}.mp3")
+    inline_music_b64 = encode_music_base64(music_path) if os.path.exists(music_path) else ""
 
     app_icon_uri = encode_webp_data_uri(
         os.path.join(REPO_DIR, "assets", "icons", "icon-192.png"), size=96, quality=82
@@ -147,6 +176,23 @@ function getSheetUrl(key) {{
 }}
 function getSceneUrl(key) {{
   return INLINE_SCENE_URIS[key] || '';
+}}
+// Videos are not inlined: video cutscenes play their painted slides instead
+function getVideoUrl(key) {{
+  return '';
+}}
+const INLINE_MUSIC_B64 = {json.dumps({MUSIC_KEY: inline_music_b64} if inline_music_b64 else {})};
+const MUSIC_BLOB_URLS = {{}};
+// Blob URLs avoid browser size limits on large media data: URIs
+function getMusicUrl(key) {{
+  if (MUSIC_BLOB_URLS[key]) return MUSIC_BLOB_URLS[key];
+  const b64 = INLINE_MUSIC_B64[key];
+  if (!b64) return '';
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  MUSIC_BLOB_URLS[key] = URL.createObjectURL(new Blob([bytes], {{ type: 'audio/mpeg' }}));
+  return MUSIC_BLOB_URLS[key];
 }}
 async function preloadAssets() {{
   const loadInto = (map, dict) => Object.entries(map).map(

@@ -264,7 +264,7 @@ export class GameEngine {
     this.previewTile = null;
     this.selectedTowerId = null;
 
-    sound.selectTrackForLevel(level.id);
+    sound.restartMusic();
     sound.setMusicDucked(false);
     sound.setMusicIntensity('prep');
 

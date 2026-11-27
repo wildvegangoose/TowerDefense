@@ -1,6 +1,7 @@
 /**
  * Sprite & Directional Animation Sheet Asset Loader for TowerDeChess.
  * Preloads all 3D miniature icons (`SPRITES`) and 4x2 animated directional sprite sheets (`SHEETS`).
+ * Also resolves URLs for cutscene paintings, cinematic videos and the streamed soundtrack.
  */
 
 const SPRITE_KEYS = [
@@ -48,6 +49,14 @@ export function getSheetUrl(key) {
 
 export function getSceneUrl(key) {
   return `assets/scenes/${key}.jpg`;
+}
+
+export function getVideoUrl(key) {
+  return `assets/videos/${key}.mp4`;
+}
+
+export function getMusicUrl(key) {
+  return `assets/audio/${key}.mp3`;
 }
 
 function loadImage(url) {

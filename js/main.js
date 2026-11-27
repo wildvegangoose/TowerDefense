@@ -167,7 +167,6 @@ class TowerDeChessApp {
       toggleSettingMusic: document.getElementById('toggle-setting-music'),
       toggleSettingSfx: document.getElementById('toggle-setting-sfx'),
       settingsTrackName: document.getElementById('settings-track-name'),
-      btnNextTrack: document.getElementById('btn-next-track'),
       settingsProgressSummary: document.getElementById('settings-progress-summary'),
       btnSettingsOpenSave: document.getElementById('btn-settings-open-save'),
       btnClearSaveInit: document.getElementById('btn-clear-save-init'),
@@ -385,12 +384,6 @@ class TowerDeChessApp {
       this._syncMuteIcon();
       if (!sound.sfxMuted) sound.playSelect();
     });
-    this.el.btnNextTrack?.addEventListener('click', () => {
-      sound.unlock();
-      sound.nextTrack();
-      if (!sound.sfxMuted) sound.playSelect();
-      this._refreshSettingsUi();
-    });
     this.el.btnSettingsOpenSave?.addEventListener('click', () => {
       this.el.modalSettings.classList.add('hidden');
       this._openSaveModal();
@@ -479,7 +472,7 @@ class TowerDeChessApp {
     }
     if (this.el.settingsTrackName) {
       const tr = sound.getCurrentTrack();
-      this.el.settingsTrackName.textContent = `${tr.name} (${tr.subtitle})`;
+      this.el.settingsTrackName.textContent = `${tr.name} • ${tr.subtitle}`;
     }
     if (this.el.settingsProgressSummary) {
       const tacStars = getTotalStars(this.progress, 'standard');
