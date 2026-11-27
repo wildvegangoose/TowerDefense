@@ -5,11 +5,81 @@
 import { BOARD_SIZE, expandWaypoints } from '../data/levels.js';
 import { PIECE_REGISTRY, getPieceStats, getUpgradeInfo } from '../data/pieces.js';
 import { createEnemyConfig, DIFFICULTY_PRESETS } from '../data/enemies.js';
+import { CHAPTER_BOSS_BY_LEVEL } from '../data/story.js';
 import { SPRITES, SHEETS, SHEET_META } from '../assets.js';
 import { sound } from '../audio.js';
 import { getPatternTiles, selectTarget, getEnemiesOnRay } from './targeting.js';
 
-const FRAME_PAD_RATIO = 0.055; // Walnut wood border with A-H / 1-8 coordinates
+const FRAME_PAD_RATIO = 0.055; // Sculpted border with A-H / 1-8 coordinates
+
+const BOARD_THEMES = {
+  1: {
+    id: 'ivory',
+    slabTop: ['#503421', '#3a2416', '#2a190f'],
+    slabLeft: '#462c1b',
+    slabRight: '#24140b',
+    inlayBand: 'rgba(222, 180, 102, 0.65)',
+    outerBevel: 'rgba(218, 178, 104, 0.52)',
+    innerFrame: 'rgba(232, 194, 118, 0.72)',
+    coordColor: 'rgba(236, 206, 152, 0.78)',
+    roadLight: '#403833',
+    roadDark: '#352e2a',
+    roadHighlight: 'rgba(255, 224, 175, 0.045)',
+    tileLight: ['#e8dac2', '#bfa989', '#968062'],
+    tileDark: ['#9c886d', '#78664e', '#594a38'],
+    bevelLight: 'rgba(255, 252, 244, 0.45)',
+    bevelDark: 'rgba(255, 245, 226, 0.18)',
+    ribbonBase: 'rgba(217, 148, 72, 0.24)',
+    ribbonDash: 'rgba(246, 192, 102, 0.5)',
+    riftColors: ['rgba(255, 130, 86, 0.95)', 'rgba(180, 34, 24, 0.78)', 'rgba(40, 10, 10, 0)'],
+    riftRing: 'rgba(255, 160, 110, 0.55)',
+    atmosphere: 'gold',
+  },
+  2: {
+    id: 'glacial',
+    slabTop: ['#2d4050', '#1e2c39', '#131c26'],
+    slabLeft: '#253848',
+    slabRight: '#111a23',
+    inlayBand: 'rgba(148, 220, 255, 0.68)',
+    outerBevel: 'rgba(136, 206, 244, 0.52)',
+    innerFrame: 'rgba(166, 230, 255, 0.74)',
+    coordColor: 'rgba(196, 232, 252, 0.8)',
+    roadLight: '#233443',
+    roadDark: '#1b2834',
+    roadHighlight: 'rgba(128, 218, 255, 0.08)',
+    tileLight: ['#dcecf6', '#a8c6db', '#81a4be'],
+    tileDark: ['#617e96', '#4a647a', '#35495b'],
+    bevelLight: 'rgba(240, 252, 255, 0.55)',
+    bevelDark: 'rgba(180, 228, 255, 0.22)',
+    ribbonBase: 'rgba(84, 186, 240, 0.28)',
+    ribbonDash: 'rgba(132, 228, 255, 0.62)',
+    riftColors: ['rgba(140, 232, 255, 0.95)', 'rgba(54, 138, 214, 0.78)', 'rgba(10, 24, 44, 0)'],
+    riftRing: 'rgba(180, 240, 255, 0.65)',
+    atmosphere: 'snow',
+  },
+  3: {
+    id: 'crimson',
+    slabTop: ['#3f1d19', '#291210', '#170909'],
+    slabLeft: '#351714',
+    slabRight: '#140808',
+    inlayBand: 'rgba(242, 126, 72, 0.72)',
+    outerBevel: 'rgba(232, 108, 66, 0.55)',
+    innerFrame: 'rgba(255, 146, 86, 0.76)',
+    coordColor: 'rgba(246, 184, 144, 0.82)',
+    roadLight: '#2c1d1c',
+    roadDark: '#221515',
+    roadHighlight: 'rgba(255, 112, 52, 0.09)',
+    tileLight: ['#ceb8a8', '#a08777', '#796457'],
+    tileDark: ['#5b413c', '#45302c', '#2f1f1d'],
+    bevelLight: 'rgba(255, 224, 196, 0.38)',
+    bevelDark: 'rgba(255, 138, 84, 0.2)',
+    ribbonBase: 'rgba(232, 82, 42, 0.32)',
+    ribbonDash: 'rgba(255, 148, 68, 0.65)',
+    riftColors: ['rgba(255, 168, 72, 0.98)', 'rgba(210, 38, 20, 0.84)', 'rgba(46, 8, 6, 0)'],
+    riftRing: 'rgba(255, 176, 84, 0.72)',
+    atmosphere: 'ember',
+  },
+};
 
 export class GameEngine {
   constructor(canvas, callbacks) {
@@ -440,7 +510,10 @@ export class GameEngine {
     sound.setMusicIntensity(hasBoss ? 'boss' : 'battle');
     if (hasBoss) {
       this._triggerShake(0.4, 5);
-      this._emitBanner('Crimson Warlord Approaches!');
+      const namedBoss = CHAPTER_BOSS_BY_LEVEL[this.level.id];
+      this._emitBanner(
+        namedBoss ? `${namedBoss.name} Approaches!` : 'Crimson Warlord Approaches!'
+      );
     }
     this._emitHud();
   }
@@ -1153,6 +1226,11 @@ export class GameEngine {
     }
   }
 
+  _getBoardTheme() {
+    const ch = this.level?.chapter || 1;
+    return BOARD_THEMES[ch] || BOARD_THEMES[1];
+  }
+
   render() {
     const ctx = this.ctx;
     if (!this.canvasW || !this.level) return;
@@ -1173,13 +1251,55 @@ export class GameEngine {
     this._drawKingTethers(ctx);
     this._drawEntitiesSorted(ctx);
     this._drawProjectilesAndVfx(ctx);
+    this._drawBiomeAtmosphere(ctx);
     this._drawFloatTexts(ctx);
 
     ctx.restore();
   }
 
+  _drawBiomeAtmosphere(ctx) {
+    const theme = this._getBoardTheme();
+    const kind = theme.atmosphere;
+    const count = kind === 'snow' ? 28 : 20;
+    const w = this.canvasW;
+    const h = this.canvasH;
+    const t = this.time;
+
+    ctx.save();
+    for (let i = 0; i < count; i++) {
+      // Deterministic lightweight procedural particles (zero GC allocations per frame!)
+      const seed = i * 97.31;
+      let px, py, r, alpha;
+      if (kind === 'snow') {
+        px = ((seed * 13.7 - t * (16 + (i % 5) * 4) + Math.sin(t * 1.4 + i) * 14) % w + w) % w;
+        py = ((seed * 7.3 + t * (22 + (i % 6) * 5)) % h + h) % h;
+        r = 1.3 + (i % 3) * 0.7;
+        alpha = 0.25 + (i % 4) * 0.1;
+        ctx.fillStyle = '#dff5ff';
+      } else if (kind === 'ember') {
+        px = ((seed * 11.3 + Math.sin(t * 1.8 + i) * 18) % w + w) % w;
+        py = ((seed * 9.1 - t * (20 + (i % 5) * 6)) % h + h) % h;
+        r = 1.2 + (i % 3) * 0.65;
+        alpha = 0.28 + 0.2 * Math.sin(t * 4 + i);
+        ctx.fillStyle = i % 2 === 0 ? '#ff9d42' : '#ff5630';
+      } else {
+        px = ((seed * 15.1 + Math.sin(t * 0.8 + i) * 16) % w + w) % w;
+        py = ((seed * 8.7 - t * (7 + (i % 4) * 2)) % h + h) % h;
+        r = 1.2 + (i % 2) * 0.6;
+        alpha = 0.14 + 0.08 * Math.sin(t * 2 + i);
+        ctx.fillStyle = '#ffe59c';
+      }
+      ctx.globalAlpha = Math.max(0.05, alpha);
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
   _drawWalnutSlab(ctx) {
-    const b = 0.48; // Sleek walnut frame overhang in tiles
+    const theme = this._getBoardTheme();
+    const b = 0.48; // Sleek frame overhang in tiles
     const slabTop = 0.05;
     const slabBot = -0.46;
 
@@ -1190,13 +1310,13 @@ export class GameEngine {
     ctx.fill();
     ctx.restore();
 
-    // 2. Sculpted 3D Walnut Tabletop Slab with warm directional shading
+    // 2. Sculpted 3D Tabletop Slab styled per Chapter Realm (Walnut / Glacial Slate / Forged Iron)
     const pTopN = this.boardToScreen(-b, -b, slabTop);
     const pTopS = this.boardToScreen(BOARD_SIZE + b, BOARD_SIZE + b, slabTop);
     const topGrad = ctx.createLinearGradient(pTopN.x, pTopN.y, pTopS.x, pTopS.y);
-    topGrad.addColorStop(0, '#503421');
-    topGrad.addColorStop(0.5, '#3a2416');
-    topGrad.addColorStop(1, '#2a190f');
+    topGrad.addColorStop(0, theme.slabTop[0]);
+    topGrad.addColorStop(0.5, theme.slabTop[1]);
+    topGrad.addColorStop(1, theme.slabTop[2]);
 
     this._drawIsoExtrudedBox(
       ctx,
@@ -1207,11 +1327,11 @@ export class GameEngine {
       slabTop,
       slabBot,
       topGrad,
-      '#462c1b', // Lit front-left walnut side
-      '#24140b'  // Shaded front-right walnut side
+      theme.slabLeft,
+      theme.slabRight
     );
 
-    // 3. Gleaming antique brass inlay band running around the 3D vertical slab wall
+    // 3. Gleaming metallic inlay band running around the 3D vertical slab wall
     const bandZ = -0.2;
     const wL = this.boardToScreen(-b, BOARD_SIZE + b, bandZ);
     const wS = this.boardToScreen(BOARD_SIZE + b, BOARD_SIZE + b, bandZ);
@@ -1221,27 +1341,27 @@ export class GameEngine {
     ctx.moveTo(wL.x, wL.y);
     ctx.lineTo(wS.x, wS.y);
     ctx.lineTo(wR.x, wR.y);
-    ctx.strokeStyle = 'rgba(222, 180, 102, 0.65)';
+    ctx.strokeStyle = theme.inlayBand;
     ctx.lineWidth = Math.max(1.8, this.tileW * 0.032);
     ctx.stroke();
 
-    // Outer top rim brass bevel
+    // Outer top rim bevel
     this._traceIsoQuad(ctx, -b, -b, BOARD_SIZE + b, BOARD_SIZE + b, slabTop);
-    ctx.strokeStyle = 'rgba(218, 178, 104, 0.52)';
+    ctx.strokeStyle = theme.outerBevel;
     ctx.lineWidth = 1.6;
     ctx.stroke();
 
-    // Inner inlaid brass frame hugging the 8x8 playing field
+    // Inner inlaid frame hugging the 8x8 playing field
     this._traceIsoQuad(ctx, -0.04, -0.04, BOARD_SIZE + 0.04, BOARD_SIZE + 0.04, slabTop + 0.01);
-    ctx.strokeStyle = 'rgba(232, 194, 118, 0.72)';
+    ctx.strokeStyle = theme.innerFrame;
     ctx.lineWidth = 1.5;
     ctx.stroke();
     ctx.restore();
 
-    // 4. Gilded chess coordinates along front-left (A-H) and front-right (8-1) walnut bevels
+    // 4. Chess coordinates along front-left (A-H) and front-right (8-1) bevels
     const fontSize = Math.max(8, Math.round(this.tileW * 0.16));
     ctx.save();
-    ctx.fillStyle = 'rgba(236, 206, 152, 0.78)';
+    ctx.fillStyle = theme.coordColor;
     ctx.font = `700 ${fontSize}px Cinzel, Georgia, serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -1257,6 +1377,7 @@ export class GameEngine {
   }
 
   _drawIsoBoardTiles(ctx) {
+    const theme = this._getBoardTheme();
     const elevatedZ = 0.16;
     const roadZ = 0.0;
 
@@ -1267,25 +1388,22 @@ export class GameEngine {
         const isLight = (r + c) % 2 === 0;
 
         if (isRoad) {
-          // Recessed dark obsidian basalt cobblestone trench!
+          // Recessed realm-themed cobblestone trench!
           this._traceIsoQuad(ctx, c, r, c + 1, r + 1, roadZ);
-          ctx.fillStyle = isLight ? '#403833' : '#352e2a';
+          ctx.fillStyle = isLight ? theme.roadLight : theme.roadDark;
           ctx.fill();
-          ctx.strokeStyle = 'rgba(18, 12, 8, 0.5)';
+          ctx.strokeStyle = 'rgba(12, 10, 12, 0.52)';
           ctx.lineWidth = 1;
           ctx.stroke();
 
-          // Subtle carved inner cobblestone flagstone highlight
+          // Carved inner cobblestone / frost / ember flagstone glow
           this._traceIsoQuad(ctx, c + 0.12, r + 0.12, c + 0.88, r + 0.88, roadZ);
-          ctx.fillStyle = 'rgba(255, 224, 175, 0.045)';
+          ctx.fillStyle = theme.roadHighlight;
           ctx.fill();
         } else {
-          // Elevated sculpted travertine & walnut marble block!
-          const topFill = isLight ? '#e8dac2' : '#9c886d';
-          const leftWall = isLight ? '#bfa989' : '#78664e';
-          const rightWall = isLight ? '#968062' : '#594a38';
+          // Elevated sculpted marble / glacier / volcanic basalt block!
+          const [topFill, leftWall, rightWall] = isLight ? theme.tileLight : theme.tileDark;
 
-          // Draw extruded stone block from roadZ up to elevatedZ
           this._drawIsoExtrudedBox(
             ctx,
             c + 0.015,
@@ -1299,7 +1417,7 @@ export class GameEngine {
             rightWall
           );
 
-          // Crisp sunlit marble edge highlight along North-West & North-East bevel
+          // Crisp sunlit/frosted/ember edge highlight along North-West & North-East bevel
           const tN = this.boardToScreen(c + 0.02, r + 0.02, elevatedZ);
           const tE = this.boardToScreen(c + 0.98, r + 0.02, elevatedZ);
           const tW = this.boardToScreen(c + 0.02, r + 0.98, elevatedZ);
@@ -1307,7 +1425,7 @@ export class GameEngine {
           ctx.moveTo(tW.x, tW.y);
           ctx.lineTo(tN.x, tN.y);
           ctx.lineTo(tE.x, tE.y);
-          ctx.strokeStyle = isLight ? 'rgba(255, 252, 244, 0.45)' : 'rgba(255, 245, 226, 0.18)';
+          ctx.strokeStyle = isLight ? theme.bevelLight : theme.bevelDark;
           ctx.lineWidth = 1.1;
           ctx.stroke();
         }
@@ -1316,7 +1434,8 @@ export class GameEngine {
   }
 
   _drawRoadRibbonAndRift(ctx) {
-    // 1. Golden-ember directional path ribbon flush inside the recessed road trench
+    const theme = this._getBoardTheme();
+    // 1. Realm-themed directional path ribbon flush inside the recessed road trench
     ctx.save();
     ctx.beginPath();
     for (let i = 0; i < this.pathTiles.length; i++) {
@@ -1325,7 +1444,7 @@ export class GameEngine {
       if (i === 0) ctx.moveTo(p.x, p.y);
       else ctx.lineTo(p.x, p.y);
     }
-    ctx.strokeStyle = 'rgba(217, 148, 72, 0.24)';
+    ctx.strokeStyle = theme.ribbonBase;
     ctx.lineWidth = Math.max(2.5, this.tileW * 0.11);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -1335,12 +1454,12 @@ export class GameEngine {
     const dashLen = this.tileW * 0.16;
     ctx.setLineDash([dashLen, dashLen * 1.6]);
     ctx.lineDashOffset = -this.time * this.tileW * 0.55;
-    ctx.strokeStyle = 'rgba(246, 192, 102, 0.5)';
+    ctx.strokeStyle = theme.ribbonDash;
     ctx.lineWidth = Math.max(1.5, this.tileW * 0.048);
     ctx.stroke();
     ctx.restore();
 
-    // 2. Elliptical glowing Dark Rift Spawn Portal lying flat on the start diamond
+    // 2. Elliptical glowing Rift Spawn Portal lying flat on the start diamond
     const [sc, sr] = this.pathTiles[0];
     const sp = this.boardToScreen(sc + 0.5, sr + 0.5, 0.02);
     const pulse = 0.88 + 0.12 * Math.sin(this.time * 4.2);
@@ -1351,18 +1470,18 @@ export class GameEngine {
     ctx.translate(sp.x, sp.y);
     ctx.scale(1, this.isoRatio);
     const riftGrad = ctx.createRadialGradient(0, 0, 1, 0, 0, rx);
-    riftGrad.addColorStop(0, 'rgba(255, 130, 86, 0.95)');
-    riftGrad.addColorStop(0.45, 'rgba(180, 34, 24, 0.78)');
-    riftGrad.addColorStop(1, 'rgba(40, 10, 10, 0)');
+    riftGrad.addColorStop(0, theme.riftColors[0]);
+    riftGrad.addColorStop(0.45, theme.riftColors[1]);
+    riftGrad.addColorStop(1, theme.riftColors[2]);
     ctx.fillStyle = riftGrad;
     ctx.beginPath();
     ctx.arc(0, 0, rx, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
-    // Subtle swirling crimson inner ring
+    // Subtle swirling inner portal ring
     ctx.save();
-    ctx.strokeStyle = 'rgba(255, 160, 110, 0.55)';
+    ctx.strokeStyle = theme.riftRing;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.ellipse(sp.x, sp.y, rx * 0.55, ry * 0.55, 0, 0, Math.PI * 2);

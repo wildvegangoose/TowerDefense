@@ -30,12 +30,23 @@ SPRITE_KEYS = [
     "citadel_gate",
 ]
 
+SCENE_KEYS = [
+    "scene_prologue_1",
+    "scene_prologue_2",
+    "scene_chapter2_1",
+    "scene_chapter2_2",
+    "scene_chapter3_1",
+    "scene_epilogue_1",
+]
+
 JS_FILES_IN_ORDER = [
     "js/data/levels.js",
     "js/data/pieces.js",
     "js/data/enemies.js",
+    "js/data/story.js",
     "js/audio.js",
     "js/storage.js",
+    "js/cutscene.js",
     "js/engine/targeting.js",
     "js/engine/game.js",
     "js/main.js",
@@ -72,6 +83,13 @@ def encode_sheet_webp_data_uri(path: str, width: int = 416, height: int = 208, q
     return "data:image/webp;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
 
 
+def encode_scene_webp_data_uri(path: str, width: int = 640, height: int = 360, quality: int = 74) -> str:
+    im = Image.open(path).convert("RGB").resize((width, height), Image.Resampling.LANCZOS)
+    buf = io.BytesIO()
+    im.save(buf, format="WEBP", quality=quality, method=4)
+    return "data:image/webp;base64," + base64.b64encode(buf.getvalue()).decode("ascii")
+
+
 def strip_es_modules(js: str) -> str:
     # Remove import statements (single or multi-line)
     js = re.sub(r"^\s*import\s+[\s\S]*?from\s+['\"][^'\"]+['\"];?\s*$", "", js, flags=re.MULTILINE)
@@ -91,6 +109,11 @@ def build() -> str:
         sheet_path = os.path.join(REPO_DIR, "assets", "sheets", f"{key}.png")
         if os.path.exists(sheet_path):
             inline_sheets[key] = encode_sheet_webp_data_uri(sheet_path, width=416, height=208, quality=76)
+    inline_scenes = {}
+    for key in SCENE_KEYS:
+        scene_path = os.path.join(REPO_DIR, "assets", "scenes", f"{key}.jpg")
+        if os.path.exists(scene_path):
+            inline_scenes[key] = encode_scene_webp_data_uri(scene_path, width=640, height=360, quality=74)
 
     app_icon_uri = encode_webp_data_uri(
         os.path.join(REPO_DIR, "assets", "icons", "icon-192.png"), size=96, quality=82
@@ -112,6 +135,7 @@ def build() -> str:
     assets_js = f"""
 const INLINE_SPRITE_URIS = {json.dumps(inline_sprites)};
 const INLINE_SHEET_URIS = {json.dumps(inline_sheets)};
+const INLINE_SCENE_URIS = {json.dumps(inline_scenes)};
 const SHEET_META = {json.dumps(SHEET_META)};
 const SPRITES = {{}};
 const SHEETS = {{}};
@@ -120,6 +144,9 @@ function getSpriteUrl(key) {{
 }}
 function getSheetUrl(key) {{
   return INLINE_SHEET_URIS[key] || '';
+}}
+function getSceneUrl(key) {{
+  return INLINE_SCENE_URIS[key] || '';
 }}
 async function preloadAssets() {{
   const loadInto = (map, dict) => Object.entries(map).map(

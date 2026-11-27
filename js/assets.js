@@ -46,6 +46,10 @@ export function getSheetUrl(key) {
   return `assets/sheets/${key}.png`;
 }
 
+export function getSceneUrl(key) {
+  return `assets/scenes/${key}.jpg`;
+}
+
 function loadImage(url) {
   return new Promise((resolve) => {
     const img = new Image();

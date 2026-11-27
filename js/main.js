@@ -2,8 +2,9 @@
  * TowerDeChess — Main App Controller, Campaign Progression & Reactive HUD.
  */
 
-import { preloadAssets, getSpriteUrl } from './assets.js';
+import { preloadAssets, getSpriteUrl, getSceneUrl } from './assets.js';
 import { sound } from './audio.js';
+import { CutscenePlayer } from './cutscene.js';
 import { LEVELS, CHAPTERS, getChapterForLevel, expandWaypoints } from './data/levels.js';
 import {
   PIECE_REGISTRY,
@@ -15,11 +16,19 @@ import {
   getUnlockedPiecesForLevel,
 } from './data/pieces.js';
 import { ENEMY_TYPES } from './data/enemies.js';
+import {
+  CUTSCENES,
+  CUTSCENE_ORDER,
+  VILLAINS,
+  ENEMY_LORE,
+  LEVEL_DISPATCHES,
+} from './data/story.js';
 import { GameEngine } from './engine/game.js';
 import {
   loadProgressSync,
   hydrateProgressFromBackup,
   recordLevelVictory,
+  markCutsceneSeen,
   clearProgress,
   getStarsForLevel,
   getTotalStars,
@@ -39,6 +48,8 @@ class TowerDeChessApp {
     this.engine = null;
     this.bannerTimer = null;
     this.deferredInstallPrompt = null;
+    this.activeCodexTab = 'defenders';
+    this.cutscene = new CutscenePlayer();
 
     this._cacheDom();
     this._bindGlobalEvents();
@@ -53,6 +64,7 @@ class TowerDeChessApp {
       campaignTotalStars: document.getElementById('campaign-total-stars'),
       campaignRevealedPill: document.getElementById('campaign-revealed-pill'),
       mapRealmIndicator: document.getElementById('map-realm-indicator'),
+      btnPlayChapterStory: document.getElementById('btn-play-chapter-story'),
       btnJumpFrontier: document.getElementById('btn-jump-frontier'),
       campaignMapViewport: document.getElementById('campaign-map-viewport'),
       campaignMapCanvas: document.getElementById('campaign-map-canvas'),
@@ -60,6 +72,7 @@ class TowerDeChessApp {
       stageTitle: document.getElementById('stage-title'),
       stageSubtitle: document.getElementById('stage-subtitle'),
       stageStars: document.getElementById('stage-stars'),
+      stageDispatch: document.getElementById('stage-dispatch'),
       stageMinimap: document.getElementById('stage-minimap'),
       stageWaves: document.getElementById('stage-waves'),
       stageGold: document.getElementById('stage-gold'),
@@ -151,6 +164,7 @@ class TowerDeChessApp {
 
       // Codex Modal
       modalCodex: document.getElementById('modal-codex'),
+      codexTabs: document.getElementById('codex-tabs'),
       codexBody: document.getElementById('codex-body'),
       btnCloseCodex: document.getElementById('btn-close-codex'),
 
@@ -196,6 +210,14 @@ class TowerDeChessApp {
         this.selectedMapLevelId = Math.min(LEVELS.length, this.progress.highestUnlocked || 1);
         this._renderCampaign(true);
       }
+      // Play opening Prologue cinematic automatically for brand-new campaigns
+      if (
+        !this.progress.seenCutscenes?.includes('prologue') &&
+        this.el.screenHome.classList.contains('active') &&
+        !this.cutscene.isOpen()
+      ) {
+        this._playCutscene('prologue');
+      }
     });
 
     await preloadAssets();
@@ -234,6 +256,14 @@ class TowerDeChessApp {
       this._renderCampaign(false);
     });
 
+    this.el.btnPlayChapterStory?.addEventListener('click', () => {
+      sound.unlock();
+      sound.playSelect();
+      const ch = getChapterForLevel(this.selectedMapLevelId || 1);
+      const cutsceneId = ch.id === 1 ? 'prologue' : ch.id === 2 ? 'chapter2' : 'chapter3';
+      this._playCutscene(cutsceneId);
+    });
+
     this.el.btnJumpFrontier?.addEventListener('click', () => {
       sound.unlock();
       sound.playSelect();
@@ -259,6 +289,13 @@ class TowerDeChessApp {
 
     this.el.btnOpenCodex.addEventListener('click', () => this._openCodex());
     this.el.btnGameCodex.addEventListener('click', () => this._openCodex());
+    this.el.codexTabs?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.codex-tab[data-tab]');
+      if (!btn) return;
+      sound.unlock();
+      sound.playSelect();
+      this._renderCodexTab(btn.dataset.tab);
+    });
     this.el.btnCloseCodex.addEventListener('click', () => {
       this.el.modalCodex.classList.add('hidden');
     });
@@ -410,6 +447,10 @@ class TowerDeChessApp {
     const capApp = window.Capacitor?.Plugins?.App;
     if (capApp?.addListener) {
       capApp.addListener('backButton', () => {
+        if (this.cutscene?.isOpen()) {
+          this.cutscene.stop(true);
+          return;
+        }
         if (!this.el.modalSettings?.classList.contains('hidden')) {
           this.el.modalSettings.classList.add('hidden');
           return;
@@ -438,6 +479,15 @@ class TowerDeChessApp {
         capApp.exitApp();
       });
     }
+  }
+
+  _playCutscene(cutsceneId, onComplete = null) {
+    if (!CUTSCENES[cutsceneId]) {
+      onComplete?.();
+      return;
+    }
+    this.progress = markCutsceneSeen(this.progress, cutsceneId);
+    this.cutscene.play(cutsceneId, onComplete);
   }
 
   _registerServiceWorker() {
@@ -874,6 +924,9 @@ class TowerDeChessApp {
     if (this.el.mapRealmIndicator) {
       this.el.mapRealmIndicator.textContent = `Chapter ${ch.roman} • ${ch.name}`;
     }
+    if (this.el.btnPlayChapterStory) {
+      this.el.btnPlayChapterStory.title = `Watch Chapter ${ch.roman} Cinematic`;
+    }
     this.el.stageKicker.textContent = `CHAPTER ${ch.roman} • LEVEL ${lvl.id}${lvl.isChapterBoss ? ' • FINALE' : ''}`;
     this.el.stageTitle.textContent = lvl.name;
     this.el.stageSubtitle.textContent = `${ch.name} — ${lvl.subtitle}`;
@@ -881,6 +934,10 @@ class TowerDeChessApp {
       .map((n) => `<span class="${n <= earnedStars ? '' : 'star-empty'}">★</span>`)
       .join('');
     this.el.stageStars.setAttribute('aria-label', `${earnedStars} of 3 stars`);
+
+    if (this.el.stageDispatch) {
+      this.el.stageDispatch.textContent = LEVEL_DISPATCHES[lvl.id] || '';
+    }
 
     this.el.stageWaves.textContent = `${lvl.waves.length}`;
     this.el.stageGold.textContent = `${displayGold}g`;
@@ -913,12 +970,19 @@ class TowerDeChessApp {
     const end = tiles[tiles.length - 1];
     const rects = [];
 
+    const palettes = {
+      1: { light: '#d8c4a2', dark: '#9c7d56', path: '#2b2320', line: 'rgba(245, 202, 109, 0.58)', rift: '#63d48e' },
+      2: { light: '#d2e4ee', dark: '#6d8ea4', path: '#162533', line: 'rgba(116, 212, 255, 0.68)', rift: '#7ee6ff' },
+      3: { light: '#b89a8c', dark: '#4f3833', path: '#1e0e0c', line: 'rgba(255, 118, 72, 0.72)', rift: '#ff7b4a' },
+    };
+    const pal = palettes[lvl.chapter] || palettes[1];
+
     for (let r = 0; r < 8; r++) {
       for (let c = 0; c < 8; c++) {
         const isPath = pathSet.has(`${c},${r}`);
         const isLight = (c + r) % 2 === 0;
-        let fill = isLight ? '#d8c4a2' : '#9c7d56';
-        if (isPath) fill = '#2b2320';
+        let fill = isLight ? pal.light : pal.dark;
+        if (isPath) fill = pal.path;
         rects.push(`<rect x="${c * 10}" y="${r * 10}" width="10" height="10" fill="${fill}"/>`);
       }
     }
@@ -927,8 +991,8 @@ class TowerDeChessApp {
     return `
       <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         ${rects.join('')}
-        <polyline points="${pts}" fill="none" stroke="rgba(245, 202, 109, 0.55)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-        <circle cx="${start[0] * 10 + 5}" cy="${start[1] * 10 + 5}" r="3.2" fill="#63d48e" stroke="#18120d" stroke-width="1"/>
+        <polyline points="${pts}" fill="none" stroke="${pal.line}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="${start[0] * 10 + 5}" cy="${start[1] * 10 + 5}" r="3.2" fill="${pal.rift}" stroke="#18120d" stroke-width="1"/>
         <circle cx="${end[0] * 10 + 5}" cy="${end[1] * 10 + 5}" r="3.5" fill="#f5ca6d" stroke="#8a281e" stroke-width="1.4"/>
       </svg>
     `;
@@ -937,6 +1001,20 @@ class TowerDeChessApp {
   _startLevel(levelId, showBriefing = true) {
     const lvl = LEVELS.find((l) => l.id === levelId);
     if (!lvl) return;
+
+    // Auto-play Chapter II or Chapter III motion-comic cutscene the first time the player enters that realm
+    const chapterCutscene = lvl.id === 7 ? 'chapter2' : lvl.id === 13 ? 'chapter3' : null;
+    if (chapterCutscene && !this.progress.seenCutscenes?.includes(chapterCutscene)) {
+      this._playCutscene(chapterCutscene, () => {
+        this._launchLevelBoard(lvl, showBriefing);
+      });
+      return;
+    }
+
+    this._launchLevelBoard(lvl, showBriefing);
+  }
+
+  _launchLevelBoard(lvl, showBriefing = true) {
     this.currentLevel = lvl;
     this.selectedMapLevelId = lvl.id;
 
@@ -968,7 +1046,7 @@ class TowerDeChessApp {
         : 'RECOMMENDED COMMANDER';
       this.el.briefPieceName.textContent = `${piece.name} — ${piece.title}`;
       this.el.briefPiecePattern.textContent = piece.patternLabel;
-      this.el.briefDesc.textContent = lvl.description;
+      this.el.briefDesc.textContent = LEVEL_DISPATCHES[lvl.id] || lvl.description;
       this.el.modalBriefing.classList.remove('hidden');
     }
   }
@@ -1158,8 +1236,54 @@ class TowerDeChessApp {
   // ==================== VICTORY / DEFEAT ====================
 
   _handleGameEnd(result) {
-    const modal = this.el.modalResult;
-    modal.classList.remove('hidden');
+    const showResultModal = () => {
+      const modal = this.el.modalResult;
+      modal.classList.remove('hidden');
+
+      if (result.victory) {
+        this.el.resultKicker.textContent =
+          result.level.id === LEVELS.length
+            ? 'CAMPAIGN COMPLETE • THE ACCORD RESTORED'
+            : `LEVEL ${result.level.id} CONQUERED`;
+        this.el.resultTitle.textContent = result.level.id === LEVELS.length ? 'Grand Victory!' : 'Victory!';
+        this.el.resultStars.textContent = '★'.repeat(result.stars) + '☆'.repeat(3 - result.stars);
+        this.el.resultSummary.textContent =
+          result.level.id === LEVELS.length
+            ? `Malakor, the Unbound King has fallen! The Crimson Rift seals with ${result.livesLeft} Citadel lives intact. Final Score: ${result.score.toLocaleString()}.`
+            : `The Obsidian Army has been repelled with ${result.livesLeft} Citadel lives intact. Final Score: ${result.score.toLocaleString()}.`;
+
+        const nextLevel = LEVELS.find((l) => l.id === result.level.id + 1);
+        if (nextLevel) {
+          const nextPieceId = nextLevel.unlocksPiece || nextLevel.featuredPiece || 'king';
+          const nextPiece = PIECE_REGISTRY[nextPieceId];
+          const nextCh = getChapterForLevel(nextLevel.id);
+          const tagEl = this.el.resultNextUnlock.querySelector('.unlock-tag');
+          this.el.resultNextUnlock.classList.remove('hidden');
+          this.el.resultNextImg.src = getSpriteUrl(nextPiece.sprite);
+          if (nextLevel.unlocksPiece) {
+            if (tagEl) tagEl.textContent = 'NEXT LEVEL UNLOCKS';
+            this.el.resultNextName.textContent = `${nextPiece.name} — ${nextPiece.title}`;
+            this.el.resultNextPattern.textContent = nextPiece.patternLabel;
+          } else {
+            if (tagEl) tagEl.textContent = `REVEALED ON MAP • CHAPTER ${nextCh.roman}`;
+            this.el.resultNextName.textContent = `Level ${nextLevel.id}: ${nextLevel.name}`;
+            this.el.resultNextPattern.textContent = `${nextCh.name} — ${nextLevel.subtitle}`;
+          }
+          this.el.btnResultNext.classList.remove('hidden');
+        } else {
+          this.el.resultNextUnlock.classList.add('hidden');
+          this.el.btnResultNext.classList.add('hidden');
+        }
+      } else {
+        this.el.resultKicker.textContent = 'THE CITADEL HAS FALLEN';
+        this.el.resultTitle.textContent = 'Checkmate';
+        this.el.resultStars.textContent = '☆☆☆';
+        this.el.resultSummary.textContent =
+          'The dark legion breached your sanctuary. Adjust your chess sightlines, promote key pieces, and hold the line!';
+        this.el.resultNextUnlock.classList.add('hidden');
+        this.el.btnResultNext.classList.add('hidden');
+      }
+    };
 
     if (result.victory) {
       const prevUnlocked = this.progress.highestUnlocked;
@@ -1176,50 +1300,43 @@ class TowerDeChessApp {
         this.selectedMapLevelId = this.progress.highestUnlocked;
       }
 
-      this.el.resultKicker.textContent = `LEVEL ${result.level.id} CONQUERED`;
-      this.el.resultTitle.textContent = 'Victory!';
-      this.el.resultStars.textContent = '★'.repeat(result.stars) + '☆'.repeat(3 - result.stars);
-      this.el.resultSummary.textContent = `The Obsidian Army has been repelled with ${result.livesLeft} Citadel lives intact. Final Score: ${result.score.toLocaleString()}.`;
-
-      const nextLevel = LEVELS.find((l) => l.id === result.level.id + 1);
-      if (nextLevel) {
-        const nextPieceId = nextLevel.unlocksPiece || nextLevel.featuredPiece || 'king';
-        const nextPiece = PIECE_REGISTRY[nextPieceId];
-        const nextCh = getChapterForLevel(nextLevel.id);
-        const tagEl = this.el.resultNextUnlock.querySelector('.unlock-tag');
-        this.el.resultNextUnlock.classList.remove('hidden');
-        this.el.resultNextImg.src = getSpriteUrl(nextPiece.sprite);
-        if (nextLevel.unlocksPiece) {
-          if (tagEl) tagEl.textContent = 'NEXT LEVEL UNLOCKS';
-          this.el.resultNextName.textContent = `${nextPiece.name} — ${nextPiece.title}`;
-          this.el.resultNextPattern.textContent = nextPiece.patternLabel;
-        } else {
-          if (tagEl) tagEl.textContent = `REVEALED ON MAP • CHAPTER ${nextCh.roman}`;
-          this.el.resultNextName.textContent = `Level ${nextLevel.id}: ${nextLevel.name}`;
-          this.el.resultNextPattern.textContent = `${nextCh.name} — ${nextLevel.subtitle}`;
-        }
-        this.el.btnResultNext.classList.remove('hidden');
-      } else {
-        this.el.resultNextUnlock.classList.add('hidden');
-        this.el.btnResultNext.classList.add('hidden');
+      if (result.level.id === LEVELS.length && !this.progress.seenCutscenes?.includes('epilogue')) {
+        this._playCutscene('epilogue', showResultModal);
+        return;
       }
+    }
+
+    showResultModal();
+  }
+
+  // ==================== ROYAL ARCHIVES (CODEX, BESTIARY, VILLAINS & CHRONICLES) ====================
+
+  _openCodex(initialTab = 'defenders') {
+    sound.unlock();
+    sound.playSelect();
+    this._renderCodexTab(initialTab);
+    this.el.modalCodex.classList.remove('hidden');
+  }
+
+  _renderCodexTab(tab = 'defenders') {
+    this.activeCodexTab = tab;
+    const tabBtns = this.el.codexTabs?.querySelectorAll('.codex-tab[data-tab]') || [];
+    for (const btn of tabBtns) {
+      btn.classList.toggle('active', btn.dataset.tab === tab);
+    }
+
+    if (tab === 'enemies') {
+      this._renderCodexEnemies();
+    } else if (tab === 'villains') {
+      this._renderCodexVillains();
+    } else if (tab === 'chronicles') {
+      this._renderCodexChronicles();
     } else {
-      this.el.resultKicker.textContent = 'THE CITADEL HAS FALLEN';
-      this.el.resultTitle.textContent = 'Checkmate';
-      this.el.resultStars.textContent = '☆☆☆';
-      this.el.resultSummary.textContent =
-        'The dark legion breached your sanctuary. Adjust your chess sightlines, promote key pieces, and hold the line!';
-      this.el.resultNextUnlock.classList.add('hidden');
-      this.el.btnResultNext.classList.add('hidden');
+      this._renderCodexDefenders();
     }
   }
 
-  // ==================== PIECE CODEX ====================
-
-  _openCodex() {
-    sound.unlock();
-    sound.playSelect();
-
+  _renderCodexDefenders() {
     const chessIds = PIECE_ORDER.filter((id) => PIECE_REGISTRY[id].category === 'chess');
     const mythicIds = PIECE_ORDER.filter((id) => PIECE_REGISTRY[id].category === 'mythic');
 
@@ -1263,8 +1380,127 @@ class TowerDeChessApp {
         <div class="codex-grid">${renderGroup(mythicIds)}${blueprintsHtml}</div>
       </div>
     `;
+  }
 
-    this.el.modalCodex.classList.remove('hidden');
+  _renderCodexEnemies() {
+    const order = ['footman', 'lancer', 'bastion', 'cleric', 'warlord'];
+    const cards = order
+      .map((id) => {
+        const e = ENEMY_TYPES[id];
+        const lore = ENEMY_LORE[id];
+        if (!e || !lore) return '';
+        const armorPct = Math.round((e.armor || 0) * 100);
+        return `
+          <div class="enemy-lore-card ${e.isBoss ? 'is-boss' : ''}">
+            <img src="${getSpriteUrl(e.sprite)}" alt="${e.name}" />
+            <div class="codex-item-info">
+              <h4>
+                ${e.name}
+                <span class="codex-badge">${e.isBoss ? 'BOSS CLASS' : `+${e.reward}g`}</span>
+              </h4>
+              <p class="enemy-lore-epithet">${lore.epithet}</p>
+              <div class="enemy-stat-pills">
+                <span class="enemy-stat-pill">HP ${e.baseHp}</span>
+                <span class="enemy-stat-pill">SPD ${e.speed.toFixed(1)}</span>
+                ${armorPct > 0 ? `<span class="enemy-stat-pill">ARMOR ${armorPct}%</span>` : ''}
+                <span class="enemy-stat-pill trait">${e.trait}</span>
+              </div>
+              <p class="codex-item-tip">${lore.story}</p>
+            </div>
+          </div>
+        `;
+      })
+      .join('');
+
+    this.el.codexBody.innerHTML = `
+      <div>
+        <h3 class="codex-section-title">The Obsidian Legion — Bestiary</h3>
+        <div class="codex-grid">${cards}</div>
+      </div>
+    `;
+  }
+
+  _renderCodexVillains() {
+    const cards = VILLAINS.map(
+      (v) => `
+      <article class="villain-card chapter-${v.chapter}">
+        <div class="villain-banner">
+          <img class="villain-banner-img" src="${getSceneUrl(v.scene)}" alt="${v.name}" />
+          <div class="villain-banner-content">
+            <img class="villain-portrait" src="${getSpriteUrl(v.sprite)}" alt="${v.name}" />
+            <div class="villain-title-block">
+              <h4>${v.name}</h4>
+              <p>Chapter ${v.chapter === 1 ? 'I' : v.chapter === 2 ? 'II' : 'III'} Boss • Level ${v.bossLevel} • ${v.title}</p>
+            </div>
+          </div>
+        </div>
+        <div class="villain-body">
+          <blockquote class="villain-quote">${v.quote}</blockquote>
+          <p class="villain-lore">${v.lore}</p>
+          <p class="villain-tactic"><strong>Tactical Counter:</strong> ${v.tactic}</p>
+        </div>
+      </article>
+    `
+    ).join('');
+
+    this.el.codexBody.innerHTML = `
+      <div>
+        <h3 class="codex-section-title">Commanders of the Shattered Crown</h3>
+        <div class="villain-list">${cards}</div>
+      </div>
+    `;
+  }
+
+  _renderCodexChronicles() {
+    const beatFinal =
+      getStarsForLevel(this.progress, LEVELS.length, 'standard') > 0 ||
+      getStarsForLevel(this.progress, LEVELS.length, 'grandmaster') > 0;
+
+    const cards = CUTSCENE_ORDER.map((id) => {
+      const c = CUTSCENES[id];
+      const unlocked =
+        this.sandboxAll ||
+        this.progress.seenCutscenes?.includes(id) ||
+        (id === 'epilogue' ? beatFinal : this.progress.highestUnlocked >= c.unlockLevel);
+
+      return `
+        <div class="chronicle-card ${unlocked ? '' : 'locked'}">
+          <div class="chronicle-thumb-wrap">
+            <img class="chronicle-thumb" src="${getSceneUrl(c.thumbScene)}" alt="${c.title}" />
+            <span class="chronicle-badge">${c.chapterLabel}</span>
+          </div>
+          <div class="chronicle-meta">
+            <h4>${c.title}</h4>
+            <p>${c.summary}</p>
+            <button
+              class="btn ${unlocked ? 'btn-gold' : 'btn-secondary'} btn-sm"
+              type="button"
+              data-watch-cutscene="${c.id}"
+              ${unlocked ? '' : 'disabled'}
+            >
+              ${unlocked ? '▶ Watch Cinematic' : id === 'epilogue' ? 'Conquer Level 18 to Unlock' : `Reach Level ${c.unlockLevel} to Unlock`}
+            </button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    this.el.codexBody.innerHTML = `
+      <div>
+        <h3 class="codex-section-title">Chronicles of Aethelgard — Replay Cinematics</h3>
+        <div class="chronicle-grid">${cards}</div>
+      </div>
+    `;
+
+    this.el.codexBody.querySelectorAll('[data-watch-cutscene]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const cid = btn.dataset.watchCutscene;
+        sound.unlock();
+        sound.playSelect();
+        this.el.modalCodex.classList.add('hidden');
+        this._playCutscene(cid);
+      });
+    });
   }
 }
 

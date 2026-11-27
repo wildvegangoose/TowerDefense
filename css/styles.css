@@ -2044,3 +2044,508 @@ body {
     height: 50px;
   }
 }
+
+/* ==================== LORE, CHRONICLES & ARCHIVES ==================== */
+
+.map-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.stage-dispatch {
+  margin: 0;
+  padding: 8px 10px;
+  border-left: 2.5px solid var(--gold);
+  background: rgba(21, 14, 9, 0.52);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 0.78rem;
+  font-style: italic;
+  line-height: 1.44;
+  color: #ead7b7;
+}
+
+.stage-dispatch:empty {
+  display: none;
+}
+
+/* Royal Archives 4-Tab Bar */
+.codex-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 4px;
+  background: var(--surface-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.codex-tab {
+  padding: 7px 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background-color 0.14s ease, color 0.14s ease, border-color 0.14s ease;
+}
+
+.codex-tab:hover {
+  color: var(--text-ivory);
+  background: rgba(255, 236, 204, 0.06);
+}
+
+.codex-tab.active {
+  background: linear-gradient(180deg, rgba(223, 169, 68, 0.24) 0%, rgba(168, 114, 34, 0.18) 100%);
+  border-color: var(--border-brass-strong);
+  color: var(--gold-bright);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* Enemy Bestiary Cards */
+.enemy-lore-card {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  background: var(--surface-inset);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.enemy-lore-card.is-boss {
+  border-color: rgba(207, 78, 64, 0.45);
+  background: linear-gradient(160deg, rgba(56, 24, 20, 0.55) 0%, rgba(24, 15, 11, 0.9) 100%);
+}
+
+.enemy-lore-card img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 4px 7px rgba(0, 0, 0, 0.65));
+}
+
+.enemy-lore-epithet {
+  margin: 2px 0 5px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #e89f71;
+}
+
+.enemy-stat-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 6px;
+}
+
+.enemy-stat-pill {
+  font-size: 0.66rem;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(255, 236, 204, 0.07);
+  border: 1px solid rgba(255, 236, 204, 0.12);
+  color: var(--text-parchment);
+}
+
+.enemy-stat-pill.trait {
+  background: rgba(207, 78, 64, 0.18);
+  border-color: rgba(207, 78, 64, 0.34);
+  color: #f4a498;
+}
+
+/* Villain Boss Dossier Cards */
+.villain-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.villain-card {
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-brass);
+  background: var(--surface-inset);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+}
+
+.villain-card.chapter-2 {
+  border-color: rgba(114, 194, 232, 0.42);
+}
+
+.villain-card.chapter-3 {
+  border-color: rgba(224, 96, 72, 0.55);
+}
+
+.villain-banner {
+  position: relative;
+  height: 112px;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  padding: 10px 14px;
+  background: #140d0a;
+}
+
+.villain-banner-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.55;
+  filter: saturate(1.1);
+}
+
+.villain-banner::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(16, 10, 7, 0.18) 0%, rgba(16, 10, 7, 0.88) 100%);
+}
+
+.villain-banner-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+
+.villain-portrait {
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.85));
+}
+
+.villain-title-block h4 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--text-ivory);
+}
+
+.villain-title-block p {
+  margin: 2px 0 0;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--gold-bright);
+}
+
+.villain-body {
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.villain-quote {
+  margin: 0;
+  padding: 7px 10px;
+  border-left: 2.5px solid #d96b54;
+  background: rgba(255, 255, 255, 0.03);
+  font-style: italic;
+  font-size: 0.8rem;
+  color: #f4dcc2;
+  line-height: 1.4;
+}
+
+.villain-lore {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--text-parchment);
+  line-height: 1.48;
+}
+
+.villain-tactic {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #d7c39f;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.villain-tactic strong {
+  color: var(--gold-bright);
+}
+
+/* Chronicles Cutscene Replay Gallery */
+.chronicle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.chronicle-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface-inset);
+  border: 1px solid var(--border-brass);
+  border-radius: var(--radius-md);
+}
+
+.chronicle-card.locked {
+  opacity: 0.56;
+  border-color: var(--border-subtle);
+}
+
+.chronicle-thumb-wrap {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  background: #120c08;
+  overflow: hidden;
+}
+
+.chronicle-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.chronicle-card:not(.locked):hover .chronicle-thumb {
+  transform: scale(1.04);
+}
+
+.chronicle-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(18, 12, 8, 0.84);
+  border: 1px solid var(--border-brass);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--gold-bright);
+}
+
+.chronicle-meta {
+  padding: 11px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.chronicle-meta h4 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 0.96rem;
+  color: var(--text-ivory);
+}
+
+.chronicle-meta p {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--text-parchment);
+  line-height: 1.42;
+  flex: 1;
+}
+
+/* ==================== MOTION-COMIC CINEMATIC CUTSCENE OVERLAY ==================== */
+
+.cutscene-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 220;
+  background: radial-gradient(circle at 50% 40%, #1c130d 0%, #090604 82%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(12px, env(safe-area-inset-top)) 14px max(12px, env(safe-area-inset-bottom));
+}
+
+.cutscene-theater {
+  width: 100%;
+  max-width: 960px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: linear-gradient(180deg, rgba(35, 24, 17, 0.96) 0%, rgba(19, 13, 9, 0.98) 100%);
+  border: 1px solid var(--border-brass-strong);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.85), var(--shadow-inset);
+}
+
+.cutscene-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cutscene-kicker {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.cutscene-title {
+  margin: 2px 0 0;
+  font-family: var(--font-display);
+  font-size: 1.24rem;
+  color: var(--text-ivory);
+}
+
+.cutscene-stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: #0d0805;
+  border: 1px solid rgba(223, 169, 68, 0.35);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.65);
+}
+
+.cutscene-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 1;
+  transition: opacity 0.45s ease;
+  will-change: transform, opacity;
+}
+
+.cutscene-img.fading {
+  opacity: 0;
+}
+
+.cutscene-fx-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.cutscene-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at center, transparent 48%, rgba(8, 5, 3, 0.62) 100%),
+    linear-gradient(180deg, rgba(8, 5, 3, 0.25) 0%, transparent 22%, rgba(8, 5, 3, 0.18) 58%, rgba(8, 5, 3, 0.9) 100%);
+}
+
+.cutscene-caption-box {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 4;
+  padding: 18px 22px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.cutscene-speaker {
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold-bright);
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+.cutscene-caption {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: #fdf6ea;
+  max-width: 760px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.95);
+}
+
+.cutscene-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cutscene-progress-track {
+  width: 100%;
+  height: 5px;
+  border-radius: 99px;
+  background: rgba(255, 236, 204, 0.12);
+  overflow: hidden;
+}
+
+.cutscene-progress-bar {
+  width: 0%;
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #c98f32 0%, #f5ca6d 100%);
+}
+
+.cutscene-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.cutscene-counter {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 640px) {
+  .codex-tabs {
+    gap: 4px;
+  }
+
+  .codex-tab {
+    font-size: 0.69rem;
+    padding: 6px 4px;
+  }
+
+  .cutscene-theater {
+    padding: 10px;
+    gap: 8px;
+  }
+
+  .cutscene-title {
+    font-size: 1.04rem;
+  }
+
+  .cutscene-stage {
+    aspect-ratio: 4 / 3;
+  }
+
+  .cutscene-caption-box {
+    padding: 12px 13px;
+  }
+
+  .cutscene-caption {
+    font-size: 0.84rem;
+    line-height: 1.42;
+  }
+}
+

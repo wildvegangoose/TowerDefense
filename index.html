@@ -29,7 +29,7 @@
           </div>
         </div>
         <div class="home-actions">
-          <button id="btn-open-codex" class="btn btn-secondary" type="button">Piece Codex</button>
+          <button id="btn-open-codex" class="btn btn-secondary" type="button">Codex &amp; Lore</button>
           <button id="btn-open-save" class="btn btn-secondary" type="button">Save Data</button>
           <button id="btn-open-settings" class="btn btn-secondary" type="button">&#9881; Settings</button>
           <button id="btn-install-pwa" class="btn btn-gold hidden" type="button">Install App</button>
@@ -62,7 +62,10 @@
           <div class="campaign-map-frame">
             <div class="map-frame-toolbar">
               <span id="map-realm-indicator" class="map-realm-indicator">Chapter I • The Ivory Ranks</span>
-              <button id="btn-jump-frontier" class="btn-map-pill" type="button" title="Scroll to active battle node">Active Battle ⌖</button>
+              <div class="map-toolbar-actions">
+                <button id="btn-play-chapter-story" class="btn-map-pill" type="button" title="Watch Chapter Cinematic">&#127916; Story</button>
+                <button id="btn-jump-frontier" class="btn-map-pill" type="button" title="Scroll to active battle node">Active Battle ⌖</button>
+              </div>
             </div>
             <div id="campaign-map-viewport" class="campaign-map-viewport" role="region" aria-label="Interactive Campaign Map">
               <div id="campaign-map-canvas" class="campaign-map-canvas"></div>
@@ -78,6 +81,8 @@
               </div>
               <div id="stage-stars" class="stage-stars" aria-label="0 of 3 stars">☆☆☆</div>
             </div>
+
+            <p id="stage-dispatch" class="stage-dispatch"></p>
 
             <div class="stage-preview-row">
               <div id="stage-minimap" class="stage-minimap" aria-label="Board Path Preview"></div>
@@ -264,15 +269,21 @@
       </div>
     </div>
 
-    <!-- ==================== PIECE CODEX MODAL ==================== -->
+    <!-- ==================== ROYAL ARCHIVES & BESTIARY MODAL ==================== -->
     <div id="modal-codex" class="modal-backdrop hidden" role="dialog" aria-modal="true">
       <div class="modal-card codex-card">
         <div class="codex-header">
           <div>
             <span class="modal-kicker">ROYAL ARCHIVES</span>
-            <h2>Piece Codex</h2>
+            <h2>Codex &amp; Lore</h2>
           </div>
-          <button id="btn-close-codex" class="icon-btn" type="button" aria-label="Close Codex">&#10005;</button>
+          <button id="btn-close-codex" class="icon-btn" type="button" aria-label="Close Archives">&#10005;</button>
+        </div>
+        <div id="codex-tabs" class="codex-tabs" role="tablist">
+          <button class="codex-tab active" data-tab="defenders" type="button" role="tab">Defenders</button>
+          <button class="codex-tab" data-tab="enemies" type="button" role="tab">Enemies</button>
+          <button class="codex-tab" data-tab="villains" type="button" role="tab">Villains</button>
+          <button class="codex-tab" data-tab="chronicles" type="button" role="tab">Chronicles</button>
         </div>
         <div id="codex-body" class="codex-body"></div>
       </div>
@@ -371,6 +382,39 @@
           </div>
 
           <p id="settings-status-msg" class="save-status-msg"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MOTION-COMIC CINEMATIC CUTSCENE OVERLAY ==================== -->
+    <div id="modal-cutscene" class="cutscene-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="cutscene-title">
+      <div class="cutscene-theater">
+        <div class="cutscene-topbar">
+          <div>
+            <span id="cutscene-chapter" class="cutscene-kicker">PROLOGUE • CHAPTER I</span>
+            <h2 id="cutscene-title" class="cutscene-title">The Shattered Gambit</h2>
+          </div>
+          <button id="btn-cutscene-skip" class="btn btn-secondary btn-sm" type="button">Skip &#9197;</button>
+        </div>
+
+        <div class="cutscene-stage">
+          <img id="cutscene-img" src="" alt="" class="cutscene-img" />
+          <canvas id="cutscene-fx-canvas" class="cutscene-fx-canvas"></canvas>
+          <div class="cutscene-vignette"></div>
+          <div class="cutscene-caption-box">
+            <span id="cutscene-speaker" class="cutscene-speaker">CHRONICLE OF AETHELGARD</span>
+            <p id="cutscene-caption" class="cutscene-caption"></p>
+          </div>
+        </div>
+
+        <div class="cutscene-footer">
+          <div class="cutscene-progress-track">
+            <div id="cutscene-progress-bar" class="cutscene-progress-bar"></div>
+          </div>
+          <div class="cutscene-controls">
+            <span id="cutscene-slide-counter" class="cutscene-counter">1 / 3</span>
+            <button id="btn-cutscene-next" class="btn btn-gold btn-sm" type="button">Next Scene →</button>
+          </div>
         </div>
       </div>
     </div>

@@ -24,6 +24,7 @@ export function createEmptyProgress() {
       grandmaster: {},
     },
     bestScores: {}, // levelId -> highest score
+    seenCutscenes: [],
     updatedAt: Date.now(),
   };
 }
@@ -67,6 +68,10 @@ function normalizeProgress(raw) {
     }
   }
 
+  if (Array.isArray(raw.seenCutscenes)) {
+    base.seenCutscenes = [...new Set(raw.seenCutscenes.filter((s) => typeof s === 'string'))];
+  }
+
   base.updatedAt = Number(raw.updatedAt) || Date.now();
   return base;
 }
@@ -104,6 +109,7 @@ export function mergeProgress(a, b) {
     out.bestScores[k] = Math.max(pA.bestScores[k] || 0, pB.bestScores[k] || 0);
   }
 
+  out.seenCutscenes = [...new Set([...pA.seenCutscenes, ...pB.seenCutscenes])];
   out.updatedAt = Math.max(pA.updatedAt, pB.updatedAt);
   return out;
 }
@@ -276,6 +282,15 @@ export function recordLevelVictory(
     next.highestUnlocked = Math.max(next.highestUnlocked, levelId + 1);
   }
   return saveProgress(next);
+}
+
+export function markCutsceneSeen(progress, cutsceneId) {
+  const next = normalizeProgress(progress);
+  if (!next.seenCutscenes.includes(cutsceneId)) {
+    next.seenCutscenes.push(cutsceneId);
+    return saveProgress(next);
+  }
+  return next;
 }
 
 export function getStarsForLevel(progress, levelId, difficulty = null) {
