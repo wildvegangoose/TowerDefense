@@ -450,7 +450,10 @@ class TowerDeChessApp {
     // Native Capacitor builds bundle assets locally — only register SW on web/PWA origins
     if (window.Capacitor?.isNativePlatform?.()) return;
     if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
-      navigator.serviceWorker.register('./sw.js').catch(() => {});
+      navigator.serviceWorker
+        .register('./sw.js')
+        .then((reg) => reg.update().catch(() => {}))
+        .catch(() => {});
     }
   }
 

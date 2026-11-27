@@ -53,9 +53,14 @@ export class CutscenePlayer {
       this.stop(true);
     });
     this.el.btnNext?.addEventListener('click', () => this._advanceSlide());
-    this.el.soundHint?.addEventListener('click', () => this._resumeVideoWithSound());
-    this.el.modal?.addEventListener('pointerdown', () => {
+    this.el.soundHint?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sound.unlock();
+      this._resumeVideoWithSound();
+    });
+    this.el.modal?.addEventListener('pointerdown', (e) => {
       if (!this.activeCutscene) return;
+      if (e.target.closest('#btn-cutscene-skip, #btn-cutscene-next')) return;
       sound.unlock();
       if (this.mode === 'video') {
         this._resumeVideoWithSound();
@@ -71,6 +76,8 @@ export class CutscenePlayer {
       if (this.activeCutscene && this.mode === 'video') this.stop(true);
     });
     video?.addEventListener('error', () => {
+      // Ignore synthetic empty-src errors fired during _teardownVideo()
+      if (!video.getAttribute('src')) return;
       // Missing/unsupported video (offline, old WebView): continue with the painted slides
       if (this.activeCutscene && this.mode === 'video') {
         this._teardownVideo();
@@ -259,6 +266,7 @@ export class CutscenePlayer {
     video.setAttribute('aria-label', data.title);
     video.classList.remove('hidden');
     video.src = url;
+    video.load();
 
     this._showCaption(0);
     this._playVideo();
@@ -329,6 +337,7 @@ export class CutscenePlayer {
 
   _teardownVideo() {
     const video = this.el.video;
+    this.mode = 'slides';
     this._setSoundHint(false);
     this.el.img?.classList.remove('hidden');
     if (!video) return;

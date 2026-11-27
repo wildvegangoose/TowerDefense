@@ -205,10 +205,21 @@ class SoundEngine {
     const el = new Audio();
     el.loop = true;
     el.preload = 'auto';
+    el.playsInline = true;
+    if (/^https?:$/.test(location.protocol)) {
+      el.crossOrigin = 'anonymous';
+    }
     el.src = url;
     this.musicEl = el;
 
-    if (this.ctx && this.musicGain) {
+    // On file:// origins, createMediaElementSource can output silence due to CORS taint;
+    // route through Web Audio only on http(s) or blob: URLs.
+    const canRouteWebAudio =
+      this.ctx &&
+      this.musicGain &&
+      (/^https?:$/.test(location.protocol) || url.startsWith('blob:'));
+
+    if (canRouteWebAudio) {
       try {
         this.musicSource = this.ctx.createMediaElementSource(el);
         this.musicSource.connect(this.musicGain);
@@ -235,9 +246,16 @@ class SoundEngine {
   }
 
   _syncMusic() {
+    const target = this._musicTargetGain();
+    if (!this.musicEl && target > 0) {
+      this._ensureMusicElement();
+    }
     const el = this.musicEl;
     if (!el) return;
-    const target = this._musicTargetGain();
+
+    if (target > 0 && this.ctx && this.ctx.state === 'suspended') {
+      this.ctx.resume().catch(() => {});
+    }
 
     if (this.musicSource && this.musicGain && this.ctx) {
       this.musicGain.gain.setTargetAtTime(target, this.ctx.currentTime, MUSIC_FADE_TIME_CONSTANT);
@@ -247,7 +265,14 @@ class SoundEngine {
 
     if (target > 0 && !this.pageHidden) {
       this._clearMusicPauseTimer();
-      if (el.paused) el.play().catch(() => {});
+      if (el.paused) {
+        const playPromise = el.play();
+        if (playPromise && typeof playPromise.catch === 'function') {
+          playPromise.catch(() => {
+            // Autoplay blocked before first gesture; unlock() will call _syncMusic() on next tap
+          });
+        }
+      }
     } else if (!el.paused && !this.musicPauseTimer) {
       // Let the fade-out finish, then stop streaming to save battery
       this.musicPauseTimer = setTimeout(() => {
