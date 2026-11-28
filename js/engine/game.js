@@ -4,7 +4,12 @@
 
 import { BOARD_SIZE, expandWaypoints } from '../data/levels.js';
 import { PIECE_REGISTRY, getPieceStats, getUpgradeInfo } from '../data/pieces.js';
-import { createEnemyConfig, DIFFICULTY_PRESETS, normalizeDifficulty } from '../data/enemies.js';
+import {
+  createEnemyConfig,
+  DIFFICULTY_PRESETS,
+  normalizeDifficulty,
+  getMatchupMultiplier,
+} from '../data/enemies.js';
 import { CHAPTER_BOSS_BY_LEVEL } from '../data/story.js';
 import { TACTICS } from '../data/tactics.js';
 import { SPRITES, SHEETS, SHEET_META } from '../assets.js';
@@ -1063,8 +1068,9 @@ export class GameEngine {
     const initScreenDy = initDx + initDy;
 
     const enemy = {
-      id: this.nextEntityId++,
       ...cfg,
+      id: this.nextEntityId++,
+      typeId,
       hp: cfg.maxHp,
       x: customPos ? customPos.x : sx + 0.5,
       y: customPos ? customPos.y : sy + 0.5,
@@ -1082,6 +1088,7 @@ export class GameEngine {
       staggerTimer: 0,
       healTimer: cfg.healCooldown || 0,
       summonedMinions: false,
+      matchupCueAt: -10,
       bobPhase: Math.random() * Math.PI * 2,
     };
     this.enemies.push(enemy);
@@ -1328,8 +1335,9 @@ export class GameEngine {
   _applyDamage(enemy, rawDmg, armorPierce, tower, isCrit) {
     if (!enemy.alive) return;
     const exposedMult = (this.activeTactics.checkmate?.remaining || 0) > 0 ? 1.35 : 1.0;
+    const matchupMult = tower ? getMatchupMultiplier(enemy.typeId, tower.pieceId) : 1.0;
     const effArmor = Math.max(0, enemy.armor * (1 - enemy.sunderAmount) * (1 - (armorPierce || 0)));
-    const finalDmg = Math.max(2, Math.round(rawDmg * exposedMult * (1 - effArmor)));
+    const finalDmg = Math.max(2, Math.round(rawDmg * exposedMult * matchupMult * (1 - effArmor)));
 
     enemy.hp -= finalDmg;
     enemy.hitFlash = 1.0;
@@ -1337,6 +1345,12 @@ export class GameEngine {
 
     if (isCrit) {
       this._spawnFloatText(enemy.x, enemy.y - 0.35, `${finalDmg}!`, '#ffd452');
+    } else if (matchupMult >= 1.25 && this.time - (enemy.matchupCueAt || -10) >= 0.95) {
+      enemy.matchupCueAt = this.time;
+      this._spawnFloatText(enemy.x, enemy.y - 0.36, `${finalDmg}▲`, '#f7cf6a');
+    } else if (matchupMult <= 0.8 && this.time - (enemy.matchupCueAt || -10) >= 1.65) {
+      enemy.matchupCueAt = this.time;
+      this._spawnFloatText(enemy.x, enemy.y - 0.36, 'Resist', '#b8b0a8');
     }
 
     // Crimson Warlord 50% HP summon ability!

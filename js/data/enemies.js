@@ -69,6 +69,19 @@ export const ENEMY_TYPES = {
     livesCost: 1,
     scale: 0.92,
     trait: 'Relentless dark vanguard soldier.',
+    matchups: {
+      knight: 1.3,
+      queen: 1.25,
+      rook: 0.8,
+    },
+    strengths: [
+      { label: 'Resists Rook Shells', detail: '-20% DMG', pieceId: 'rook' },
+      { label: 'Tight Marching Swarms', detail: 'High numbers' },
+    ],
+    weaknesses: [
+      { label: 'Weak to Knight', detail: '+30% DMG', pieceId: 'knight' },
+      { label: 'Weak to Queen', detail: '+25% DMG', pieceId: 'queen' },
+    ],
   },
   lancer: {
     id: 'lancer',
@@ -81,6 +94,23 @@ export const ENEMY_TYPES = {
     livesCost: 1,
     scale: 0.98,
     trait: 'Blazingly fast obsidian steed that punishes uncovered corners.',
+    matchups: {
+      knight: 1.35,
+      obelisk: 1.3,
+      pawn: 1.25,
+      rook: 0.72,
+      bishop: 0.8,
+    },
+    strengths: [
+      { label: 'Resists Rook', detail: '-28% DMG', pieceId: 'rook' },
+      { label: 'Resists Bishop', detail: '-20% DMG', pieceId: 'bishop' },
+      { label: 'Galloping Blitz', detail: '2.28 tiles/s' },
+    ],
+    weaknesses: [
+      { label: 'Weak to Knight', detail: '+35% DMG', pieceId: 'knight' },
+      { label: 'Weak to Frost Obelisk', detail: '+30% DMG', pieceId: 'obelisk' },
+      { label: 'Weak to Pawn', detail: '+25% DMG', pieceId: 'pawn' },
+    ],
   },
   bastion: {
     id: 'bastion',
@@ -88,11 +118,26 @@ export const ENEMY_TYPES = {
     sprite: 'enemy_bastion',
     baseHp: 260,
     speed: 0.78,
-    armor: 0.45,       // 45% heavy armor — use Promoted Pawns, Bishop Sunder, or Rook!
+    armor: 0.45,       // 45% heavy armor — use Rook Siege or Bishop Sunder!
     reward: 22,
     livesCost: 2,
     scale: 1.08,
-    trait: 'Heavy armored siege golem (45% armor). Promote Pawns or bring Bishop Sunder / Rooks.',
+    trait: 'Heavy armored siege golem (45% armor). Break its plate with Rooks or Bishop Sunder.',
+    matchups: {
+      rook: 1.35,
+      bishop: 1.3,
+      knight: 0.75,
+      pawn: 0.8,
+    },
+    strengths: [
+      { label: 'Heavy Iron Plate', detail: '45% Armor' },
+      { label: 'Resists Knight', detail: '-25% DMG', pieceId: 'knight' },
+      { label: 'Resists Pawn', detail: '-20% DMG', pieceId: 'pawn' },
+    ],
+    weaknesses: [
+      { label: 'Weak to Rook', detail: '+35% DMG', pieceId: 'rook' },
+      { label: 'Weak to Bishop', detail: '+30% + Sunder', pieceId: 'bishop' },
+    ],
   },
   cleric: {
     id: 'cleric',
@@ -108,6 +153,21 @@ export const ENEMY_TYPES = {
     healAmount: 36,
     healCooldown: 2.4,
     trait: 'Pulses dark mending to heal nearby enemies every 2.4s.',
+    matchups: {
+      bishop: 1.35,
+      queen: 1.3,
+      obelisk: 0.72,
+      knight: 0.8,
+    },
+    strengths: [
+      { label: 'Dark Mending Aura', detail: '+36 HP / 2.4s' },
+      { label: 'Resists Frost Obelisk', detail: '-28% DMG', pieceId: 'obelisk' },
+      { label: 'Resists Knight', detail: '-20% DMG', pieceId: 'knight' },
+    ],
+    weaknesses: [
+      { label: 'Weak to Bishop', detail: '+35% DMG', pieceId: 'bishop' },
+      { label: 'Weak to Queen', detail: '+30% DMG', pieceId: 'queen' },
+    ],
   },
   warlord: {
     id: 'warlord',
@@ -122,8 +182,33 @@ export const ENEMY_TYPES = {
     isBoss: true,
     summonThreshold: 0.5,
     trait: 'Dread Monarch Boss. Summons 4 Obsidian Footmen at 50% HP and resists slow by 45%.',
+    matchups: {
+      king: 1.35,
+      rook: 1.25,
+      queen: 1.25,
+      obelisk: 0.75,
+      pawn: 0.8,
+    },
+    strengths: [
+      { label: 'Sovereign Plate & Will', detail: '34% Armor • 45% Slow Resist' },
+      { label: 'Rift Reinforcements', detail: 'Summons 4 at 50% HP' },
+      { label: 'Resists Frost Obelisk & Pawn', detail: '-25% / -20%', pieceId: 'obelisk' },
+    ],
+    weaknesses: [
+      { label: 'Weak to King', detail: '+35% DMG', pieceId: 'king' },
+      { label: 'Weak to Rook', detail: '+25% DMG', pieceId: 'rook' },
+      { label: 'Weak to Queen', detail: '+25% DMG', pieceId: 'queen' },
+    ],
   },
 };
+
+/**
+ * Returns the tactical damage multiplier for a defender piece attacking a given enemy archetype.
+ */
+export function getMatchupMultiplier(enemyTypeId, pieceId) {
+  if (!enemyTypeId || !pieceId) return 1.0;
+  return ENEMY_TYPES[enemyTypeId]?.matchups?.[pieceId] ?? 1.0;
+}
 
 /**
  * Scale enemy stats progressively by level, wave, and difficulty mode.

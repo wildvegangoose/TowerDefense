@@ -25,7 +25,12 @@ import {
   getUpgradeInfo,
   getUnlockedPiecesForLevel,
 } from './data/pieces.js';
-import { ENEMY_TYPES, DIFFICULTY_PRESETS, normalizeDifficulty } from './data/enemies.js';
+import {
+  ENEMY_TYPES,
+  DIFFICULTY_PRESETS,
+  normalizeDifficulty,
+  createEnemyConfig,
+} from './data/enemies.js';
 import {
   CUTSCENES,
   CUTSCENE_ORDER,
@@ -269,6 +274,21 @@ class TowerDeChessApp {
       btnClearSaveConfirm: document.getElementById('btn-clear-save-confirm'),
       settingsStatusMsg: document.getElementById('settings-status-msg'),
 
+      // Enemy Intel Pop-up Modal
+      modalEnemyIntel: document.getElementById('modal-enemy-intel'),
+      btnCloseEnemyIntel: document.getElementById('btn-close-enemy-intel'),
+      enemyIntelImg: document.getElementById('enemy-intel-img'),
+      enemyIntelKicker: document.getElementById('enemy-intel-kicker'),
+      enemyIntelName: document.getElementById('enemy-intel-name'),
+      enemyIntelEpithet: document.getElementById('enemy-intel-epithet'),
+      enemyIntelStory: document.getElementById('enemy-intel-story'),
+      enemyIntelHp: document.getElementById('enemy-intel-hp'),
+      enemyIntelSpeed: document.getElementById('enemy-intel-speed'),
+      enemyIntelArmor: document.getElementById('enemy-intel-armor'),
+      enemyIntelBounty: document.getElementById('enemy-intel-bounty'),
+      enemyIntelStrengths: document.getElementById('enemy-intel-strengths'),
+      enemyIntelWeaknesses: document.getElementById('enemy-intel-weaknesses'),
+
       // WildGoose Studio Opening Intro
       studioIntro: document.getElementById('studio-intro'),
       studioLogoImg: document.getElementById('studio-logo-img'),
@@ -500,6 +520,24 @@ class TowerDeChessApp {
     });
     this.el.btnGameSettings?.addEventListener('click', () => this._openSettings());
 
+    // Click any incoming wave enemy count pill to open its Story, Strengths & Weaknesses pop-up
+    this.el.waveEnemiesPreview?.addEventListener('click', (e) => {
+      const btn = e.target.closest('.wave-enemy-pill[data-enemy-type]');
+      if (!btn) return;
+      const typeId = btn.dataset.enemyType;
+      const count = Number(btn.dataset.enemyCount) || 1;
+      this._openEnemyIntel(typeId, count);
+    });
+    this.el.btnCloseEnemyIntel?.addEventListener('click', () => this._closeEnemyIntel());
+    this.el.modalEnemyIntel?.addEventListener('click', (e) => {
+      if (e.target === this.el.modalEnemyIntel) this._closeEnemyIntel();
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !this.el.modalEnemyIntel?.classList.contains('hidden')) {
+        this._closeEnemyIntel();
+      }
+    });
+
     // Touch Confirm Placement
     this.el.btnCancelPreview.addEventListener('click', () => this.engine?.clearSelection());
     this.el.btnConfirmPlace.addEventListener('click', () => this.engine?.confirmPreviewPlacement());
@@ -710,6 +748,7 @@ class TowerDeChessApp {
   _hasBackTarget() {
     return (
       Boolean(this.cutscene?.isOpen()) ||
+      !this.el.modalEnemyIntel?.classList.contains('hidden') ||
       !this.el.modalSettings?.classList.contains('hidden') ||
       !this.el.modalQuickmatch?.classList.contains('hidden') ||
       !this.el.modalSave?.classList.contains('hidden') ||
@@ -750,6 +789,10 @@ class TowerDeChessApp {
     }
     if (this.cutscene?.isOpen()) {
       this.cutscene.stop(true);
+      return true;
+    }
+    if (!this.el.modalEnemyIntel?.classList.contains('hidden')) {
+      this._closeEnemyIntel();
       return true;
     }
     if (!this.el.modalSettings?.classList.contains('hidden')) {
@@ -1943,7 +1986,7 @@ class TowerDeChessApp {
     this.el.btnPause.setAttribute('aria-label', isPaused ? 'Resume Battle' : 'Pause Battle');
     this.el.btnPause.classList.toggle('active-toggle', isPaused);
 
-    // Wave Launch Button & Next Wave Enemy Preview
+    // Wave Launch Button & Next Wave Enemy Preview (clickable unit pills for tactical intel!)
     const nextWaveNum = state.waveIndex + 2;
     const hasMoreWaves = state.nextWaveDef !== null;
 
@@ -1951,29 +1994,36 @@ class TowerDeChessApp {
       this.el.btnStartWave.disabled = true;
       this.el.btnStartWave.textContent = state.waveActive ? 'Final Wave!' : 'Cleared!';
       this.el.waveIntelTitle.textContent = 'Final Wave in Progress';
-      this.el.waveEnemiesPreview.innerHTML = '';
+      if (this._lastWavePreviewSig !== 'none') {
+        this._lastWavePreviewSig = 'none';
+        this.el.waveEnemiesPreview.innerHTML = '';
+      }
     } else {
       const canCallEarly = !state.waveActive || this.engine.spawnQueue.length === 0;
       this.el.btnStartWave.disabled = !canCallEarly;
       this.el.btnStartWave.textContent = state.waveActive
         ? `Early Wave ${nextWaveNum} (+g)`
         : `Send Wave ${nextWaveNum}`;
-      this.el.waveIntelTitle.textContent = `Incoming Wave ${nextWaveNum}`;
+      this.el.waveIntelTitle.textContent = `Incoming Wave ${nextWaveNum} • Tap unit for intel`;
 
       // Summarize enemy counts for next wave
       const counts = {};
       for (const g of state.nextWaveDef.groups) {
         counts[g.type] = (counts[g.type] || 0) + g.count;
       }
-      this.el.waveEnemiesPreview.innerHTML = Object.entries(counts)
-        .map(([typeId, count]) => {
-          const e = ENEMY_TYPES[typeId];
-          return `<span class="wave-enemy-pill" title="${e.name}: ${e.trait}">
-            <img src="${getSpriteUrl(e.sprite)}" alt="${e.name}" />
-            <span>×${count}</span>
-          </span>`;
-        })
-        .join('');
+      const sig = `${this.currentLevel?.id || 0}:${nextWaveNum}:${JSON.stringify(counts)}`;
+      if (this._lastWavePreviewSig !== sig) {
+        this._lastWavePreviewSig = sig;
+        this.el.waveEnemiesPreview.innerHTML = Object.entries(counts)
+          .map(([typeId, count]) => {
+            const e = ENEMY_TYPES[typeId];
+            return `<button type="button" class="wave-enemy-pill" data-enemy-type="${typeId}" data-enemy-count="${count}" aria-label="Inspect ${e.name} (×${count})" title="Tap to view ${e.name} story, strengths &amp; weaknesses">
+              <img src="${getSpriteUrl(e.sprite)}" alt="" aria-hidden="true" />
+              <span>×${count}</span>
+            </button>`;
+          })
+          .join('');
+      }
     }
 
     // Touch preview confirm overlay
@@ -2104,6 +2154,80 @@ class TowerDeChessApp {
     this.bannerTimer = setTimeout(() => {
       this.el.battleBanner.classList.add('hidden');
     }, 2400);
+  }
+
+  _renderMatchupPills(items = [], kind = 'weakness') {
+    const cls = kind === 'strength' ? 'is-strength' : 'is-weakness';
+    return items
+      .map((item) => {
+        const piece = item.pieceId ? PIECE_REGISTRY[item.pieceId] : null;
+        const iconHtml = piece
+          ? `<img src="${getSpriteUrl(piece.sprite)}" alt="${piece.name}" />`
+          : '';
+        return `<span class="enemy-matchup-pill ${cls}">
+          ${iconHtml}
+          <span>${item.label}</span>
+          ${item.detail ? `<strong>${item.detail}</strong>` : ''}
+        </span>`;
+      })
+      .join('');
+  }
+
+  _openEnemyIntel(typeId, incomingCount = 1) {
+    const base = ENEMY_TYPES[typeId];
+    const lore = ENEMY_LORE[typeId];
+    if (!base || !this.el.modalEnemyIntel) return;
+
+    sound.unlock();
+    sound.playSelect();
+
+    // Auto-pause active battle while inspecting incoming enemy intel
+    this._pausedByEnemyIntel = false;
+    if (this.el.screenGame?.classList.contains('active') && this.engine?.gameState === 'playing') {
+      this.engine.togglePause();
+      this._pausedByEnemyIntel = true;
+    }
+
+    const lvl = this.currentLevel;
+    const nextWaveIdx = Math.max(0, (this.engine?.waveIndex ?? -1) + 1);
+    const totalWaves = lvl?.waves?.length || 1;
+    const scaled = lvl
+      ? createEnemyConfig(typeId, lvl.id || 1, Math.min(nextWaveIdx, totalWaves - 1), totalWaves, this.difficulty)
+      : { ...base, maxHp: base.baseHp };
+
+    const armorPct = Math.round((scaled.armor || 0) * 100);
+    const waveNum = nextWaveIdx + 1;
+
+    this.el.enemyIntelImg.src = getSpriteUrl(base.sprite);
+    this.el.enemyIntelImg.alt = base.name;
+    this.el.enemyIntelKicker.textContent = base.isBoss
+      ? `WAVE ${waveNum} • ×${incomingCount} BOSS CLASS`
+      : `WAVE ${waveNum} • ×${incomingCount} INCOMING`;
+    this.el.enemyIntelName.textContent = base.name;
+    this.el.enemyIntelEpithet.textContent = lore?.epithet || base.trait;
+    this.el.enemyIntelStory.textContent = lore?.story || base.trait;
+
+    this.el.enemyIntelHp.textContent = scaled.maxHp.toLocaleString();
+    this.el.enemyIntelSpeed.textContent = `${scaled.speed.toFixed(2)}/s`;
+    this.el.enemyIntelArmor.textContent = `${armorPct}%`;
+    this.el.enemyIntelBounty.textContent = `+${scaled.reward}g • -${base.livesCost}♥`;
+
+    this.el.enemyIntelStrengths.innerHTML = this._renderMatchupPills(base.strengths || [], 'strength');
+    this.el.enemyIntelWeaknesses.innerHTML = this._renderMatchupPills(base.weaknesses || [], 'weakness');
+
+    this.el.modalEnemyIntel.classList.remove('hidden');
+    this._syncHistoryGuard();
+  }
+
+  _closeEnemyIntel() {
+    this.el.modalEnemyIntel?.classList.add('hidden');
+    if (this._pausedByEnemyIntel && this.el.screenGame?.classList.contains('active')) {
+      if (this.engine?.gameState === 'paused') {
+        this.engine.togglePause();
+      }
+      this._pausedByEnemyIntel = false;
+    }
+    this._syncHistoryGuard();
   }
 
   // ==================== VICTORY / DEFEAT ====================
@@ -2403,6 +2527,10 @@ class TowerDeChessApp {
                 <span class="enemy-stat-pill trait">${e.trait}</span>
               </div>
               <p class="codex-item-tip">${lore.story}</p>
+              <div class="codex-matchup-row">
+                ${this._renderMatchupPills(e.strengths || [], 'strength')}
+                ${this._renderMatchupPills(e.weaknesses || [], 'weakness')}
+              </div>
             </div>
           </div>
         `;
