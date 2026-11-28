@@ -77,6 +77,7 @@ class TowerDeChessApp {
     this._removePref('towerdechess_sandbox');
     this.difficulty = normalizeDifficulty(this._readPref('towerdechess_difficulty'));
     this.weatherEnabled = this._readPref('towerdechess_weather_enabled') !== 'false';
+    this.cutscenesEnabled = this._readPref('towerdechess_cutscenes_enabled') !== 'false';
     this.selectedMapLevelId = Math.min(LEVELS.length, this.progress.highestUnlocked || 1);
     this.justUnlockedLevelId = null;
     this.pendingProgression = null;
@@ -225,6 +226,7 @@ class TowerDeChessApp {
       toggleSettingMusic: document.getElementById('toggle-setting-music'),
       toggleSettingSfx: document.getElementById('toggle-setting-sfx'),
       toggleSettingWeather: document.getElementById('toggle-setting-weather'),
+      toggleSettingCutscenes: document.getElementById('toggle-setting-cutscenes'),
       settingsTrackName: document.getElementById('settings-track-name'),
       settingsProgressSummary: document.getElementById('settings-progress-summary'),
       btnSettingsOpenSave: document.getElementById('btn-settings-open-save'),
@@ -314,6 +316,7 @@ class TowerDeChessApp {
       // Wait until the 3-second WildGoose studio intro completes before auto-playing Prologue
       await this._studioIntroDone;
       if (
+        this.cutscenesEnabled &&
         !this.progress.seenCutscenes?.includes('prologue') &&
         this.el.screenHome.classList.contains('active') &&
         !this.cutscene.isOpen()
@@ -330,6 +333,9 @@ class TowerDeChessApp {
     }
     if (this.el.toggleSettingWeather) {
       this.el.toggleSettingWeather.checked = this.weatherEnabled;
+    }
+    if (this.el.toggleSettingCutscenes) {
+      this.el.toggleSettingCutscenes.checked = this.cutscenesEnabled;
     }
 
     this.engine = new GameEngine(this.el.canvas, {
@@ -481,7 +487,7 @@ class TowerDeChessApp {
       this._pendingBriefLevel = null;
       this.el.modalBriefing.classList.add('hidden');
       if (pending) {
-        this._startLevel(pending.id, false);
+        this._startLevel(pending.id, false, true);
       } else {
         this._syncHistoryGuard();
       }
@@ -498,7 +504,7 @@ class TowerDeChessApp {
       if (this.currentLevel?.isQuickMatch) {
         this._launchLevelBoard(this.currentLevel);
       } else if (this.currentLevel) {
-        this._startLevel(this.currentLevel.id, false);
+        this._startLevel(this.currentLevel.id, false, false);
       }
     });
 
@@ -551,7 +557,7 @@ class TowerDeChessApp {
       if (this.currentLevel?.isQuickMatch) {
         this._launchLevelBoard(this.currentLevel);
       } else if (this.currentLevel) {
-        this._startLevel(this.currentLevel.id, false);
+        this._startLevel(this.currentLevel.id, false, false);
       }
     });
     this.el.btnSettingsMap?.addEventListener('click', () => {
@@ -589,6 +595,12 @@ class TowerDeChessApp {
           );
         }
       }
+      if (!sound.sfxMuted) sound.playSelect();
+    });
+    this.el.toggleSettingCutscenes?.addEventListener('change', (e) => {
+      sound.unlock();
+      this.cutscenesEnabled = Boolean(e.target.checked);
+      this._writePref('towerdechess_cutscenes_enabled', String(this.cutscenesEnabled));
       if (!sound.sfxMuted) sound.playSelect();
     });
     this.el.btnSettingsOpenSave?.addEventListener('click', () => {
@@ -833,6 +845,9 @@ class TowerDeChessApp {
     }
     if (this.el.toggleSettingWeather) {
       this.el.toggleSettingWeather.checked = this.weatherEnabled;
+    }
+    if (this.el.toggleSettingCutscenes) {
+      this.el.toggleSettingCutscenes.checked = this.cutscenesEnabled;
     }
     if (this.el.settingsTrackName) {
       const tr = sound.getCurrentTrack();
@@ -1449,7 +1464,7 @@ class TowerDeChessApp {
     this._syncHistoryGuard();
   }
 
-  _startLevel(levelId, showBriefing = false) {
+  _startLevel(levelId, showBriefing = false, allowCutscene = true) {
     const lvl = LEVELS.find((l) => l.id === levelId);
     if (!lvl) return;
 
@@ -1458,13 +1473,15 @@ class TowerDeChessApp {
       return;
     }
 
-    // Auto-play each level's dedicated 30-second story the first time the player deploys into it
-    const levelCutscene = getCutsceneIdForLevel(lvl.id);
-    if (levelCutscene && !this.progress.seenCutscenes?.includes(levelCutscene)) {
-      this._playCutscene(levelCutscene, () => {
-        this._launchLevelBoard(lvl);
-      });
-      return;
+    // Play each level's dedicated 30-second story when entering the board (if Story Cutscenes are enabled)
+    if (allowCutscene && this.cutscenesEnabled) {
+      const levelCutscene = getCutsceneIdForLevel(lvl.id);
+      if (levelCutscene) {
+        this._playCutscene(levelCutscene, () => {
+          this._launchLevelBoard(lvl);
+        });
+        return;
+      }
     }
 
     this._launchLevelBoard(lvl);
@@ -1863,7 +1880,7 @@ class TowerDeChessApp {
           ? { fromId: result.level.id, toId: nextLevel.id, newlyUnlocked }
           : null;
 
-      if (result.level.id === LEVELS.length && !this.progress.seenCutscenes?.includes('epilogue')) {
+      if (result.level.id === LEVELS.length && this.cutscenesEnabled) {
         this._playCutscene('epilogue', showResultModal);
         return;
       }
