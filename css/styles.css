@@ -1095,6 +1095,18 @@ body {
   transform: scale(0.96);
 }
 
+.map-story-btn {
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  border-radius: 11px;
+}
+
+.map-story-icon {
+  width: 28px;
+  height: 28px;
+}
+
 .campaign-map-viewport {
   position: relative;
   height: min(64dvh, 560px);

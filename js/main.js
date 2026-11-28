@@ -82,7 +82,6 @@ class TowerDeChessApp {
       campaignRevealedPill: document.getElementById('campaign-revealed-pill'),
       mapRealmIndicator: document.getElementById('map-realm-indicator'),
       btnPlayChapterStory: document.getElementById('btn-play-chapter-story'),
-      btnJumpFrontier: document.getElementById('btn-jump-frontier'),
       campaignMapViewport: document.getElementById('campaign-map-viewport'),
       campaignMapCanvas: document.getElementById('campaign-map-canvas'),
       btnDiffStandard: document.getElementById('btn-diff-standard'),
@@ -323,14 +322,6 @@ class TowerDeChessApp {
       const ch = getChapterForLevel(this.selectedMapLevelId || 1);
       const cutsceneId = ch.id === 1 ? 'prologue' : ch.id === 2 ? 'chapter2' : 'chapter3';
       this._playCutscene(cutsceneId);
-    });
-
-    this.el.btnJumpFrontier?.addEventListener('click', () => {
-      sound.unlock();
-      sound.playSelect();
-      const frontierId = Math.min(LEVELS.length, this.progress.highestUnlocked || 1);
-      this._selectMapLevel(frontierId);
-      this._scrollToMapNode(frontierId, true);
     });
 
     const setDiff = (mode) => {
