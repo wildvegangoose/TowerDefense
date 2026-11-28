@@ -122,7 +122,7 @@ export const LEVELS = [
     subtitle: 'Sunbeam Staircase',
     unlocksPiece: 'bishop',
     featuredPiece: 'bishop',
-    startingGold: 165,
+    startingGold: 190,
     startingLives: 12,
     description: 'Unlock the Bishop! Sight along the long marble diagonals to pierce columns of foes and sunder heavy armor while Blighted Clerics march to mend their allies.',
     waypoints: [
