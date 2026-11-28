@@ -2,7 +2,14 @@
  * TowerDeChess — Main App Controller, Campaign Progression & Reactive HUD.
  */
 
-import { preloadAssets, getSpriteUrl, getSceneUrl, getMapBgUrl, getMapNodeUrl } from './assets.js';
+import {
+  preloadAssets,
+  getSpriteUrl,
+  getSceneUrl,
+  getMapBgUrl,
+  getMapNodeUrl,
+  getLevelBgUrl,
+} from './assets.js';
 import { sound } from './audio.js';
 import { CutscenePlayer } from './cutscene.js';
 import { LEVELS, CHAPTERS, getChapterForLevel } from './data/levels.js';
@@ -43,6 +50,8 @@ class TowerDeChessApp {
     this.difficulty = localStorage.getItem('towerdechess_difficulty') || 'standard';
     this.selectedMapLevelId = Math.min(LEVELS.length, this.progress.highestUnlocked || 1);
     this.justUnlockedLevelId = null;
+    this.pendingProgression = null;
+    this._progressionTimers = [];
     this._mapNodeY = new Map();
     this.currentLevel = null;
     this.engine = null;
@@ -61,6 +70,7 @@ class TowerDeChessApp {
     this.el = {
       screenHome: document.getElementById('screen-home'),
       screenGame: document.getElementById('screen-game'),
+      gameBgArt: document.getElementById('game-bg-art'),
       campaignTotalStars: document.getElementById('campaign-total-stars'),
       campaignRevealedPill: document.getElementById('campaign-revealed-pill'),
       mapRealmIndicator: document.getElementById('map-realm-indicator'),
@@ -337,17 +347,16 @@ class TowerDeChessApp {
     });
 
     this.el.btnResultRetry.addEventListener('click', () => {
+      this.pendingProgression = null;
       this.el.modalResult.classList.add('hidden');
       if (this.currentLevel) this._startLevel(this.currentLevel.id, false);
     });
 
     this.el.btnResultNext.addEventListener('click', () => {
+      sound.unlock();
+      sound.playSelect();
       this.el.modalResult.classList.add('hidden');
-      if (this.currentLevel) {
-        const nextLevel = LEVELS.find((l) => l.id === this.currentLevel.id + 1);
-        if (nextLevel) this._startLevel(nextLevel.id, true);
-        else this._returnToCampaign();
-      }
+      this._returnToCampaign();
     });
 
     // Android PWA Install Prompt
@@ -491,6 +500,8 @@ class TowerDeChessApp {
 
     this.selectedMapLevelId = 1;
     this.justUnlockedLevelId = null;
+    this.pendingProgression = null;
+    this._clearProgressionTimers();
 
     this.el.clearSaveConfirm.classList.add('hidden');
     this._refreshSettingsUi();
@@ -688,6 +699,7 @@ class TowerDeChessApp {
       // Dark stone roadbed shadow
       const roadShadow = document.createElementNS(svgNS, 'path');
       roadShadow.setAttribute('d', d);
+      roadShadow.setAttribute('data-road-shadow', `${a.lvl.id}-${b.lvl.id}`);
       roadShadow.setAttribute('fill', 'none');
       roadShadow.setAttribute('stroke', isFogSegment ? 'rgba(12, 8, 5, 0.35)' : 'rgba(12, 8, 5, 0.7)');
       roadShadow.setAttribute('stroke-width', isFogSegment ? '7' : '11');
@@ -698,6 +710,8 @@ class TowerDeChessApp {
       // Main gilded/misty trail
       const roadMain = document.createElementNS(svgNS, 'path');
       roadMain.setAttribute('d', d);
+      roadMain.setAttribute('data-from', String(a.lvl.id));
+      roadMain.setAttribute('data-to', String(b.lvl.id));
       roadMain.setAttribute('fill', 'none');
       roadMain.setAttribute('stroke-linecap', 'round');
       roadMain.setAttribute('vector-effect', 'non-scaling-stroke');
@@ -833,8 +847,8 @@ class TowerDeChessApp {
       canvas.appendChild(fog);
     }
 
-    // Clear one-shot reveal celebration flag after triggering animation
-    if (this.justUnlockedLevelId) {
+    // Clear one-shot reveal celebration flag (handled by progression animation if present)
+    if (this.justUnlockedLevelId && !this.pendingProgression) {
       setTimeout(() => {
         this.justUnlockedLevelId = null;
       }, 1000);
@@ -842,9 +856,167 @@ class TowerDeChessApp {
 
     this._syncRealmIndicator(this.selectedMapLevelId);
 
-    if (scrollToFrontier) {
+    if (this.pendingProgression) {
+      const prog = this.pendingProgression;
+      this.pendingProgression = null;
+      requestAnimationFrame(() => this._playMapProgression(prog));
+    } else if (scrollToFrontier) {
       requestAnimationFrame(() => this._scrollToMapNode(this.selectedMapLevelId, false));
     }
+  }
+
+  _clearProgressionTimers() {
+    for (const id of this._progressionTimers) clearTimeout(id);
+    this._progressionTimers = [];
+  }
+
+  _playMapProgression({ fromId, toId, newlyUnlocked }) {
+    this._clearProgressionTimers();
+    const canvas = this.el.campaignMapCanvas;
+    const vp = this.el.campaignMapViewport;
+    if (!canvas) return;
+
+    const fromLvl = LEVELS.find((l) => l.id === fromId);
+    const toLvl = LEVELS.find((l) => l.id === toId);
+    const yFrom = this._mapNodeY.get(fromId);
+    const yTo = this._mapNodeY.get(toId);
+    if (!fromLvl || !toLvl || yFrom === undefined || yTo === undefined) return;
+
+    if (vp) {
+      const midY = (yFrom + yTo) * 0.5;
+      vp.scrollTo({ top: Math.max(0, midY - vp.clientHeight * 0.5), behavior: 'smooth' });
+    }
+
+    const baseRoad = canvas.querySelector(`path[data-from="${fromId}"][data-to="${toId}"]`);
+    const targetNode = canvas.querySelector(`.map-node[data-level-id="${toId}"]`);
+    const canvasW = Math.max(1, canvas.clientWidth);
+    const canvasH = Math.max(1, canvas.clientHeight);
+
+    // Hold newly unlocked target node concealed until the marching line & footsteps arrive
+    if (newlyUnlocked && targetNode) {
+      targetNode.classList.remove('just-revealed');
+      targetNode.classList.add('progression-pending');
+    }
+
+    // Dim static segment while the glowing animated trail draws itself forward
+    const prevOpacity = baseRoad ? baseRoad.style.opacity : '';
+    if (baseRoad) baseRoad.style.opacity = '0.18';
+
+    // Build a 1:1 CSS-pixel SVG overlay so stroke-dashoffset & tangent angles are 100% distortion-free
+    const svgNS = 'http://www.w3.org/2000/svg';
+    const overlaySvg = document.createElementNS(svgNS, 'svg');
+    overlaySvg.setAttribute('class', 'map-svg-layer');
+    overlaySvg.style.zIndex = '3';
+    overlaySvg.setAttribute('viewBox', `0 0 ${canvasW} ${canvasH}`);
+
+    const x1Px = (fromLvl.mapX / 100) * canvasW;
+    const x2Px = (toLvl.mapX / 100) * canvasW;
+    const midY = (yFrom + yTo) * 0.5;
+    const dPx = `M ${x1Px.toFixed(1)} ${yFrom} C ${x1Px.toFixed(1)} ${midY}, ${x2Px.toFixed(1)} ${midY}, ${x2Px.toFixed(1)} ${yTo}`;
+
+    const animPath = document.createElementNS(svgNS, 'path');
+    animPath.setAttribute('d', dPx);
+    animPath.setAttribute('fill', 'none');
+    animPath.setAttribute('stroke', '#ffe28a');
+    animPath.setAttribute('stroke-width', '5');
+    animPath.setAttribute('stroke-linecap', 'round');
+    animPath.setAttribute('class', 'map-progress-trail');
+    overlaySvg.appendChild(animPath);
+    canvas.appendChild(overlaySvg);
+
+    const totalLen = typeof animPath.getTotalLength === 'function' ? animPath.getTotalLength() : 0;
+    if (totalLen <= 1) {
+      overlaySvg.remove();
+      if (baseRoad) baseRoad.style.opacity = prevOpacity;
+      if (targetNode) targetNode.classList.remove('progression-pending');
+      return;
+    }
+
+    animPath.style.strokeDasharray = `${totalLen}`;
+    animPath.style.strokeDashoffset = `${totalLen}`;
+    animPath.style.transition = 'stroke-dashoffset 1.35s cubic-bezier(0.35, 0, 0.25, 1)';
+
+    // Kick off smooth SVG line draw on next frame
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        animPath.style.strokeDashoffset = '0';
+      });
+    });
+
+    // Spawn tiny alternating left/right golden footsteps marching along the exact curve!
+    const stepCount = 9;
+    const footstepSvg = `
+      <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true">
+        <ellipse cx="8" cy="5.6" rx="3.1" ry="4.1" fill="currentColor"/>
+        <ellipse cx="8" cy="12.2" rx="2.3" ry="2.2" fill="currentColor"/>
+      </svg>
+    `;
+
+    for (let i = 0; i < stepCount; i++) {
+      const t = 0.14 + (i / (stepCount - 1)) * 0.72;
+      const dist = totalLen * t;
+      const p = animPath.getPointAtLength(dist);
+      const pNext = animPath.getPointAtLength(Math.min(totalLen, dist + 4));
+
+      // Compute true screen-space tangent angle & perpendicular left/right stride offset
+      const dxPx = pNext.x - p.x;
+      const dyPx = pNext.y - p.y;
+      const mag = Math.hypot(dxPx, dyPx) || 1;
+      const angleDeg = (Math.atan2(dyPx, dxPx) * 180) / Math.PI + 90;
+
+      const side = i % 2 === 0 ? 1 : -1;
+      const offsetPx = 9.5 * side;
+      const nx = -dyPx / mag;
+      const ny = dxPx / mag;
+
+      const stepEl = document.createElement('span');
+      stepEl.className = 'map-footstep';
+      stepEl.innerHTML = footstepSvg;
+      stepEl.style.left = `calc(${((p.x / canvasW) * 100).toFixed(2)}% + ${(nx * offsetPx).toFixed(1)}px)`;
+      stepEl.style.top = `${(p.y + ny * offsetPx).toFixed(1)}px`;
+      stepEl.style.transform = `translate(-50%, -50%) rotate(${angleDeg.toFixed(1)}deg) scaleX(${side})`;
+      const delayMs = Math.round(140 + i * 125);
+      stepEl.style.animationDelay = `${delayMs}ms`;
+      canvas.appendChild(stepEl);
+
+      // Subtle rhythmic footstep tap sound on every other stride
+      if (i % 2 === 0) {
+        this._progressionTimers.push(
+          setTimeout(() => {
+            if (this.el.screenHome.classList.contains('active')) {
+              sound.playSelect();
+            }
+          }, delayMs)
+        );
+      }
+    }
+
+    // Arrival at next stronghold: reveal the glowing medallion & settle trail
+    this._progressionTimers.push(
+      setTimeout(() => {
+        if (baseRoad) baseRoad.style.opacity = prevOpacity;
+        overlaySvg.style.transition = 'opacity 0.55s ease';
+        overlaySvg.style.opacity = '0';
+        this._selectMapLevel(toId);
+
+        if (targetNode) {
+          targetNode.classList.remove('progression-pending');
+          targetNode.classList.remove('just-revealed');
+          void targetNode.offsetWidth;
+          targetNode.classList.add('just-revealed');
+        }
+        if (newlyUnlocked && this.el.screenHome.classList.contains('active')) {
+          sound.playPlace();
+        }
+        this.justUnlockedLevelId = null;
+
+        this._progressionTimers.push(
+          setTimeout(() => {
+            overlaySvg.remove();
+          }, 600)
+        );
+      }, 1420)
+    );
   }
 
   _selectMapLevel(levelId) {
@@ -891,8 +1063,16 @@ class TowerDeChessApp {
   }
 
   _launchLevelBoard(lvl, showBriefing = true) {
+    this._clearProgressionTimers();
+    this.pendingProgression = null;
     this.currentLevel = lvl;
     this.selectedMapLevelId = lvl.id;
+
+    // Apply per-level painted battlefield backdrop at low opacity behind the 2.5D board
+    if (this.el.gameBgArt) {
+      const bgUrl = getLevelBgUrl(lvl.id);
+      this.el.gameBgArt.style.backgroundImage = bgUrl ? `url("${bgUrl}")` : '';
+    }
 
     this.el.screenHome.classList.remove('active');
     this.el.screenGame.classList.add('active');
@@ -933,7 +1113,7 @@ class TowerDeChessApp {
     this.el.modalResult.classList.add('hidden');
     this.el.screenGame.classList.remove('active');
     this.el.screenHome.classList.add('active');
-    this._renderCampaign(Boolean(this.justUnlockedLevelId));
+    this._renderCampaign(Boolean(this.justUnlockedLevelId || this.pendingProgression));
   }
 
   // ==================== REACTIVE GAMEPLAY HUD ====================
@@ -1131,6 +1311,8 @@ class TowerDeChessApp {
             : `The Obsidian Army has been repelled with ${result.livesLeft} Citadel lives intact. Final Score: ${result.score.toLocaleString()}.`;
 
         const nextLevel = LEVELS.find((l) => l.id === result.level.id + 1);
+        this.el.btnResultMenu.classList.add('hidden');
+        this.el.btnResultNext.classList.remove('hidden');
         if (nextLevel) {
           const nextPieceId = nextLevel.unlocksPiece || nextLevel.featuredPiece || 'king';
           const nextPiece = PIECE_REGISTRY[nextPieceId];
@@ -1147,10 +1329,10 @@ class TowerDeChessApp {
             this.el.resultNextName.textContent = `Level ${nextLevel.id}: ${nextLevel.name}`;
             this.el.resultNextPattern.textContent = `${nextCh.name} — ${nextLevel.subtitle}`;
           }
-          this.el.btnResultNext.classList.remove('hidden');
+          this.el.btnResultNext.textContent = 'Continue on Map →';
         } else {
           this.el.resultNextUnlock.classList.add('hidden');
-          this.el.btnResultNext.classList.add('hidden');
+          this.el.btnResultNext.textContent = 'Return to Map →';
         }
       } else {
         this.el.resultKicker.textContent = 'THE CITADEL HAS FALLEN';
@@ -1159,6 +1341,7 @@ class TowerDeChessApp {
         this.el.resultSummary.textContent =
           'The dark legion breached your sanctuary. Adjust your chess sightlines, promote key pieces, and hold the line!';
         this.el.resultNextUnlock.classList.add('hidden');
+        this.el.btnResultMenu.classList.remove('hidden');
         this.el.btnResultNext.classList.add('hidden');
       }
     };
@@ -1173,15 +1356,26 @@ class TowerDeChessApp {
         totalLevels: LEVELS.length,
       });
 
-      if (this.progress.highestUnlocked > prevUnlocked) {
+      const newlyUnlocked = this.progress.highestUnlocked > prevUnlocked;
+      const nextLevel = LEVELS.find((l) => l.id === result.level.id + 1);
+      if (newlyUnlocked) {
         this.justUnlockedLevelId = this.progress.highestUnlocked;
         this.selectedMapLevelId = this.progress.highestUnlocked;
+      } else if (nextLevel && nextLevel.id <= this.progress.highestUnlocked) {
+        this.selectedMapLevelId = nextLevel.id;
       }
+
+      this.pendingProgression =
+        nextLevel && nextLevel.id <= this.progress.highestUnlocked
+          ? { fromId: result.level.id, toId: nextLevel.id, newlyUnlocked }
+          : null;
 
       if (result.level.id === LEVELS.length && !this.progress.seenCutscenes?.includes('epilogue')) {
         this._playCutscene('epilogue', showResultModal);
         return;
       }
+    } else {
+      this.pendingProgression = null;
     }
 
     showResultModal();

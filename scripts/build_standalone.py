@@ -152,6 +152,11 @@ def build() -> str:
         node_path = os.path.join(REPO_DIR, "assets", "map", f"node_{lvl_id:02d}.png")
         if os.path.exists(node_path):
             inline_map_nodes[str(lvl_id)] = encode_sheet_webp_data_uri(node_path, width=144, height=144, quality=80)
+    inline_level_bgs = {}
+    for lvl_id in range(1, 19):
+        lbg_path = os.path.join(REPO_DIR, "assets", "backgrounds", f"level_{lvl_id:02d}.jpg")
+        if os.path.exists(lbg_path):
+            inline_level_bgs[str(lvl_id)] = encode_scene_webp_data_uri(lbg_path, width=480, height=270, quality=68)
 
     music_path = os.path.join(REPO_DIR, "assets", "audio", f"{MUSIC_KEY}.mp3")
     inline_music_b64 = encode_music_base64(music_path) if os.path.exists(music_path) else ""
@@ -179,6 +184,7 @@ const INLINE_SHEET_URIS = {json.dumps(inline_sheets)};
 const INLINE_SCENE_URIS = {json.dumps(inline_scenes)};
 const INLINE_MAP_BG_URIS = {json.dumps(inline_map_bgs)};
 const INLINE_MAP_NODE_URIS = {json.dumps(inline_map_nodes)};
+const INLINE_LEVEL_BG_URIS = {json.dumps(inline_level_bgs)};
 const SHEET_META = {json.dumps(SHEET_META)};
 const SPRITES = {{}};
 const SHEETS = {{}};
@@ -196,6 +202,9 @@ function getMapBgUrl(theme) {{
 }}
 function getMapNodeUrl(levelId) {{
   return INLINE_MAP_NODE_URIS[String(levelId)] || '';
+}}
+function getLevelBgUrl(levelId) {{
+  return INLINE_LEVEL_BG_URIS[String(levelId)] || '';
 }}
 // Videos are not inlined: video cutscenes play their painted slides instead
 function getVideoUrl(key) {{

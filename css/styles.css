@@ -1318,12 +1318,84 @@ body {
 }
 
 
+/* ==================== CAMPAIGN PROGRESSION TRAIL & MARCHING FOOTSTEPS ==================== */
+
+.map-node.progression-pending {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.5);
+  pointer-events: none;
+}
+
+.map-progress-trail {
+  filter: drop-shadow(0 0 6px rgba(245, 202, 109, 0.85));
+}
+
+.map-footstep {
+  position: absolute;
+  width: 15px;
+  height: 15px;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0;
+  transform-origin: center center;
+  color: #f8d47a;
+  filter: drop-shadow(0 0 5px rgba(245, 202, 109, 0.85)) drop-shadow(0 2px 3px rgba(0, 0, 0, 0.85));
+  animation: footstepMarchIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes footstepMarchIn {
+  0% {
+    opacity: 0;
+    scale: 0.4;
+  }
+  55% {
+    opacity: 1;
+    scale: 1.2;
+  }
+  100% {
+    opacity: 0.78;
+    scale: 1;
+  }
+}
+
 /* ==================== GAMEPLAY SCREEN ==================== */
 
 .screen-game {
+  position: relative;
   height: 100dvh;
   overflow: hidden;
   padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  background: radial-gradient(ellipse at 50% 42%, #241912 0%, #150e0a 72%, #0e0906 100%);
+}
+
+/* Per-level painted battlefield backdrop blended subtly behind the floating 2.5D chessboard */
+.game-bg-art {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  opacity: 0.33;
+  filter: saturate(0.9) contrast(1.05);
+  mix-blend-mode: lighten;
+  transition: opacity 0.4s ease;
+}
+
+.game-bg-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 68% 66% at 44% 50%, rgba(16, 11, 7, 0.12) 0%, rgba(12, 8, 5, 0.72) 100%),
+    linear-gradient(180deg, rgba(16, 11, 7, 0.55) 0%, transparent 18%, transparent 82%, rgba(14, 9, 6, 0.65) 100%);
+}
+
+.game-topbar,
+.battle-layout {
+  position: relative;
+  z-index: 1;
 }
 
 .game-topbar {
@@ -1332,7 +1404,7 @@ body {
   justify-content: space-between;
   gap: 8px;
   padding: 8px 12px;
-  background: linear-gradient(180deg, #2d1f16 0%, #221710 100%);
+  background: linear-gradient(180deg, rgba(45, 31, 22, 0.94) 0%, rgba(34, 23, 16, 0.96) 100%);
   border-bottom: 1px solid var(--border-brass);
   flex-shrink: 0;
 }

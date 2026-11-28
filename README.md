@@ -65,9 +65,10 @@ Conquering a level awards **1 to 3 stars** based on remaining Citadel lives (`li
 - **★☆☆ (1 Star):** `< 45%` lives remaining (survived with at least 1 life)
 
 ### Fog-of-War Campaign Map
-- The home screen features a full-width **Interactive Campaign Map** across 3 biome bands (*Ivory Ranks*, *Glacial Rift*, *Crimson Citadel*).
+- The home screen features a full-width **Interactive Campaign Map** across 3 illustrated low-opacity biome realms (*Ivory Ranks*, *Glacial Rift*, *Crimson Citadel*) with 18 unique story-matched circular level medallions.
 - Only conquered levels plus your active frontier level are revealed; undiscovered strongholds remain shrouded under the **Fog of War** until you conquer the battle before them.
-- Tapping any revealed map node deploys directly into that level with its Chronicle briefing.
+- Tapping any revealed map node deploys directly into that level with its Chronicle briefing and custom low-opacity painted battlefield backdrop behind the 2.5D chessboard.
+- Conquering a level returns you to the Campaign Map with an **animated glowing progression trail and marching footsteps** advancing from the conquered stronghold to reveal the next level.
 
 ---
 
@@ -210,6 +211,8 @@ TowerDefense/
 │       └── targeting.js          # Authentic chess sightline geometry (Pawn, Knight L-jump, Bishop, Rook, Queen, King, Radial)
 │
 ├── assets/
+│   ├── backgrounds/              # 18 widescreen (16:9) painted in-level battlefield backdrops (level_01..18.jpg)
+│   ├── map/                      # 3 illustrated realm map backdrops + 18 story-matched circular level emblems
 │   ├── sprites/                  # Static transparent PNG miniatures (UI icons, HUD cards, Codex, Citadel Gate)
 │   ├── sheets/                   # 12 custom 4×2 (8-frame) directional animation sprite sheets (enemies + defenders)
 │   ├── scenes/                   # 6 widescreen (16:9) painted cutscene illustrations (JPEG)

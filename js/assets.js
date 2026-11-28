@@ -67,6 +67,10 @@ export function getMapNodeUrl(levelId) {
   return `assets/map/node_${String(levelId).padStart(2, '0')}.png`;
 }
 
+export function getLevelBgUrl(levelId) {
+  return `assets/backgrounds/level_${String(levelId).padStart(2, '0')}.jpg`;
+}
+
 function loadImage(url) {
   return new Promise((resolve) => {
     const img = new Image();

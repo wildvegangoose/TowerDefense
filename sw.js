@@ -4,7 +4,7 @@
  * while still supporting offline play on Android home screen.
  */
 
-const CACHE_NAME = 'towerdechess-v17';
+const CACHE_NAME = 'towerdechess-v18';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

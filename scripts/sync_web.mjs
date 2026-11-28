@@ -18,6 +18,7 @@ const DIRS = [
   'assets/sheets',
   'assets/scenes',
   'assets/map',
+  'assets/backgrounds',
   'assets/videos',
   'assets/audio',
   'assets/icons',
