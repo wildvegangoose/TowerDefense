@@ -161,7 +161,7 @@ def build() -> str:
 
     ui_icon_keys = [
         "settings", "back", "pause", "play", "speed",
-        "music", "sfx", "codex", "restart", "scroll", "story",
+        "music", "sfx", "codex", "restart", "scroll", "story", "weather",
     ]
     inline_ui_icons = {}
     for key in ui_icon_keys:

@@ -50,6 +50,7 @@ class TowerDeChessApp {
     this.progress = loadProgressSync();
     localStorage.removeItem('towerdechess_sandbox');
     this.difficulty = localStorage.getItem('towerdechess_difficulty') || 'standard';
+    this.weatherEnabled = localStorage.getItem('towerdechess_weather_enabled') !== 'false';
     this.selectedMapLevelId = Math.min(LEVELS.length, this.progress.highestUnlocked || 1);
     this.justUnlockedLevelId = null;
     this.pendingProgression = null;
@@ -189,6 +190,7 @@ class TowerDeChessApp {
       btnSettingsMap: document.getElementById('btn-settings-map'),
       toggleSettingMusic: document.getElementById('toggle-setting-music'),
       toggleSettingSfx: document.getElementById('toggle-setting-sfx'),
+      toggleSettingWeather: document.getElementById('toggle-setting-weather'),
       settingsTrackName: document.getElementById('settings-track-name'),
       settingsProgressSummary: document.getElementById('settings-progress-summary'),
       btnSettingsOpenSave: document.getElementById('btn-settings-open-save'),
@@ -516,6 +518,19 @@ class TowerDeChessApp {
       this._syncMuteIcon();
       if (!sound.sfxMuted) sound.playSelect();
     });
+    this.el.toggleSettingWeather?.addEventListener('change', (e) => {
+      sound.unlock();
+      this.weatherEnabled = Boolean(e.target.checked);
+      localStorage.setItem('towerdechess_weather_enabled', String(this.weatherEnabled));
+      if (this.el.screenGame.classList.contains('active') && this.currentLevel) {
+        if (this.weatherEnabled) {
+          this.weather?.start(this.currentLevel.weather || 'sunrays', this.currentLevel.id);
+        } else {
+          this.weather?.stop();
+        }
+      }
+      if (!sound.sfxMuted) sound.playSelect();
+    });
     this.el.btnSettingsOpenSave?.addEventListener('click', () => {
       this.el.modalSettings.classList.add('hidden');
       this._openSaveModal();
@@ -739,6 +754,9 @@ class TowerDeChessApp {
     }
     if (this.el.toggleSettingSfx) {
       this.el.toggleSettingSfx.checked = !sound.sfxMuted;
+    }
+    if (this.el.toggleSettingWeather) {
+      this.el.toggleSettingWeather.checked = this.weatherEnabled;
     }
     if (this.el.settingsTrackName) {
       const tr = sound.getCurrentTrack();
@@ -1447,10 +1465,14 @@ class TowerDeChessApp {
     this.el.hudLevelName.textContent = lvl.name;
 
     this.engine.loadLevel(lvl, this.difficulty);
-    this.weather?.start(lvl.weather || 'sunrays', lvl.id);
+    if (this.weatherEnabled) {
+      this.weather?.start(lvl.weather || 'sunrays', lvl.id);
+    } else {
+      this.weather?.stop();
+    }
     requestAnimationFrame(() => {
       this.engine.resize();
-      this.weather?.resize();
+      if (this.weatherEnabled) this.weather?.resize();
     });
     this._syncHistoryGuard();
   }
