@@ -133,6 +133,7 @@ class TowerDeChessApp {
 
       // Briefing Modal
       modalBriefing: document.getElementById('modal-briefing'),
+      btnCloseBriefing: document.getElementById('btn-close-briefing'),
       briefKicker: document.getElementById('brief-kicker'),
       briefTitle: document.getElementById('brief-title'),
       briefPieceImg: document.getElementById('brief-piece-img'),
@@ -257,6 +258,7 @@ class TowerDeChessApp {
   }
 
   async _init() {
+    this._setupHistoryNavigation();
     this._studioIntroDone = this._playStudioIntro();
     this._syncDifficultyUi();
     this._syncMuteIcon();
@@ -343,28 +345,14 @@ class TowerDeChessApp {
       sound.playSelect();
       this._renderCodexTab(btn.dataset.tab);
     });
-    this.el.btnCloseCodex.addEventListener('click', () => {
-      this.el.modalCodex.classList.add('hidden');
-      if (this._pausedBySettings && this.el.screenGame.classList.contains('active')) {
-        if (this.engine?.gameState === 'paused') this.engine.togglePause();
-        this._pausedBySettings = false;
-      }
-    });
+    this.el.btnCloseCodex.addEventListener('click', () => this._closeCodex());
     this.el.modalCodex.addEventListener('click', (e) => {
-      if (e.target === this.el.modalCodex) {
-        this.el.modalCodex.classList.add('hidden');
-        if (this._pausedBySettings && this.el.screenGame.classList.contains('active')) {
-          if (this.engine?.gameState === 'paused') this.engine.togglePause();
-          this._pausedBySettings = false;
-        }
-      }
+      if (e.target === this.el.modalCodex) this._closeCodex();
     });
 
-    this.el.btnCloseSave.addEventListener('click', () => {
-      this.el.modalSave.classList.add('hidden');
-    });
+    this.el.btnCloseSave.addEventListener('click', () => this._closeSaveModal());
     this.el.modalSave.addEventListener('click', (e) => {
-      if (e.target === this.el.modalSave) this.el.modalSave.classList.add('hidden');
+      if (e.target === this.el.modalSave) this._closeSaveModal();
     });
     this.el.btnCopySave.addEventListener('click', async () => {
       const code = exportSaveCode(this.progress);
@@ -410,10 +398,22 @@ class TowerDeChessApp {
     this.el.btnTargetMode.addEventListener('click', () => this.engine?.cycleSelectedTargetMode());
     this.el.btnSellTower.addEventListener('click', () => this.engine?.sellSelectedTower());
 
-    // Modals
+    // Level Details / Briefing Modal (click outside borders or X to close back to Campaign Map)
+    this.el.btnCloseBriefing?.addEventListener('click', () => this._closeLevelBriefing());
+    this.el.modalBriefing?.addEventListener('click', (e) => {
+      if (e.target === this.el.modalBriefing) this._closeLevelBriefing();
+    });
     this.el.btnBriefStart.addEventListener('click', () => {
       sound.unlock();
+      sound.playSelect();
+      const pending = this._pendingBriefLevel;
+      this._pendingBriefLevel = null;
       this.el.modalBriefing.classList.add('hidden');
+      if (pending) {
+        this._startLevel(pending.id, false);
+      } else {
+        this._syncHistoryGuard();
+      }
     });
 
     this.el.btnResultMenu.addEventListener('click', () => {
@@ -509,38 +509,136 @@ class TowerDeChessApp {
     const capApp = window.Capacitor?.Plugins?.App;
     if (capApp?.addListener) {
       capApp.addListener('backButton', () => {
-        if (this.cutscene?.isOpen()) {
-          this.cutscene.stop(true);
-          return;
+        if (!this._handleBackNavigation()) {
+          capApp.exitApp();
         }
-        if (!this.el.modalSettings?.classList.contains('hidden')) {
-          this._closeSettings();
-          return;
-        }
-        if (!this.el.modalSave?.classList.contains('hidden')) {
-          this.el.modalSave.classList.add('hidden');
-          return;
-        }
-        if (!this.el.modalCodex.classList.contains('hidden')) {
-          this.el.modalCodex.classList.add('hidden');
-          return;
-        }
-        if (!this.el.modalBriefing.classList.contains('hidden')) {
-          this.el.modalBriefing.classList.add('hidden');
-          return;
-        }
-        if (!this.el.modalResult.classList.contains('hidden')) {
-          this.el.modalResult.classList.add('hidden');
-          this._returnToCampaign();
-          return;
-        }
-        if (this.el.screenGame.classList.contains('active')) {
-          this._returnToCampaign();
-          return;
-        }
-        capApp.exitApp();
       });
     }
+  }
+
+  // ==================== CONTEXT-AWARE BACK NAVIGATION (PWA + CAPACITOR) ====================
+
+  _setupHistoryNavigation() {
+    this._inPopstate = false;
+    this._ignoringPopstate = false;
+    this._historyGuardEnabled =
+      typeof window !== 'undefined' &&
+      Boolean(window.history?.pushState) &&
+      /^https?:$/.test(location.protocol) &&
+      !window.Capacitor?.isNativePlatform?.();
+
+    if (!this._historyGuardEnabled) return;
+
+    try {
+      if (!history.state?.tdcRoot && !history.state?.tdcGuard) {
+        history.replaceState({ tdcRoot: true }, '');
+      }
+    } catch {
+      this._historyGuardEnabled = false;
+      return;
+    }
+
+    window.addEventListener('popstate', () => {
+      if (this._ignoringPopstate) {
+        this._ignoringPopstate = false;
+        return;
+      }
+      if (this._hasBackTarget()) {
+        this._inPopstate = true;
+        this._handleBackNavigation();
+        this._inPopstate = false;
+        // If another inner layer remains open (e.g., closed Settings while still in Battle),
+        // re-arm the guard so the next Back press handles that layer instead of exiting!
+        if (this._hasBackTarget()) {
+          this._pushHistoryGuard();
+        }
+      }
+    });
+  }
+
+  _hasBackTarget() {
+    return (
+      Boolean(this.cutscene?.isOpen()) ||
+      !this.el.modalSettings?.classList.contains('hidden') ||
+      !this.el.modalSave?.classList.contains('hidden') ||
+      !this.el.modalCodex?.classList.contains('hidden') ||
+      !this.el.modalBriefing?.classList.contains('hidden') ||
+      !this.el.modalResult?.classList.contains('hidden') ||
+      Boolean(this.el.screenGame?.classList.contains('active'))
+    );
+  }
+
+  _pushHistoryGuard() {
+    if (!this._historyGuardEnabled) return;
+    try {
+      if (!history.state?.tdcGuard) {
+        history.pushState({ tdcGuard: true }, '');
+      }
+    } catch {
+      // Ignore restricted history environments
+    }
+  }
+
+  _syncHistoryGuard() {
+    if (!this._historyGuardEnabled || this._inPopstate) return;
+    if (this._hasBackTarget()) {
+      this._pushHistoryGuard();
+    } else if (history.state?.tdcGuard) {
+      // Returned to root Campaign Map via UI controls — pop our guard so the next Back exits naturally
+      this._ignoringPopstate = true;
+      history.back();
+    }
+  }
+
+  _handleBackNavigation() {
+    if (this.el.studioIntro && !this.el.studioIntro.classList.contains('hidden')) {
+      this.el.studioIntro.click();
+      return true;
+    }
+    if (this.cutscene?.isOpen()) {
+      this.cutscene.stop(true);
+      return true;
+    }
+    if (!this.el.modalSettings?.classList.contains('hidden')) {
+      this._closeSettings();
+      return true;
+    }
+    if (!this.el.modalSave?.classList.contains('hidden')) {
+      this._closeSaveModal();
+      return true;
+    }
+    if (!this.el.modalCodex?.classList.contains('hidden')) {
+      this._closeCodex();
+      return true;
+    }
+    if (!this.el.modalBriefing?.classList.contains('hidden')) {
+      this._closeLevelBriefing();
+      return true;
+    }
+    if (!this.el.modalResult?.classList.contains('hidden')) {
+      this.el.modalResult.classList.add('hidden');
+      this._returnToCampaign();
+      return true;
+    }
+    if (this.el.screenGame?.classList.contains('active')) {
+      this._returnToCampaign();
+      return true;
+    }
+    return false;
+  }
+
+  _closeCodex() {
+    this.el.modalCodex.classList.add('hidden');
+    if (this._pausedBySettings && this.el.screenGame.classList.contains('active')) {
+      if (this.engine?.gameState === 'paused') this.engine.togglePause();
+      this._pausedBySettings = false;
+    }
+    this._syncHistoryGuard();
+  }
+
+  _closeSaveModal() {
+    this.el.modalSave.classList.add('hidden');
+    this._syncHistoryGuard();
   }
 
   _playCutscene(cutsceneId, onComplete = null) {
@@ -549,7 +647,11 @@ class TowerDeChessApp {
       return;
     }
     this.progress = markCutsceneSeen(this.progress, cutsceneId);
-    this.cutscene.play(cutsceneId, onComplete);
+    this.cutscene.play(cutsceneId, () => {
+      onComplete?.();
+      this._syncHistoryGuard();
+    });
+    this._syncHistoryGuard();
   }
 
   _registerServiceWorker() {
@@ -580,6 +682,7 @@ class TowerDeChessApp {
     this.el.clearSaveConfirm.classList.add('hidden');
     this.el.settingsStatusMsg.textContent = '';
     this.el.modalSettings.classList.remove('hidden');
+    this._syncHistoryGuard();
   }
 
   _closeSettings() {
@@ -590,6 +693,7 @@ class TowerDeChessApp {
       }
       this._pausedBySettings = false;
     }
+    this._syncHistoryGuard();
   }
 
   _refreshSettingsUi() {
@@ -634,6 +738,7 @@ class TowerDeChessApp {
     this.el.inputSaveCode.value = exportSaveCode(this.progress);
     this._setSaveStatus('', false);
     this.el.modalSave.classList.remove('hidden');
+    this._syncHistoryGuard();
   }
 
   _refreshSaveModalStats() {
@@ -940,7 +1045,7 @@ class TowerDeChessApp {
         sound.unlock();
         sound.playSelect();
         this._selectMapLevel(lvl.id);
-        this._startLevel(lvl.id, true);
+        this._openLevelBriefing(lvl.id);
       });
 
       canvas.appendChild(btn);
@@ -1157,25 +1262,65 @@ class TowerDeChessApp {
     vp.scrollTo({ top: targetTop, behavior: smooth ? 'smooth' : 'auto' });
   }
 
-  _startLevel(levelId, showBriefing = true) {
+  _openLevelBriefing(levelId) {
     const lvl = LEVELS.find((l) => l.id === levelId);
     if (!lvl) return;
+
+    this._pendingBriefLevel = lvl;
+    const ch = getChapterForLevel(lvl.id);
+    const pieceId = lvl.unlocksPiece || lvl.featuredPiece || 'pawn';
+    const piece = PIECE_REGISTRY[pieceId];
+    this.el.briefKicker.textContent = `CHAPTER ${ch.roman} • LEVEL ${lvl.id} • ${lvl.subtitle.toUpperCase()}`;
+    this.el.briefTitle.textContent = lvl.name;
+    this.el.briefPieceImg.src = getSpriteUrl(piece.sprite);
+    this.el.briefPieceImg.alt = piece.name;
+    this.el.briefUnlockBadge.textContent = lvl.unlocksPiece
+      ? piece.category === 'mythic'
+        ? 'NON-CHESS RELIC UNLOCKED'
+        : lvl.id === 1
+        ? 'STARTING CHESS PIECE'
+        : 'NEW CHESS PIECE UNLOCKED'
+      : lvl.isChapterBoss
+      ? 'CHAPTER FINALE • KEY COMMANDER'
+      : 'RECOMMENDED COMMANDER';
+    this.el.briefPieceName.textContent = `${piece.name} — ${piece.title}`;
+    this.el.briefPiecePattern.textContent = piece.patternLabel;
+    this.el.briefDesc.textContent = LEVEL_DISPATCHES[lvl.id] || lvl.description;
+    this.el.modalBriefing.classList.remove('hidden');
+    this._syncHistoryGuard();
+  }
+
+  _closeLevelBriefing() {
+    this._pendingBriefLevel = null;
+    this.el.modalBriefing.classList.add('hidden');
+    this._syncHistoryGuard();
+  }
+
+  _startLevel(levelId, showBriefing = false) {
+    const lvl = LEVELS.find((l) => l.id === levelId);
+    if (!lvl) return;
+
+    if (showBriefing) {
+      this._openLevelBriefing(lvl.id);
+      return;
+    }
 
     // Auto-play Chapter II or Chapter III motion-comic cutscene the first time the player enters that realm
     const chapterCutscene = lvl.id === 7 ? 'chapter2' : lvl.id === 13 ? 'chapter3' : null;
     if (chapterCutscene && !this.progress.seenCutscenes?.includes(chapterCutscene)) {
       this._playCutscene(chapterCutscene, () => {
-        this._launchLevelBoard(lvl, showBriefing);
+        this._launchLevelBoard(lvl);
       });
       return;
     }
 
-    this._launchLevelBoard(lvl, showBriefing);
+    this._launchLevelBoard(lvl);
   }
 
-  _launchLevelBoard(lvl, showBriefing = true) {
+  _launchLevelBoard(lvl) {
     this._clearProgressionTimers();
     this.pendingProgression = null;
+    this._pendingBriefLevel = null;
     this.currentLevel = lvl;
     this.selectedMapLevelId = lvl.id;
 
@@ -1185,6 +1330,7 @@ class TowerDeChessApp {
       this.el.gameBgArt.style.backgroundImage = bgUrl ? `url("${bgUrl}")` : '';
     }
 
+    this.el.modalBriefing.classList.add('hidden');
     this.el.screenHome.classList.remove('active');
     this.el.screenGame.classList.add('active');
     const diffTag = this.difficulty === 'grandmaster' ? ' • GRANDMASTER' : '';
@@ -1197,39 +1343,21 @@ class TowerDeChessApp {
       this.engine.resize();
       this.weather?.resize();
     });
-
-    if (showBriefing) {
-      const ch = getChapterForLevel(lvl.id);
-      const pieceId = lvl.unlocksPiece || lvl.featuredPiece || 'pawn';
-      const piece = PIECE_REGISTRY[pieceId];
-      this.el.briefKicker.textContent = `CHAPTER ${ch.roman} • LEVEL ${lvl.id} • ${lvl.subtitle.toUpperCase()}`;
-      this.el.briefTitle.textContent = lvl.name;
-      this.el.briefPieceImg.src = getSpriteUrl(piece.sprite);
-      this.el.briefPieceImg.alt = piece.name;
-      this.el.briefUnlockBadge.textContent = lvl.unlocksPiece
-        ? piece.category === 'mythic'
-          ? 'NON-CHESS RELIC UNLOCKED'
-          : lvl.id === 1
-          ? 'STARTING CHESS PIECE'
-          : 'NEW CHESS PIECE UNLOCKED'
-        : lvl.isChapterBoss
-        ? 'CHAPTER FINALE • KEY COMMANDER'
-        : 'RECOMMENDED COMMANDER';
-      this.el.briefPieceName.textContent = `${piece.name} — ${piece.title}`;
-      this.el.briefPiecePattern.textContent = piece.patternLabel;
-      this.el.briefDesc.textContent = LEVEL_DISPATCHES[lvl.id] || lvl.description;
-      this.el.modalBriefing.classList.remove('hidden');
-    }
+    this._syncHistoryGuard();
   }
 
   _returnToCampaign() {
     this.engine?.stop();
     this.weather?.stop();
+    this._pendingBriefLevel = null;
+    this._pausedBySettings = false;
     this.el.modalBriefing.classList.add('hidden');
     this.el.modalResult.classList.add('hidden');
+    this.el.modalSettings?.classList.add('hidden');
     this.el.screenGame.classList.remove('active');
     this.el.screenHome.classList.add('active');
     this._renderCampaign(Boolean(this.justUnlockedLevelId || this.pendingProgression));
+    this._syncHistoryGuard();
   }
 
   // ==================== REACTIVE GAMEPLAY HUD ====================
@@ -1514,6 +1642,7 @@ class TowerDeChessApp {
     sound.playSelect();
     this._renderCodexTab(initialTab);
     this.el.modalCodex.classList.remove('hidden');
+    this._syncHistoryGuard();
   }
 
   _renderCodexTab(tab = 'defenders') {

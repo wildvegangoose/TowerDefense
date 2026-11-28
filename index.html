@@ -224,10 +224,15 @@
     </section>
 
     <!-- ==================== LEVEL BRIEFING / UNLOCK MODAL ==================== -->
-    <div id="modal-briefing" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div id="modal-briefing" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="brief-title">
       <div class="modal-card briefing-card">
-        <span id="brief-kicker" class="modal-kicker">LEVEL 1 BRIEFING</span>
-        <h2 id="brief-title">The Pawn's Bastion</h2>
+        <div class="codex-header">
+          <div>
+            <span id="brief-kicker" class="modal-kicker">LEVEL 1 BRIEFING</span>
+            <h2 id="brief-title">The Pawn's Bastion</h2>
+          </div>
+          <button id="btn-close-briefing" class="icon-btn" type="button" aria-label="Close Level Details">&#10005;</button>
+        </div>
         <div class="unlock-spotlight">
           <img id="brief-piece-img" src="" alt="" class="spotlight-sprite" />
           <div class="spotlight-copy">
