@@ -184,22 +184,85 @@ class TowerDeChessApp {
       btnClearSaveCancel: document.getElementById('btn-clear-save-cancel'),
       btnClearSaveConfirm: document.getElementById('btn-clear-save-confirm'),
       settingsStatusMsg: document.getElementById('settings-status-msg'),
+
+      // WildGoose Studio Opening Intro
+      studioIntro: document.getElementById('studio-intro'),
+      studioLogoImg: document.getElementById('studio-logo-img'),
+      studioLogoSheenMask: document.getElementById('studio-logo-sheen-mask'),
     };
   }
 
+  _playStudioIntro() {
+    const intro = this.el.studioIntro;
+    if (!intro) return Promise.resolve();
+
+    // Sync exact alpha mask (works for both relative URL & standalone inline data URI)
+    const logoSrc = this.el.studioLogoImg?.getAttribute('src') || this.el.studioLogoImg?.src || '';
+    if (this.el.studioLogoSheenMask && logoSrc) {
+      const maskVal = `url("${logoSrc}")`;
+      this.el.studioLogoSheenMask.style.webkitMaskImage = maskVal;
+      this.el.studioLogoSheenMask.style.maskImage = maskVal;
+    }
+
+    return new Promise((resolve) => {
+      let dismissed = false;
+      let fadeTimer = null;
+      let hideTimer = null;
+      const startedAt = performance.now();
+
+      const finish = () => {
+        if (dismissed) return;
+        dismissed = true;
+        clearTimeout(fadeTimer);
+        clearTimeout(hideTimer);
+        intro.removeEventListener('click', onSkip);
+        window.removeEventListener('keydown', onKey);
+        intro.classList.add('fading-out');
+        hideTimer = setTimeout(() => {
+          intro.classList.add('hidden');
+          resolve();
+        }, 550);
+      };
+
+      const onSkip = () => {
+        if (performance.now() - startedAt < 450) return;
+        finish();
+      };
+      const onKey = (e) => {
+        if (e.key === 'Escape' || e.key === ' ' || e.key === 'Enter') {
+          onSkip();
+        }
+      };
+
+      intro.addEventListener('click', onSkip);
+      window.addEventListener('keydown', onKey);
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          intro.classList.add('is-playing');
+        });
+      });
+
+      // Exact 3.0s studio intro: 2.45s showcase + 0.55s smooth fade-out
+      fadeTimer = setTimeout(finish, 2450);
+    });
+  }
+
   async _init() {
+    this._studioIntroDone = this._playStudioIntro();
     this._syncDifficultyUi();
     this._syncMuteIcon();
     this._renderCampaign(true);
 
     // Reconcile with durable IndexedDB backup in case localStorage was cleared
-    hydrateProgressFromBackup(this.progress).then(({ progress, changed }) => {
+    hydrateProgressFromBackup(this.progress).then(async ({ progress, changed }) => {
       if (changed) {
         this.progress = progress;
         this.selectedMapLevelId = Math.min(LEVELS.length, this.progress.highestUnlocked || 1);
         this._renderCampaign(true);
       }
-      // Play opening Prologue cinematic automatically for brand-new campaigns
+      // Wait until the 3-second WildGoose studio intro completes before auto-playing Prologue
+      await this._studioIntroDone;
       if (
         !this.progress.seenCutscenes?.includes('prologue') &&
         this.el.screenHome.classList.contains('active') &&

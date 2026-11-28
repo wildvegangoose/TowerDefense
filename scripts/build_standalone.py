@@ -164,6 +164,12 @@ def build() -> str:
     app_icon_uri = encode_webp_data_uri(
         os.path.join(REPO_DIR, "assets", "icons", "icon-192.png"), size=96, quality=82
     )
+    studio_logo_path = os.path.join(REPO_DIR, "assets", "icons", "wildgoose_logo.png")
+    studio_logo_uri = (
+        encode_webp_data_uri(studio_logo_path, size=256, quality=90)
+        if os.path.exists(studio_logo_path)
+        else ""
+    )
 
     with open(os.path.join(REPO_DIR, "css", "styles.css"), "r", encoding="utf-8") as f:
         css = f.read()
@@ -176,6 +182,8 @@ def build() -> str:
     body_inner = body_match.group(1)
     body_inner = re.sub(r'<script\s+type="module"[\s\S]*?</script>', "", body_inner)
     body_inner = body_inner.replace('src="assets/icons/icon-192.png"', f'src="{app_icon_uri}"')
+    if studio_logo_uri:
+        body_inner = body_inner.replace('src="assets/icons/wildgoose_logo.png"', f'src="{studio_logo_uri}"')
 
     # Inline assets.js replacement backed by base64 data URIs
     assets_js = f"""

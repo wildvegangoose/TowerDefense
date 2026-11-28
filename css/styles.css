@@ -2737,3 +2737,328 @@ body {
   }
 }
 
+/* ==================== WILDGOOSE STUDIO OPENING INTRO (3s) ==================== */
+
+.studio-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #090705;
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  opacity: 1;
+  transition: opacity 0.55s cubic-bezier(0.4, 0, 0.2, 1), transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.studio-intro.fading-out {
+  opacity: 0;
+  transform: scale(1.025);
+  pointer-events: none;
+}
+
+.studio-intro.hidden {
+  display: none;
+}
+
+.studio-intro-backdrop {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 44%, rgba(212, 168, 92, 0.14) 0%, rgba(44, 30, 18, 0.35) 38%, rgba(9, 7, 5, 0.98) 76%);
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+
+.studio-intro.is-playing .studio-intro-backdrop {
+  opacity: 1;
+}
+
+/* Crisp translucent white diagonal silhouette gliding cleanly past the logo */
+.studio-diagonal-ribbon {
+  position: absolute;
+  top: -30%;
+  bottom: -30%;
+  left: -40%;
+  width: clamp(92px, 16vw, 170px);
+  pointer-events: none;
+  z-index: 2;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.08) 28%,
+    rgba(255, 255, 255, 0.24) 48%,
+    rgba(255, 255, 255, 0.32) 52%,
+    rgba(255, 255, 255, 0.09) 72%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: translateX(-30vw) skewX(-28deg);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.studio-intro.is-playing .studio-diagonal-ribbon {
+  animation: studioRibbonPass 1.05s cubic-bezier(0.26, 0.08, 0.22, 1) 0.84s forwards;
+}
+
+.studio-intro-lockup {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px;
+}
+
+.studio-logo-wrap {
+  position: relative;
+  width: clamp(148px, 34vw, 212px);
+  height: clamp(148px, 34vw, 212px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(24px) scale(0.72);
+  will-change: transform, opacity;
+  filter: drop-shadow(0 16px 34px rgba(0, 0, 0, 0.75)) drop-shadow(0 0 24px rgba(245, 202, 109, 0.2));
+}
+
+.studio-intro.is-playing .studio-logo-wrap {
+  animation: studioLogoPop 0.62s cubic-bezier(0.2, 1.18, 0.36, 1) 0.06s forwards;
+}
+
+.studio-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+}
+
+/* Alpha-masked crisp white diagonal silhouette sweeping right across the WildGoose emblem */
+.studio-logo-sheen-mask {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+}
+
+.studio-logo-sheen-bar {
+  position: absolute;
+  top: -28%;
+  bottom: -28%;
+  left: -75%;
+  width: 58%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.68) 26%,
+    #ffffff 50%,
+    rgba(255, 255, 255, 0.68) 74%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: translateX(-40%) skewX(-28deg);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+.studio-intro.is-playing .studio-logo-sheen-bar {
+  animation: studioLogoSheenSweep 0.9s cubic-bezier(0.26, 0.08, 0.22, 1) 0.86s forwards;
+}
+
+.studio-wordmark-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(14px);
+  will-change: transform, opacity;
+}
+
+.studio-intro.is-playing .studio-wordmark-wrap {
+  animation: studioWordmarkRise 0.54s cubic-bezier(0.22, 1, 0.36, 1) 0.28s forwards;
+}
+
+.studio-wordmark {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 6.2vw, 2.55rem);
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-indent: 0.22em;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.studio-wordmark-base {
+  display: block;
+  background: linear-gradient(180deg, #fff6df 0%, #f1cc7a 52%, #b9822d 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.85));
+}
+
+.studio-wordmark-glint {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    118deg,
+    rgba(255, 255, 255, 0) 34%,
+    rgba(255, 255, 255, 0.95) 48%,
+    #ffffff 50%,
+    rgba(255, 255, 255, 0.95) 52%,
+    rgba(255, 255, 255, 0) 66%
+  );
+  background-size: 260% 100%;
+  background-position: 135% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  opacity: 0;
+}
+
+.studio-intro.is-playing .studio-wordmark-glint {
+  animation: studioTextGlintSweep 0.88s cubic-bezier(0.26, 0.08, 0.22, 1) 0.92s forwards;
+}
+
+.studio-divider {
+  width: clamp(90px, 24vw, 148px);
+  height: 1.5px;
+  background: linear-gradient(90deg, transparent 0%, rgba(245, 202, 109, 0.85) 50%, transparent 100%);
+  transform: scaleX(0);
+  opacity: 0;
+}
+
+.studio-intro.is-playing .studio-divider {
+  animation: studioDividerExpand 0.52s cubic-bezier(0.22, 1, 0.36, 1) 0.44s forwards;
+}
+
+.studio-tagline {
+  font-family: var(--font-sans);
+  font-size: clamp(0.66rem, 2.2vw, 0.78rem);
+  font-weight: 700;
+  letter-spacing: 0.42em;
+  text-indent: 0.42em;
+  color: rgba(235, 218, 190, 0.72);
+  text-transform: uppercase;
+}
+
+@keyframes studioLogoPop {
+  0% {
+    opacity: 0;
+    transform: translateY(24px) scale(0.72);
+  }
+  68% {
+    opacity: 1;
+    transform: translateY(-3px) scale(1.035);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes studioWordmarkRise {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes studioDividerExpand {
+  0% {
+    opacity: 0;
+    transform: scaleX(0);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes studioLogoSheenSweep {
+  0% {
+    opacity: 0;
+    transform: translateX(-40%) skewX(-28deg);
+  }
+  14% {
+    opacity: 1;
+  }
+  84% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(395%) skewX(-28deg);
+  }
+}
+
+@keyframes studioRibbonPass {
+  0% {
+    opacity: 0;
+    transform: translateX(-25vw) skewX(-28deg);
+  }
+  18% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(165vw) skewX(-28deg);
+  }
+}
+
+@keyframes studioTextGlintSweep {
+  0% {
+    opacity: 0;
+    background-position: 135% 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  85% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    background-position: -35% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-logo-wrap,
+  .studio-wordmark-wrap,
+  .studio-divider {
+    opacity: 1;
+    transform: none;
+    animation: none !important;
+  }
+  .studio-diagonal-ribbon,
+  .studio-logo-sheen-bar,
+  .studio-wordmark-glint {
+    display: none;
+  }
+}
+
+
