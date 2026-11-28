@@ -1040,33 +1040,35 @@ body {
 }
 
 .diff-btn.active {
-  color: #1f1308;
-  text-shadow: 0 1px 0 rgba(255, 244, 214, 0.35);
+  color: var(--gold-bright);
+  text-shadow: 0 1px 4px rgba(14, 8, 4, 0.78);
   box-shadow:
-    inset 0 1px 0 rgba(255, 248, 224, 0.56),
-    inset 0 -2px 5px rgba(72, 42, 8, 0.34);
+    inset 0 1px 0 rgba(255, 232, 174, 0.34),
+    inset 0 -2px 0 rgba(240, 194, 102, 0.78),
+    inset 0 0 14px rgba(223, 169, 68, 0.14);
 }
 
 .diff-btn.diff-novice.active {
-  background: linear-gradient(180deg, #ecd08c 0%, #c9973b 58%, #a67622 100%);
+  background: linear-gradient(180deg, rgba(223, 169, 68, 0.3) 0%, rgba(154, 106, 30, 0.22) 100%);
+  color: var(--gold-bright);
 }
 
 .diff-btn.diff-master.active {
-  background: linear-gradient(180deg, #dc8640 0%, #ad571e 58%, #853c11 100%);
-  color: #fff7eb;
-  text-shadow: 0 1px 2px rgba(40, 14, 4, 0.55);
+  background: linear-gradient(180deg, rgba(196, 128, 52, 0.34) 0%, rgba(122, 70, 22, 0.26) 100%);
+  color: #f9d89c;
   box-shadow:
-    inset 0 1px 0 rgba(255, 218, 174, 0.42),
-    inset 0 -2px 5px rgba(48, 16, 4, 0.42);
+    inset 0 1px 0 rgba(255, 220, 162, 0.3),
+    inset 0 -2px 0 rgba(226, 158, 76, 0.8),
+    inset 0 0 14px rgba(196, 128, 52, 0.16);
 }
 
 .diff-btn.diff-grandmaster.active {
-  background: linear-gradient(180deg, #c64236 0%, #92221a 58%, #6a1410 100%);
-  color: #fff3eb;
-  text-shadow: 0 1px 2px rgba(36, 6, 6, 0.65);
+  background: linear-gradient(180deg, rgba(142, 44, 36, 0.48) 0%, rgba(82, 22, 18, 0.42) 100%);
+  color: #f7d9a6;
   box-shadow:
-    inset 0 1px 0 rgba(255, 200, 180, 0.36),
-    inset 0 -2px 5px rgba(42, 6, 6, 0.48);
+    inset 0 1px 0 rgba(242, 176, 138, 0.28),
+    inset 0 -2px 0 rgba(214, 144, 82, 0.78),
+    inset 0 0 14px rgba(142, 44, 36, 0.22);
 }
 
 /* Quick Match setup modal */
@@ -1166,12 +1168,13 @@ body {
   gap: 4px;
   padding: 3px 10px;
   border-radius: 999px;
-  background: rgba(72, 156, 106, 0.14);
-  border: 1px solid rgba(114, 198, 148, 0.36);
-  color: #a9e4bf;
+  background: linear-gradient(180deg, rgba(58, 40, 26, 0.9) 0%, rgba(28, 18, 12, 0.95) 100%);
+  border: 1px solid rgba(214, 170, 88, 0.42);
+  color: var(--text-parchment);
   font-size: 0.76rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  box-shadow: inset 0 1px 0 rgba(255, 226, 168, 0.14);
 }
 
 /* ==================== INTERACTIVE CAMPAIGN MAP ==================== */
