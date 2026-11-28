@@ -293,7 +293,7 @@ export const LEVELS = [
     featuredPiece: 'knight',
     startingGold: 390,
     startingLives: 10,
-    description: 'Two narrow canyons snake past elevated ridges. Position Knights and a buffing King on the high ground to stagger Shadow Chargers across multiple lanes at once.',
+    description: 'Two narrow canyons snake past elevated ridges. Position Knights and a buffing King on the high ground to fork Shadow Chargers across multiple lanes at once.',
     waypoints: [
       [0, 2], [2, 2], [2, 0], [5, 0], [5, 3], [1, 3], [1, 6], [6, 6], [6, 2], [7, 2], [7, 5],
     ],
@@ -579,3 +579,207 @@ export const LEVELS = [
     ],
   },
 ];
+
+const QUICKMATCH_ARENA_TITLES = {
+  1: ['Sunlit Gambit', 'Marble Crossing', 'Ivory Switchback', 'Gilded Bastion', 'Royal Promenade', 'Alabaster Fork'],
+  2: ['Glacial Gambit', 'Frostbound Rift', 'Rime Switchback', 'Frozen Crevasse', 'Crystalline Watch', 'Winter Pass'],
+  3: ['Basalt Crucible', 'Ashen Rampart', 'Obsidian Gauntlet', 'Crimson Gambit', 'Ember Trench', 'Citadel Gorge'],
+};
+
+const QUICKMATCH_FALLBACK_WAYPOINTS = [
+  [[0, 1], [6, 1], [6, 3], [1, 3], [1, 6], [7, 6]],
+  [[0, 0], [5, 0], [5, 2], [2, 2], [2, 5], [7, 5], [7, 7]],
+  [[1, 0], [1, 4], [4, 4], [4, 1], [7, 1], [7, 6], [3, 6], [3, 7]],
+  [[0, 2], [3, 2], [3, 0], [6, 0], [6, 4], [2, 4], [2, 7], [7, 7]],
+];
+
+function applyBoardSymmetry(waypoints, rot, flipX) {
+  const max = BOARD_SIZE - 1;
+  return waypoints.map(([x, y]) => {
+    let nx = flipX ? max - x : x;
+    let ny = y;
+    for (let r = 0; r < rot; r++) {
+      const tx = nx;
+      nx = max - ny;
+      ny = tx;
+    }
+    return [nx, ny];
+  });
+}
+
+function compressWaypoints(tiles) {
+  if (tiles.length <= 2) return tiles.slice();
+  const corners = [tiles[0]];
+  for (let i = 1; i < tiles.length - 1; i++) {
+    const [px, py] = tiles[i - 1];
+    const [cx, cy] = tiles[i];
+    const [nx, ny] = tiles[i + 1];
+    if (cx - px !== nx - cx || cy - py !== ny - cy) {
+      corners.push([cx, cy]);
+    }
+  }
+  corners.push(tiles[tiles.length - 1]);
+  return corners;
+}
+
+/**
+ * Procedurally generate a valid, non-self-intersecting orthogonal 8x8 path
+ * where parallel corridors stay separated by buildable chess ridges.
+ */
+export function generateRandomBoardWaypoints() {
+  const DIRS = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ];
+  const minLen = 19;
+  const maxLen = 27;
+
+  for (let attempt = 0; attempt < 28; attempt++) {
+    const startY = Math.floor(Math.random() * BOARD_SIZE);
+    const startX = 0;
+    const targetLen = minLen + Math.floor(Math.random() * (maxLen - minLen + 1));
+
+    const path = [[startX, startY]];
+    const visited = new Set([`${startX},${startY}`]);
+    let bestPath = null;
+    let nodesVisited = 0;
+    const maxNodes = 420;
+
+    const isEdge = (x, y) =>
+      x === 0 || y === 0 || x === BOARD_SIZE - 1 || y === BOARD_SIZE - 1;
+
+    const hasNonAdjacentNeighbor = (nx, ny, prevX, prevY) => {
+      for (const [dx, dy] of DIRS) {
+        const ax = nx + dx;
+        const ay = ny + dy;
+        if (ax === prevX && ay === prevY) continue;
+        if (visited.has(`${ax},${ay}`)) return true;
+      }
+      return false;
+    };
+
+    const dfs = (x, y, prevDx, prevDy, runLen, turns) => {
+      nodesVisited++;
+      if (nodesVisited > maxNodes) return false;
+
+      const len = path.length;
+      const distFromStart = Math.abs(x - startX) + Math.abs(y - startY);
+      if (len >= minLen && turns >= 4 && distFromStart >= 5) {
+        if (isEdge(x, y) && (x === BOARD_SIZE - 1 || len >= targetLen - 2)) {
+          bestPath = path.slice();
+          return true;
+        }
+        if (!bestPath || len > bestPath.length) {
+          bestPath = path.slice();
+        }
+      }
+      if (len >= maxLen) return false;
+
+      const candidates = [];
+      for (const [dx, dy] of DIRS) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= BOARD_SIZE || ny >= BOARD_SIZE) continue;
+        const key = `${nx},${ny}`;
+        if (visited.has(key)) continue;
+        if (hasNonAdjacentNeighbor(nx, ny, x, y)) continue;
+
+        const sameDir = dx === prevDx && dy === prevDy;
+        let weight = 1.0 + Math.random() * 1.4;
+        if (prevDx !== 0 || prevDy !== 0) {
+          if (sameDir && runLen < 2) weight += 3.2;
+          else if (sameDir && runLen < 4) weight += 1.0;
+          else if (!sameDir && runLen >= 4) weight += 2.2;
+          else if (!sameDir && runLen === 1) weight -= 0.7;
+        }
+        // Gentle pull toward the right edge once past mid-length so exits feel natural
+        if (len >= minLen - 4 && dx === 1) weight += 1.2;
+        if (len < 12 && (nx === BOARD_SIZE - 1 || nx === 0)) weight -= 0.4;
+
+        candidates.push({ nx, ny, dx, dy, sameDir, weight });
+      }
+
+      candidates.sort((a, b) => b.weight - a.weight);
+
+      for (const c of candidates) {
+        const key = `${c.nx},${c.ny}`;
+        visited.add(key);
+        path.push([c.nx, c.ny]);
+        const nextRun = c.sameDir ? runLen + 1 : 1;
+        const nextTurns = (prevDx === 0 && prevDy === 0) || c.sameDir ? turns : turns + 1;
+        if (dfs(c.nx, c.ny, c.dx, c.dy, nextRun, nextTurns)) {
+          return true;
+        }
+        path.pop();
+        visited.delete(key);
+        if (nodesVisited > maxNodes) return false;
+      }
+      return false;
+    };
+
+    dfs(startX, startY, 0, 0, 0, 0);
+
+    if (bestPath && bestPath.length >= minLen) {
+      const corners = compressWaypoints(bestPath);
+      const rot = Math.floor(Math.random() * 4);
+      const flipX = Math.random() < 0.5;
+      return applyBoardSymmetry(corners, rot, flipX);
+    }
+  }
+
+  // Verified geometric fallback with full D4 symmetry randomization
+  const tpl = QUICKMATCH_FALLBACK_WAYPOINTS[Math.floor(Math.random() * QUICKMATCH_FALLBACK_WAYPOINTS.length)];
+  return applyBoardSymmetry(tpl, Math.floor(Math.random() * 4), Math.random() < 0.5);
+}
+
+/**
+ * Generate a complete procedural Quick Match level with a random 8x8 path,
+ * random battlefield background (1..18), cohesive biome/weather, and 8 escalating waves.
+ */
+export function generateQuickMatchLevel(lastBgId = null) {
+  let bgLevelId = 1 + Math.floor(Math.random() * LEVELS.length);
+  if (lastBgId != null && LEVELS.length > 1 && bgLevelId === lastBgId) {
+    bgLevelId = (bgLevelId % LEVELS.length) + 1;
+  }
+
+  const refLevel = LEVELS.find((l) => l.id === bgLevelId) || LEVELS[0];
+  const chapter = refLevel.chapter;
+  const ch = getChapterForLevel(refLevel.id);
+  const titles = QUICKMATCH_ARENA_TITLES[chapter] || QUICKMATCH_ARENA_TITLES[1];
+  const arenaName = titles[Math.floor(Math.random() * titles.length)];
+  const waypoints = generateRandomBoardWaypoints();
+  const pathLength = expandWaypoints(waypoints).length;
+
+  // Mild wave flavor variation so each skirmish has its own tactical tempo
+  const rushBias = Math.random() < 0.5;
+
+  return {
+    id: 8,
+    bgLevelId,
+    isQuickMatch: true,
+    unlockAllPieces: true,
+    chapter,
+    weather: refLevel.weather,
+    name: arenaName,
+    subtitle: `Quick Match • ${ch.name}`,
+    unlocksPiece: null,
+    featuredPiece: null,
+    startingGold: 340,
+    startingLives: 10,
+    description: `Procedurally charted ${pathLength}-tile battlefield in ${ch.name}. Every royal defender is unlocked — adapt your formation to the random lanes!`,
+    waypoints,
+    waves: [
+      { groups: [{ type: 'footman', count: 16, interval: 0.48 }, { type: 'lancer', count: rushBias ? 10 : 7, interval: 0.44, delay: 0.8 }] },
+      { groups: [{ type: 'bastion', count: 4, interval: 1.45 }, { type: 'footman', count: 14, interval: 0.44, delay: 0.8 }, { type: 'lancer', count: 8, interval: 0.42, delay: 0.9 }] },
+      { groups: [{ type: 'lancer', count: rushBias ? 24 : 18, interval: 0.34 }, { type: 'cleric', count: 4, interval: 1.1, delay: 0.8 }, { type: 'bastion', count: 5, interval: 1.25, delay: 0.9 }] },
+      { groups: [{ type: 'bastion', count: 8, interval: 1.1 }, { type: 'cleric', count: 5, interval: 1.0, delay: 0.7 }, { type: 'footman', count: 18, interval: 0.36, delay: 0.8 }] },
+      { groups: [{ type: 'warlord', count: 2, interval: 3.8 }, { type: 'lancer', count: 18, interval: 0.32, delay: 0.9 }, { type: 'cleric', count: 4, interval: 1.0, delay: 0.7 }] },
+      { groups: [{ type: 'bastion', count: 10, interval: 0.95 }, { type: 'footman', count: 24, interval: 0.3, delay: 0.8 }, { type: 'cleric', count: 5, interval: 0.92, delay: 0.7 }] },
+      { groups: [{ type: 'warlord', count: 3, interval: 3.2 }, { type: 'lancer', count: 26, interval: 0.27, delay: 0.9 }, { type: 'bastion', count: 8, interval: 0.95, delay: 0.9 }] },
+      { groups: [{ type: 'warlord', count: 4, interval: 2.7 }, { type: 'bastion', count: 11, interval: 0.86, delay: 0.9 }, { type: 'cleric', count: 6, interval: 0.85, delay: 0.7 }] },
+    ],
+  };
+}
+

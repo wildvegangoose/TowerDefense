@@ -3,22 +3,53 @@
  * Simulation-verified for tense Tactical play and tough-but-achievable Grandmaster runs.
  */
 
+export const DIFFICULTY_ORDER = ['novice', 'master', 'grandmaster'];
+
 export const DIFFICULTY_PRESETS = {
-  standard: {
-    id: 'standard',
-    label: 'Tactical',
+  novice: {
+    id: 'novice',
+    label: 'Novice',
+    shortTag: '',
     hpMult: 1.0,
     speedMult: 1.0,
     goldMult: 1.0,
+    rewardMult: 1.0,
+    lateWaveHpBoost: 0.0,
+    armorBonus: 0.0,
+    desc: 'Balanced royal campaign economy & classic enemy strength.',
+  },
+  master: {
+    id: 'master',
+    label: 'Master',
+    shortTag: 'MASTER',
+    hpMult: 1.38,
+    speedMult: 1.1,
+    goldMult: 0.9,
+    rewardMult: 0.88,
+    lateWaveHpBoost: 0.28,
+    armorBonus: 0.04,
+    desc: '+38% enemy HP, faster marches, heavier armor & tighter bounties.',
   },
   grandmaster: {
     id: 'grandmaster',
     label: 'Grandmaster',
-    hpMult: 1.32,
-    speedMult: 1.09,
-    goldMult: 0.9,
+    shortTag: 'GRANDMASTER',
+    hpMult: 1.78,
+    speedMult: 1.18,
+    goldMult: 0.82,
+    rewardMult: 0.74,
+    lateWaveHpBoost: 0.58,
+    armorBonus: 0.08,
+    desc: 'Brutal endgame siege: +78% HP surging in late waves, lean gold & fortified armor.',
   },
 };
+
+export function normalizeDifficulty(difficultyId) {
+  if (difficultyId === 'master' || difficultyId === 'grandmaster' || difficultyId === 'novice') {
+    return difficultyId;
+  }
+  return 'novice';
+}
 
 export const ENEMY_TYPES = {
   footman: {
@@ -91,31 +122,35 @@ export const ENEMY_TYPES = {
 /**
  * Scale enemy stats progressively by level, wave, and difficulty mode.
  */
-export function createEnemyConfig(typeId, levelNum, waveIndex, totalWaves, difficultyId = 'standard') {
+export function createEnemyConfig(typeId, levelNum, waveIndex, totalWaves, difficultyId = 'novice') {
   const base = ENEMY_TYPES[typeId];
   if (!base) throw new Error(`Unknown enemy type: ${typeId}`);
-  const diff = DIFFICULTY_PRESETS[difficultyId] || DIFFICULTY_PRESETS.standard;
+  const diff = DIFFICULTY_PRESETS[normalizeDifficulty(difficultyId)] || DIFFICULTY_PRESETS.novice;
 
-  // Sustainable per-level scaling: identical on Lv1-7 (1.0x -> 1.84x), smoothly tapered across Lv8-18 (up to 2.94x)
+  // Sustainable per-level scaling + extra late-wave surge on Master & Grandmaster
   const levelHpScale =
-    levelNum <= 7 ? 1 + (levelNum - 1) * 0.14 : 1.84 + (levelNum - 7) * 0.1;
+    levelNum <= 7 ? 1 + (levelNum - 1) * 0.14 : 1.84 + (levelNum - 7) * 0.11;
   const waveProgress = totalWaves > 1 ? waveIndex / (totalWaves - 1) : 0;
-  const waveHpScale = 1 + waveIndex * 0.2 + waveProgress * 0.22;
+  const lateSurge = 1 + waveProgress * waveProgress * (diff.lateWaveHpBoost || 0);
+  const waveHpScale = (1 + waveIndex * 0.21 + waveProgress * 0.24) * lateSurge;
 
   const levelSpeedBonus =
     levelNum <= 7 ? (levelNum - 1) * 0.022 : 6 * 0.022 + (levelNum - 7) * 0.011;
   const speedScale = (1 + levelSpeedBonus + waveIndex * 0.012) * diff.speedMult;
-  const bonusArmor = Math.min(0.2, (levelNum - 1) * 0.015 + Math.floor(waveIndex / 3) * 0.02);
-  const rewardScale = 1 + Math.min(12, levelNum - 1) * 0.05;
+  const bonusArmor = Math.min(
+    0.24,
+    (levelNum - 1) * 0.015 + Math.floor(waveIndex / 3) * 0.02 + (diff.armorBonus || 0)
+  );
+  const rewardScale = (1 + Math.min(12, levelNum - 1) * 0.045) * (diff.rewardMult || 1.0);
 
   return {
     ...base,
     maxHp: Math.round(base.baseHp * levelHpScale * waveHpScale * diff.hpMult),
     speed: Number((base.speed * speedScale).toFixed(3)),
-    armor: Math.min(0.68, base.armor + bonusArmor),
-    reward: Math.max(5, Math.round(base.reward * rewardScale)),
+    armor: Math.min(0.74, base.armor + bonusArmor),
+    reward: Math.max(4, Math.round(base.reward * rewardScale)),
     healAmount: base.healAmount
-      ? Math.round(base.healAmount * levelHpScale * (1 + waveIndex * 0.1) * diff.hpMult)
+      ? Math.round(base.healAmount * levelHpScale * (1 + waveIndex * 0.12) * diff.hpMult)
       : 0,
   };
 }

@@ -676,6 +676,10 @@ body {
   margin-bottom: 14px;
 }
 
+.save-stats-row.save-stats-grid-4 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
 .save-code-label {
   display: block;
   font-size: 0.74rem;
@@ -971,37 +975,165 @@ body {
   gap: 8px;
 }
 
+/* Singular curved antique-brass & carved-walnut rectangle subdivided into 3 levels */
 .difficulty-switch {
-  display: inline-flex;
-  background: var(--surface-inset);
-  border: 1px solid var(--border-brass);
-  border-radius: var(--radius-sm);
-  padding: 2px;
-  gap: 2px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  min-width: 312px;
+  background: linear-gradient(180deg, #342318 0%, #22160f 52%, #170e09 100%);
+  border: 1.5px solid rgba(214, 170, 88, 0.56);
+  border-radius: 14px;
+  overflow: hidden;
+  padding: 0;
+  gap: 0;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 230, 176, 0.18),
+    inset 0 -2px 6px rgba(0, 0, 0, 0.58),
+    0 5px 14px rgba(0, 0, 0, 0.42);
+}
+
+.difficulty-switch-full {
+  width: 100%;
+  min-width: 0;
 }
 
 .diff-btn {
   appearance: none;
+  position: relative;
   border: none;
+  border-right: 1px solid rgba(214, 170, 88, 0.3);
+  border-radius: 0;
   background: transparent;
-  color: var(--text-parchment);
-  font-family: var(--font-sans);
+  color: #d8c6a6;
+  font-family: var(--font-display);
   font-size: 0.78rem;
   font-weight: 700;
-  padding: 6px 11px;
-  border-radius: 6px;
+  letter-spacing: 0.04em;
+  line-height: 1.15;
+  padding: 10px 14px;
+  min-height: 40px;
+  text-align: center;
+  white-space: nowrap;
   cursor: pointer;
-  transition: background-color 0.14s ease, color 0.14s ease;
+  transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.diff-btn:last-child {
+  border-right: none;
+}
+
+.diff-btn:hover:not(.active) {
+  background: linear-gradient(180deg, rgba(232, 188, 102, 0.14) 0%, rgba(186, 134, 48, 0.08) 100%);
+  color: var(--text-ivory);
+}
+
+.diff-btn:focus-visible {
+  outline: 2px solid var(--gold-bright);
+  outline-offset: -2px;
+  z-index: 1;
 }
 
 .diff-btn.active {
-  background: linear-gradient(180deg, #e8b857 0%, #c58e2f 100%);
-  color: #211408;
+  color: #1f1308;
+  text-shadow: 0 1px 0 rgba(255, 244, 214, 0.35);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 248, 224, 0.56),
+    inset 0 -2px 5px rgba(72, 42, 8, 0.34);
 }
 
-.diff-btn.grandmaster.active {
-  background: linear-gradient(180deg, #d8594b 0%, #9f3024 100%);
-  color: #fff3f0;
+.diff-btn.diff-novice.active {
+  background: linear-gradient(180deg, #ecd08c 0%, #c9973b 58%, #a67622 100%);
+}
+
+.diff-btn.diff-master.active {
+  background: linear-gradient(180deg, #dc8640 0%, #ad571e 58%, #853c11 100%);
+  color: #fff7eb;
+  text-shadow: 0 1px 2px rgba(40, 14, 4, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 218, 174, 0.42),
+    inset 0 -2px 5px rgba(48, 16, 4, 0.42);
+}
+
+.diff-btn.diff-grandmaster.active {
+  background: linear-gradient(180deg, #c64236 0%, #92221a 58%, #6a1410 100%);
+  color: #fff3eb;
+  text-shadow: 0 1px 2px rgba(36, 6, 6, 0.65);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 200, 180, 0.36),
+    inset 0 -2px 5px rgba(42, 6, 6, 0.48);
+}
+
+/* Quick Match setup modal */
+.quickmatch-card {
+  max-width: 480px;
+}
+
+.qm-intro {
+  margin-bottom: 14px;
+}
+
+.qm-feature-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.qm-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(64, 44, 28, 0.85) 0%, rgba(36, 24, 15, 0.92) 100%);
+  border: 1px solid rgba(214, 170, 88, 0.36);
+  color: #f0dfb9;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.qm-diff-block {
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(18, 11, 7, 0.55);
+  border: 1px solid rgba(214, 170, 88, 0.24);
+  margin-bottom: 18px;
+}
+
+.qm-section-label {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-bottom: 10px;
+}
+
+.qm-diff-desc {
+  margin: 11px 2px 0;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: var(--text-parchment);
+}
+
+@media (max-width: 600px) {
+  .campaign-controls {
+    width: 100%;
+  }
+
+  .difficulty-switch {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .diff-btn {
+    font-size: 0.72rem;
+    padding: 9px 6px;
+    letter-spacing: 0.02em;
+  }
 }
 
 .dev-unlock-toggle {
@@ -3677,8 +3809,9 @@ body {
           </div>
           <div class="campaign-controls">
             <div class="difficulty-switch" role="group" aria-label="Difficulty Mode">
-              <button id="btn-diff-standard" class="diff-btn active" type="button">Tactical</button>
-              <button id="btn-diff-grandmaster" class="diff-btn" type="button">Grandmaster</button>
+              <button id="btn-diff-novice" class="diff-btn diff-novice active" data-diff="novice" type="button" aria-pressed="true">Novice</button>
+              <button id="btn-diff-master" class="diff-btn diff-master" data-diff="master" type="button" aria-pressed="false">Master</button>
+              <button id="btn-diff-grandmaster" class="diff-btn diff-grandmaster" data-diff="grandmaster" type="button" aria-pressed="false">Grandmaster</button>
             </div>
           </div>
         </div>
@@ -3900,10 +4033,11 @@ body {
           <button id="btn-close-save" class="icon-btn" type="button" aria-label="Close Save Data">&#10005;</button>
         </div>
         <p class="result-summary">
-          Your unlocked levels and stars (both Tactical and Grandmaster) are saved automatically on this device. Copy your Save Code below to back up or transfer your progress between web and Android.
+          Your unlocked levels and stars across Novice, Master, and Grandmaster are saved automatically on this device. Copy your Save Code below to back up or transfer your progress between web and Android.
         </p>
-        <div class="save-stats-row">
-          <div class="insp-stat"><span>TACTICAL STARS</span><strong id="save-tactical-stars">★ 0 / 54</strong></div>
+        <div class="save-stats-row save-stats-grid-4">
+          <div class="insp-stat"><span>NOVICE</span><strong id="save-novice-stars">★ 0 / 54</strong></div>
+          <div class="insp-stat"><span>MASTER</span><strong id="save-master-stars">★ 0 / 54</strong></div>
           <div class="insp-stat"><span>GRANDMASTER</span><strong id="save-gm-stars">★ 0 / 54</strong></div>
           <div class="insp-stat"><span>UNLOCKED</span><strong id="save-unlocked-lv">Lv. 1 / 18</strong></div>
         </div>
@@ -3913,6 +4047,44 @@ body {
         <div class="modal-actions">
           <button id="btn-copy-save" class="btn btn-secondary" type="button">Copy Code</button>
           <button id="btn-import-save" class="btn btn-gold" type="button">Restore / Merge</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== QUICK MATCH SETUP MODAL ==================== -->
+    <div id="modal-quickmatch" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="qm-modal-title">
+      <div class="modal-card quickmatch-card">
+        <div class="codex-header">
+          <div>
+            <span class="modal-kicker">PROCEDURAL SKIRMISH</span>
+            <h2 id="qm-modal-title">Quick Match</h2>
+          </div>
+          <button id="btn-close-quickmatch" class="icon-btn" type="button" aria-label="Close Quick Match">&#10005;</button>
+        </div>
+
+        <p class="result-summary qm-intro">
+          Chart a freshly generated 8&times;8 chessboard with a random battlefield panorama, matching weather, and all 7 royal defenders unlocked.
+        </p>
+
+        <div class="qm-feature-pills" aria-hidden="true">
+          <span class="qm-pill">Random 8&times;8 Path</span>
+          <span class="qm-pill">Random Battlefield</span>
+          <span class="qm-pill">All 7 Defenders</span>
+        </div>
+
+        <div class="qm-diff-block">
+          <span class="qm-section-label">Difficulty</span>
+          <div class="difficulty-switch difficulty-switch-full" role="group" aria-label="Quick Match Difficulty">
+            <button class="diff-btn diff-novice active" data-diff="novice" type="button" aria-pressed="true">Novice</button>
+            <button class="diff-btn diff-master" data-diff="master" type="button" aria-pressed="false">Master</button>
+            <button class="diff-btn diff-grandmaster" data-diff="grandmaster" type="button" aria-pressed="false">Grandmaster</button>
+          </div>
+          <p id="qm-diff-desc" class="qm-diff-desc">Balanced royal campaign economy &amp; classic enemy strength.</p>
+        </div>
+
+        <div class="modal-actions">
+          <button id="btn-qm-cancel" class="btn btn-secondary" type="button">Cancel</button>
+          <button id="btn-qm-start" class="btn btn-gold" type="button">Deploy Skirmish &#8594;</button>
         </div>
       </div>
     </div>
@@ -4022,7 +4194,7 @@ body {
         <div class="settings-section">
           <h3 class="settings-section-title">Campaign Save Data</h3>
           <p id="settings-progress-summary" class="settings-progress-summary">
-            Currently unlocked up to Level 1 / 18 • ★ 0 Tactical / ★ 0 Grandmaster
+            Currently unlocked up to Level 1 / 18 • ★ 0 Novice / ★ 0 Master / ★ 0 Grandmaster
           </p>
 
           <div class="settings-data-actions">
@@ -4454,7 +4626,7 @@ const LEVELS = [
     featuredPiece: 'knight',
     startingGold: 390,
     startingLives: 10,
-    description: 'Two narrow canyons snake past elevated ridges. Position Knights and a buffing King on the high ground to stagger Shadow Chargers across multiple lanes at once.',
+    description: 'Two narrow canyons snake past elevated ridges. Position Knights and a buffing King on the high ground to fork Shadow Chargers across multiple lanes at once.',
     waypoints: [
       [0, 2], [2, 2], [2, 0], [5, 0], [5, 3], [1, 3], [1, 6], [6, 6], [6, 2], [7, 2], [7, 5],
     ],
@@ -4741,6 +4913,210 @@ const LEVELS = [
   },
 ];
 
+const QUICKMATCH_ARENA_TITLES = {
+  1: ['Sunlit Gambit', 'Marble Crossing', 'Ivory Switchback', 'Gilded Bastion', 'Royal Promenade', 'Alabaster Fork'],
+  2: ['Glacial Gambit', 'Frostbound Rift', 'Rime Switchback', 'Frozen Crevasse', 'Crystalline Watch', 'Winter Pass'],
+  3: ['Basalt Crucible', 'Ashen Rampart', 'Obsidian Gauntlet', 'Crimson Gambit', 'Ember Trench', 'Citadel Gorge'],
+};
+
+const QUICKMATCH_FALLBACK_WAYPOINTS = [
+  [[0, 1], [6, 1], [6, 3], [1, 3], [1, 6], [7, 6]],
+  [[0, 0], [5, 0], [5, 2], [2, 2], [2, 5], [7, 5], [7, 7]],
+  [[1, 0], [1, 4], [4, 4], [4, 1], [7, 1], [7, 6], [3, 6], [3, 7]],
+  [[0, 2], [3, 2], [3, 0], [6, 0], [6, 4], [2, 4], [2, 7], [7, 7]],
+];
+
+function applyBoardSymmetry(waypoints, rot, flipX) {
+  const max = BOARD_SIZE - 1;
+  return waypoints.map(([x, y]) => {
+    let nx = flipX ? max - x : x;
+    let ny = y;
+    for (let r = 0; r < rot; r++) {
+      const tx = nx;
+      nx = max - ny;
+      ny = tx;
+    }
+    return [nx, ny];
+  });
+}
+
+function compressWaypoints(tiles) {
+  if (tiles.length <= 2) return tiles.slice();
+  const corners = [tiles[0]];
+  for (let i = 1; i < tiles.length - 1; i++) {
+    const [px, py] = tiles[i - 1];
+    const [cx, cy] = tiles[i];
+    const [nx, ny] = tiles[i + 1];
+    if (cx - px !== nx - cx || cy - py !== ny - cy) {
+      corners.push([cx, cy]);
+    }
+  }
+  corners.push(tiles[tiles.length - 1]);
+  return corners;
+}
+
+/**
+ * Procedurally generate a valid, non-self-intersecting orthogonal 8x8 path
+ * where parallel corridors stay separated by buildable chess ridges.
+ */
+function generateRandomBoardWaypoints() {
+  const DIRS = [
+    [1, 0],
+    [-1, 0],
+    [0, 1],
+    [0, -1],
+  ];
+  const minLen = 19;
+  const maxLen = 27;
+
+  for (let attempt = 0; attempt < 28; attempt++) {
+    const startY = Math.floor(Math.random() * BOARD_SIZE);
+    const startX = 0;
+    const targetLen = minLen + Math.floor(Math.random() * (maxLen - minLen + 1));
+
+    const path = [[startX, startY]];
+    const visited = new Set([`${startX},${startY}`]);
+    let bestPath = null;
+    let nodesVisited = 0;
+    const maxNodes = 420;
+
+    const isEdge = (x, y) =>
+      x === 0 || y === 0 || x === BOARD_SIZE - 1 || y === BOARD_SIZE - 1;
+
+    const hasNonAdjacentNeighbor = (nx, ny, prevX, prevY) => {
+      for (const [dx, dy] of DIRS) {
+        const ax = nx + dx;
+        const ay = ny + dy;
+        if (ax === prevX && ay === prevY) continue;
+        if (visited.has(`${ax},${ay}`)) return true;
+      }
+      return false;
+    };
+
+    const dfs = (x, y, prevDx, prevDy, runLen, turns) => {
+      nodesVisited++;
+      if (nodesVisited > maxNodes) return false;
+
+      const len = path.length;
+      const distFromStart = Math.abs(x - startX) + Math.abs(y - startY);
+      if (len >= minLen && turns >= 4 && distFromStart >= 5) {
+        if (isEdge(x, y) && (x === BOARD_SIZE - 1 || len >= targetLen - 2)) {
+          bestPath = path.slice();
+          return true;
+        }
+        if (!bestPath || len > bestPath.length) {
+          bestPath = path.slice();
+        }
+      }
+      if (len >= maxLen) return false;
+
+      const candidates = [];
+      for (const [dx, dy] of DIRS) {
+        const nx = x + dx;
+        const ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= BOARD_SIZE || ny >= BOARD_SIZE) continue;
+        const key = `${nx},${ny}`;
+        if (visited.has(key)) continue;
+        if (hasNonAdjacentNeighbor(nx, ny, x, y)) continue;
+
+        const sameDir = dx === prevDx && dy === prevDy;
+        let weight = 1.0 + Math.random() * 1.4;
+        if (prevDx !== 0 || prevDy !== 0) {
+          if (sameDir && runLen < 2) weight += 3.2;
+          else if (sameDir && runLen < 4) weight += 1.0;
+          else if (!sameDir && runLen >= 4) weight += 2.2;
+          else if (!sameDir && runLen === 1) weight -= 0.7;
+        }
+        // Gentle pull toward the right edge once past mid-length so exits feel natural
+        if (len >= minLen - 4 && dx === 1) weight += 1.2;
+        if (len < 12 && (nx === BOARD_SIZE - 1 || nx === 0)) weight -= 0.4;
+
+        candidates.push({ nx, ny, dx, dy, sameDir, weight });
+      }
+
+      candidates.sort((a, b) => b.weight - a.weight);
+
+      for (const c of candidates) {
+        const key = `${c.nx},${c.ny}`;
+        visited.add(key);
+        path.push([c.nx, c.ny]);
+        const nextRun = c.sameDir ? runLen + 1 : 1;
+        const nextTurns = (prevDx === 0 && prevDy === 0) || c.sameDir ? turns : turns + 1;
+        if (dfs(c.nx, c.ny, c.dx, c.dy, nextRun, nextTurns)) {
+          return true;
+        }
+        path.pop();
+        visited.delete(key);
+        if (nodesVisited > maxNodes) return false;
+      }
+      return false;
+    };
+
+    dfs(startX, startY, 0, 0, 0, 0);
+
+    if (bestPath && bestPath.length >= minLen) {
+      const corners = compressWaypoints(bestPath);
+      const rot = Math.floor(Math.random() * 4);
+      const flipX = Math.random() < 0.5;
+      return applyBoardSymmetry(corners, rot, flipX);
+    }
+  }
+
+  // Verified geometric fallback with full D4 symmetry randomization
+  const tpl = QUICKMATCH_FALLBACK_WAYPOINTS[Math.floor(Math.random() * QUICKMATCH_FALLBACK_WAYPOINTS.length)];
+  return applyBoardSymmetry(tpl, Math.floor(Math.random() * 4), Math.random() < 0.5);
+}
+
+/**
+ * Generate a complete procedural Quick Match level with a random 8x8 path,
+ * random battlefield background (1..18), cohesive biome/weather, and 8 escalating waves.
+ */
+function generateQuickMatchLevel(lastBgId = null) {
+  let bgLevelId = 1 + Math.floor(Math.random() * LEVELS.length);
+  if (lastBgId != null && LEVELS.length > 1 && bgLevelId === lastBgId) {
+    bgLevelId = (bgLevelId % LEVELS.length) + 1;
+  }
+
+  const refLevel = LEVELS.find((l) => l.id === bgLevelId) || LEVELS[0];
+  const chapter = refLevel.chapter;
+  const ch = getChapterForLevel(refLevel.id);
+  const titles = QUICKMATCH_ARENA_TITLES[chapter] || QUICKMATCH_ARENA_TITLES[1];
+  const arenaName = titles[Math.floor(Math.random() * titles.length)];
+  const waypoints = generateRandomBoardWaypoints();
+  const pathLength = expandWaypoints(waypoints).length;
+
+  // Mild wave flavor variation so each skirmish has its own tactical tempo
+  const rushBias = Math.random() < 0.5;
+
+  return {
+    id: 8,
+    bgLevelId,
+    isQuickMatch: true,
+    unlockAllPieces: true,
+    chapter,
+    weather: refLevel.weather,
+    name: arenaName,
+    subtitle: `Quick Match • ${ch.name}`,
+    unlocksPiece: null,
+    featuredPiece: null,
+    startingGold: 340,
+    startingLives: 10,
+    description: `Procedurally charted ${pathLength}-tile battlefield in ${ch.name}. Every royal defender is unlocked — adapt your formation to the random lanes!`,
+    waypoints,
+    waves: [
+      { groups: [{ type: 'footman', count: 16, interval: 0.48 }, { type: 'lancer', count: rushBias ? 10 : 7, interval: 0.44, delay: 0.8 }] },
+      { groups: [{ type: 'bastion', count: 4, interval: 1.45 }, { type: 'footman', count: 14, interval: 0.44, delay: 0.8 }, { type: 'lancer', count: 8, interval: 0.42, delay: 0.9 }] },
+      { groups: [{ type: 'lancer', count: rushBias ? 24 : 18, interval: 0.34 }, { type: 'cleric', count: 4, interval: 1.1, delay: 0.8 }, { type: 'bastion', count: 5, interval: 1.25, delay: 0.9 }] },
+      { groups: [{ type: 'bastion', count: 8, interval: 1.1 }, { type: 'cleric', count: 5, interval: 1.0, delay: 0.7 }, { type: 'footman', count: 18, interval: 0.36, delay: 0.8 }] },
+      { groups: [{ type: 'warlord', count: 2, interval: 3.8 }, { type: 'lancer', count: 18, interval: 0.32, delay: 0.9 }, { type: 'cleric', count: 4, interval: 1.0, delay: 0.7 }] },
+      { groups: [{ type: 'bastion', count: 10, interval: 0.95 }, { type: 'footman', count: 24, interval: 0.3, delay: 0.8 }, { type: 'cleric', count: 5, interval: 0.92, delay: 0.7 }] },
+      { groups: [{ type: 'warlord', count: 3, interval: 3.2 }, { type: 'lancer', count: 26, interval: 0.27, delay: 0.9 }, { type: 'bastion', count: 8, interval: 0.95, delay: 0.9 }] },
+      { groups: [{ type: 'warlord', count: 4, interval: 2.7 }, { type: 'bastion', count: 11, interval: 0.86, delay: 0.9 }, { type: 'cleric', count: 6, interval: 0.85, delay: 0.7 }] },
+    ],
+  };
+}
+
+
 
 // === js/data/pieces.js ===
 /**
@@ -4820,36 +5196,34 @@ const PIECE_REGISTRY = {
     pattern: 'knight',
     maxRay: 0,
     attackType: 'leap_slam',
-    damage: 44,
-    fireRate: 0.82,
-    splashRadius: 1.05,
-    armorPierce: 0.25,
-    staggerDuration: 0.3,
+    damage: 38,
+    fireRate: 0.78,
+    splashRadius: 0.68,
+    armorPierce: 0.12,
     accentColor: '#c9883a',
-    patternLabel: 'Classic L-Jump (8 Fork Squares + Splash)',
-    tacticalTip: 'Leaps over obstacles to slam enemies on its 8 L-shape squares with splash damage. Ideal for forking parallel lanes and sniping healers.',
+    patternLabel: 'Classic L-Jump (8 Fork Squares + Tight Splash)',
+    tacticalTip: 'Leaps over obstacles to strike enemies on its 8 L-shape squares with a compact flank splash. Ideal for forking parallel lanes and sniping Chargers & Clerics — bring Rooks or Bishops for armored Bastions.',
     lore: 'Carved warhorses that vault cleanly across rank and file to crush enemy flanks.',
     upgrades: [
       {
         tier: 2,
         name: 'Gilded Charger',
         cost: 95,
-        damage: 74,
-        fireRate: 0.94,
-        splashRadius: 1.2,
-        staggerDuration: 0.42,
-        desc: 'Wider shockwave splash & stronger impact stagger',
+        damage: 64,
+        fireRate: 0.88,
+        splashRadius: 0.78,
+        armorPierce: 0.18,
+        desc: 'Sharper L-fork strikes & quicker leaps',
       },
       {
         tier: 3,
         name: 'Paladin Steed',
         cost: 150,
-        damage: 122,
-        fireRate: 1.08,
-        splashRadius: 1.4,
-        armorPierce: 0.45,
-        staggerDuration: 0.55,
-        desc: 'Devastating armored L-slam shockwave',
+        damage: 102,
+        fireRate: 1.0,
+        splashRadius: 0.88,
+        armorPierce: 0.24,
+        desc: 'Relentless precision cavalry assault across 8 fork tiles',
       },
     ],
   },
@@ -4914,34 +5288,34 @@ const PIECE_REGISTRY = {
     pattern: 'rook',
     maxRay: 7,
     attackType: 'cannon_line',
-    damage: 78,
-    fireRate: 0.64,
-    splashRadius: 0.98,
-    armorPierce: 0.6,
+    damage: 86,
+    fireRate: 0.66,
+    splashRadius: 1.15,
+    armorPierce: 0.68,
     accentColor: '#b56e35',
-    patternLabel: '4 Straight Ranks & Files (Heavy Cannon)',
-    tacticalTip: 'Fires armor-piercing bronze cannonballs strictly down straight ranks and files. Place at the end of a long corridor to obliterate heavy tanks.',
+    patternLabel: '4 Straight Ranks & Files (Heavy AoE Cannon)',
+    tacticalTip: 'Fires devastating wide-blast bronze cannonballs down straight ranks and files, ignoring 68% armor. Place at the end of long straightaways to shatter Bastions and packed waves.',
     lore: 'Mobile ivory watchtowers bristling with four bronze siege culverins.',
     upgrades: [
       {
         tier: 2,
         name: 'Ironwall Keep',
         cost: 145,
-        damage: 130,
-        fireRate: 0.74,
-        splashRadius: 1.15,
-        armorPierce: 0.75,
-        desc: 'Crushing cannon damage & expanded blast radius',
+        damage: 145,
+        fireRate: 0.76,
+        splashRadius: 1.32,
+        armorPierce: 0.8,
+        desc: 'Crushing siege blast & 80% armor-piercing shells',
       },
       {
         tier: 3,
         name: 'Grand Citadel Tower',
         cost: 225,
-        damage: 215,
-        fireRate: 0.86,
-        splashRadius: 1.4,
-        armorPierce: 0.88,
-        desc: 'Massive siege barrage ignoring 88% enemy armor',
+        damage: 245,
+        fireRate: 0.88,
+        splashRadius: 1.55,
+        armorPierce: 0.92,
+        desc: 'Cataclysmic corridor barrage ignoring 92% enemy armor',
       },
     ],
   },
@@ -5149,22 +5523,51 @@ function getUnlockedPiecesForLevel(levelNumber) {
  * Enemy Archetypes & Wave Scaling for TowerDeChess.
  * Simulation-verified for tense Tactical play and tough-but-achievable Grandmaster runs.
  */
+const DIFFICULTY_ORDER = ['novice', 'master', 'grandmaster'];
 const DIFFICULTY_PRESETS = {
-  standard: {
-    id: 'standard',
-    label: 'Tactical',
+  novice: {
+    id: 'novice',
+    label: 'Novice',
+    shortTag: '',
     hpMult: 1.0,
     speedMult: 1.0,
     goldMult: 1.0,
+    rewardMult: 1.0,
+    lateWaveHpBoost: 0.0,
+    armorBonus: 0.0,
+    desc: 'Balanced royal campaign economy & classic enemy strength.',
+  },
+  master: {
+    id: 'master',
+    label: 'Master',
+    shortTag: 'MASTER',
+    hpMult: 1.38,
+    speedMult: 1.1,
+    goldMult: 0.9,
+    rewardMult: 0.88,
+    lateWaveHpBoost: 0.28,
+    armorBonus: 0.04,
+    desc: '+38% enemy HP, faster marches, heavier armor & tighter bounties.',
   },
   grandmaster: {
     id: 'grandmaster',
     label: 'Grandmaster',
-    hpMult: 1.32,
-    speedMult: 1.09,
-    goldMult: 0.9,
+    shortTag: 'GRANDMASTER',
+    hpMult: 1.78,
+    speedMult: 1.18,
+    goldMult: 0.82,
+    rewardMult: 0.74,
+    lateWaveHpBoost: 0.58,
+    armorBonus: 0.08,
+    desc: 'Brutal endgame siege: +78% HP surging in late waves, lean gold & fortified armor.',
   },
 };
+function normalizeDifficulty(difficultyId) {
+  if (difficultyId === 'master' || difficultyId === 'grandmaster' || difficultyId === 'novice') {
+    return difficultyId;
+  }
+  return 'novice';
+}
 const ENEMY_TYPES = {
   footman: {
     id: 'footman',
@@ -5236,31 +5639,35 @@ const ENEMY_TYPES = {
 /**
  * Scale enemy stats progressively by level, wave, and difficulty mode.
  */
-function createEnemyConfig(typeId, levelNum, waveIndex, totalWaves, difficultyId = 'standard') {
+function createEnemyConfig(typeId, levelNum, waveIndex, totalWaves, difficultyId = 'novice') {
   const base = ENEMY_TYPES[typeId];
   if (!base) throw new Error(`Unknown enemy type: ${typeId}`);
-  const diff = DIFFICULTY_PRESETS[difficultyId] || DIFFICULTY_PRESETS.standard;
+  const diff = DIFFICULTY_PRESETS[normalizeDifficulty(difficultyId)] || DIFFICULTY_PRESETS.novice;
 
-  // Sustainable per-level scaling: identical on Lv1-7 (1.0x -> 1.84x), smoothly tapered across Lv8-18 (up to 2.94x)
+  // Sustainable per-level scaling + extra late-wave surge on Master & Grandmaster
   const levelHpScale =
-    levelNum <= 7 ? 1 + (levelNum - 1) * 0.14 : 1.84 + (levelNum - 7) * 0.1;
+    levelNum <= 7 ? 1 + (levelNum - 1) * 0.14 : 1.84 + (levelNum - 7) * 0.11;
   const waveProgress = totalWaves > 1 ? waveIndex / (totalWaves - 1) : 0;
-  const waveHpScale = 1 + waveIndex * 0.2 + waveProgress * 0.22;
+  const lateSurge = 1 + waveProgress * waveProgress * (diff.lateWaveHpBoost || 0);
+  const waveHpScale = (1 + waveIndex * 0.21 + waveProgress * 0.24) * lateSurge;
 
   const levelSpeedBonus =
     levelNum <= 7 ? (levelNum - 1) * 0.022 : 6 * 0.022 + (levelNum - 7) * 0.011;
   const speedScale = (1 + levelSpeedBonus + waveIndex * 0.012) * diff.speedMult;
-  const bonusArmor = Math.min(0.2, (levelNum - 1) * 0.015 + Math.floor(waveIndex / 3) * 0.02);
-  const rewardScale = 1 + Math.min(12, levelNum - 1) * 0.05;
+  const bonusArmor = Math.min(
+    0.24,
+    (levelNum - 1) * 0.015 + Math.floor(waveIndex / 3) * 0.02 + (diff.armorBonus || 0)
+  );
+  const rewardScale = (1 + Math.min(12, levelNum - 1) * 0.045) * (diff.rewardMult || 1.0);
 
   return {
     ...base,
     maxHp: Math.round(base.baseHp * levelHpScale * waveHpScale * diff.hpMult),
     speed: Number((base.speed * speedScale).toFixed(3)),
-    armor: Math.min(0.68, base.armor + bonusArmor),
-    reward: Math.max(5, Math.round(base.reward * rewardScale)),
+    armor: Math.min(0.74, base.armor + bonusArmor),
+    reward: Math.max(4, Math.round(base.reward * rewardScale)),
     healAmount: base.healAmount
-      ? Math.round(base.healAmount * levelHpScale * (1 + waveIndex * 0.1) * diff.hpMult)
+      ? Math.round(base.healAmount * levelHpScale * (1 + waveIndex * 0.12) * diff.hpMult)
       : 0,
   };
 }
@@ -6121,13 +6528,16 @@ const LEGACY_KEYS = ['crownward_progress_v1'];
 const IDB_NAME = 'TowerDeChessDB';
 const IDB_STORE = 'saves';
 const IDB_KEY = 'campaign_progress';
+
+const DIFFICULTY_MODES = ['novice', 'master', 'grandmaster'];
 function createEmptyProgress() {
   return {
-    version: 2,
+    version: 3,
     highestUnlocked: 1,
     stars: {}, // levelId -> best stars across difficulties (0..3)
     starsByDifficulty: {
-      standard: {},
+      novice: {},
+      master: {},
       grandmaster: {},
     },
     bestScores: {}, // levelId -> highest score
@@ -6148,23 +6558,28 @@ function normalizeProgress(raw) {
     }
   }
 
-  if (raw.starsByDifficulty && typeof raw.starsByDifficulty === 'object') {
-    for (const mode of ['standard', 'grandmaster']) {
-      const src = raw.starsByDifficulty[mode];
-      if (src && typeof src === 'object') {
-        for (const [k, v] of Object.entries(src)) {
-          const n = Math.max(0, Math.min(3, Number(v) || 0));
-          if (n > 0) {
-            base.starsByDifficulty[mode][k] = n;
-            base.stars[k] = Math.max(base.stars[k] || 0, n);
-          }
-        }
+  const copyModeStars = (src, targetMode) => {
+    if (!src || typeof src !== 'object') return;
+    for (const [k, v] of Object.entries(src)) {
+      const n = Math.max(0, Math.min(3, Number(v) || 0));
+      if (n > 0) {
+        base.starsByDifficulty[targetMode][k] = Math.max(base.starsByDifficulty[targetMode][k] || 0, n);
+        base.stars[k] = Math.max(base.stars[k] || 0, n);
       }
     }
+  };
+
+  if (raw.starsByDifficulty && typeof raw.starsByDifficulty === 'object') {
+    const rawVer = Number(raw.version) || 1;
+    // Migrate legacy `standard` -> `novice`, and pre-v3 `grandmaster` -> `master`
+    copyModeStars(raw.starsByDifficulty.standard, 'novice');
+    copyModeStars(raw.starsByDifficulty.novice, 'novice');
+    copyModeStars(raw.starsByDifficulty.master, 'master');
+    copyModeStars(raw.starsByDifficulty.grandmaster, rawVer < 3 ? 'master' : 'grandmaster');
   } else {
-    // Legacy save only had top-level `stars` — mirror into `standard` so nothing looks empty
+    // Legacy save only had top-level `stars` — mirror into `novice` so nothing looks empty
     for (const [k, v] of Object.entries(base.stars)) {
-      base.starsByDifficulty.standard[k] = v;
+      base.starsByDifficulty.novice[k] = v;
     }
   }
 
@@ -6193,7 +6608,7 @@ function mergeProgress(a, b) {
     out.stars[k] = Math.max(pA.stars[k] || 0, pB.stars[k] || 0);
   }
 
-  for (const mode of ['standard', 'grandmaster']) {
+  for (const mode of DIFFICULTY_MODES) {
     const keys = new Set([
       ...Object.keys(pA.starsByDifficulty[mode]),
       ...Object.keys(pB.starsByDifficulty[mode]),
@@ -6369,13 +6784,20 @@ function saveProgress(progress) {
   writeIdb(normalized);
   return normalized;
 }
+
+function normalizeMode(difficulty) {
+  if (difficulty === 'master' || difficulty === 'grandmaster' || difficulty === 'novice') {
+    return difficulty;
+  }
+  return 'novice';
+}
 function recordLevelVictory(
   progress,
   { levelId, stars, score, difficulty, totalLevels, allowUnlockAdvance = true }
 ) {
   const next = normalizeProgress(progress);
   const key = String(levelId);
-  const mode = difficulty === 'grandmaster' ? 'grandmaster' : 'standard';
+  const mode = normalizeMode(difficulty);
 
   next.stars[key] = Math.max(next.stars[key] || 0, stars);
   next.starsByDifficulty[mode][key] = Math.max(next.starsByDifficulty[mode][key] || 0, stars);
@@ -6397,14 +6819,15 @@ function markCutsceneSeen(progress, cutsceneId) {
 }
 function getStarsForLevel(progress, levelId, difficulty = null) {
   const key = String(levelId);
-  if (difficulty && progress?.starsByDifficulty?.[difficulty]) {
-    return progress.starsByDifficulty[difficulty][key] || 0;
+  if (difficulty) {
+    const mode = normalizeMode(difficulty);
+    return progress?.starsByDifficulty?.[mode]?.[key] || 0;
   }
   return progress?.stars?.[key] || 0;
 }
 function getTotalStars(progress, difficulty = null) {
   const map = difficulty
-    ? progress?.starsByDifficulty?.[difficulty] || {}
+    ? progress?.starsByDifficulty?.[normalizeMode(difficulty)] || {}
     : progress?.stars || {};
   return Object.values(map).reduce((sum, n) => sum + (Number(n) || 0), 0);
 }
@@ -7232,7 +7655,7 @@ class GameEngine {
     this.callbacks = callbacks || {};
 
     this.level = null;
-    this.difficulty = 'standard';
+    this.difficulty = 'novice';
     this.pathTiles = [];
     this.pathSet = new Set();
 
@@ -7378,10 +7801,11 @@ class GameEngine {
     this.originY = (availH - boardDiamondH) * 0.5 - this.tileH * 0.22;
   }
 
-  loadLevel(level, difficulty = 'standard') {
+  loadLevel(level, difficulty = 'novice') {
     this.level = level;
-    this.difficulty = difficulty;
-    const diff = DIFFICULTY_PRESETS[difficulty] || DIFFICULTY_PRESETS.standard;
+    const normDiff = normalizeDifficulty(difficulty);
+    this.difficulty = normDiff;
+    const diff = DIFFICULTY_PRESETS[normDiff] || DIFFICULTY_PRESETS.novice;
     this.pathTiles = expandWaypoints(level.waypoints);
     this.pathSet = new Set(this.pathTiles.map(([c, r]) => `${c},${r}`));
 
@@ -9713,13 +10137,14 @@ class TowerDeChessApp {
   constructor() {
     this.progress = loadProgressSync();
     localStorage.removeItem('towerdechess_sandbox');
-    this.difficulty = localStorage.getItem('towerdechess_difficulty') || 'standard';
+    this.difficulty = normalizeDifficulty(localStorage.getItem('towerdechess_difficulty'));
     this.weatherEnabled = localStorage.getItem('towerdechess_weather_enabled') !== 'false';
     this.selectedMapLevelId = Math.min(LEVELS.length, this.progress.highestUnlocked || 1);
     this.justUnlockedLevelId = null;
     this.pendingProgression = null;
     this._progressionTimers = [];
     this._mapNodeY = new Map();
+    this._lastQuickMatchBgId = null;
     this.currentLevel = null;
     this.engine = null;
     this.bannerTimer = null;
@@ -9749,8 +10174,7 @@ class TowerDeChessApp {
       btnPlayChapterStory: document.getElementById('btn-play-chapter-story'),
       campaignMapViewport: document.getElementById('campaign-map-viewport'),
       campaignMapCanvas: document.getElementById('campaign-map-canvas'),
-      btnDiffStandard: document.getElementById('btn-diff-standard'),
-      btnDiffGrandmaster: document.getElementById('btn-diff-grandmaster'),
+      diffButtons: Array.from(document.querySelectorAll('.diff-btn[data-diff]')),
       btnOpenCodex: document.getElementById('btn-open-codex'),
       btnInstallPwa: document.getElementById('btn-install-pwa'),
 
@@ -9835,8 +10259,16 @@ class TowerDeChessApp {
       // Save Data Modal
       modalSave: document.getElementById('modal-save'),
       btnCloseSave: document.getElementById('btn-close-save'),
-      saveTacticalStars: document.getElementById('save-tactical-stars'),
+      saveNoviceStars: document.getElementById('save-novice-stars'),
+      saveMasterStars: document.getElementById('save-master-stars'),
       saveGmStars: document.getElementById('save-gm-stars'),
+
+      // Quick Match Modal
+      modalQuickmatch: document.getElementById('modal-quickmatch'),
+      btnCloseQuickmatch: document.getElementById('btn-close-quickmatch'),
+      btnQmCancel: document.getElementById('btn-qm-cancel'),
+      btnQmStart: document.getElementById('btn-qm-start'),
+      qmDiffDesc: document.getElementById('qm-diff-desc'),
       saveUnlockedLv: document.getElementById('save-unlocked-lv'),
       inputSaveCode: document.getElementById('input-save-code'),
       saveStatusMsg: document.getElementById('save-status-msg'),
@@ -9991,13 +10423,17 @@ class TowerDeChessApp {
     });
 
     const setDiff = (mode) => {
-      this.difficulty = mode;
-      localStorage.setItem('towerdechess_difficulty', mode);
+      const normalized = normalizeDifficulty(mode);
+      this.difficulty = normalized;
+      localStorage.setItem('towerdechess_difficulty', normalized);
+      sound.unlock();
+      sound.playSelect();
       this._syncDifficultyUi();
       this._renderCampaign(false);
     };
-    this.el.btnDiffStandard.addEventListener('click', () => setDiff('standard'));
-    this.el.btnDiffGrandmaster.addEventListener('click', () => setDiff('grandmaster'));
+    for (const btn of this.el.diffButtons || []) {
+      btn.addEventListener('click', () => setDiff(btn.dataset.diff));
+    }
 
     this.el.btnOpenCodex.addEventListener('click', () => this._openCodex());
     this.el.codexTabs?.addEventListener('click', (e) => {
@@ -10047,6 +10483,18 @@ class TowerDeChessApp {
     this.el.btnModeQuickmatch?.addEventListener('click', () => {
       sound.unlock();
       sound.playSelect();
+      this._openQuickMatchModal();
+    });
+
+    this.el.btnCloseQuickmatch?.addEventListener('click', () => this._closeQuickMatchModal());
+    this.el.btnQmCancel?.addEventListener('click', () => this._closeQuickMatchModal());
+    this.el.modalQuickmatch?.addEventListener('click', (e) => {
+      if (e.target === this.el.modalQuickmatch) this._closeQuickMatchModal();
+    });
+    this.el.btnQmStart?.addEventListener('click', () => {
+      sound.unlock();
+      sound.playSelect();
+      this.el.modalQuickmatch?.classList.add('hidden');
       this._startQuickMatch();
     });
 
@@ -10188,7 +10636,10 @@ class TowerDeChessApp {
       localStorage.setItem('towerdechess_weather_enabled', String(this.weatherEnabled));
       if (this.el.screenGame.classList.contains('active') && this.currentLevel) {
         if (this.weatherEnabled) {
-          this.weather?.start(this.currentLevel.weather || 'sunrays', this.currentLevel.id);
+          this.weather?.start(
+            this.currentLevel.weather || 'sunrays',
+            this.currentLevel.bgLevelId || this.currentLevel.id
+          );
         } else {
           this.weather?.stop();
         }
@@ -10265,6 +10716,7 @@ class TowerDeChessApp {
     return (
       Boolean(this.cutscene?.isOpen()) ||
       !this.el.modalSettings?.classList.contains('hidden') ||
+      !this.el.modalQuickmatch?.classList.contains('hidden') ||
       !this.el.modalSave?.classList.contains('hidden') ||
       !this.el.modalCodex?.classList.contains('hidden') ||
       !this.el.modalBriefing?.classList.contains('hidden') ||
@@ -10309,6 +10761,10 @@ class TowerDeChessApp {
       this._closeSettings();
       return true;
     }
+    if (!this.el.modalQuickmatch?.classList.contains('hidden')) {
+      this._closeQuickMatchModal();
+      return true;
+    }
     if (!this.el.modalSave?.classList.contains('hidden')) {
       this._closeSaveModal();
       return true;
@@ -10335,6 +10791,17 @@ class TowerDeChessApp {
       return true;
     }
     return false;
+  }
+
+  _openQuickMatchModal() {
+    this._syncDifficultyUi();
+    this.el.modalQuickmatch?.classList.remove('hidden');
+    this._syncHistoryGuard();
+  }
+
+  _closeQuickMatchModal() {
+    this.el.modalQuickmatch?.classList.add('hidden');
+    this._syncHistoryGuard();
   }
 
   _closeCodex() {
@@ -10427,10 +10894,11 @@ class TowerDeChessApp {
       this.el.settingsTrackName.textContent = `${tr.name} • ${tr.subtitle}`;
     }
     if (this.el.settingsProgressSummary) {
-      const tacStars = getTotalStars(this.progress, 'standard');
+      const novStars = getTotalStars(this.progress, 'novice');
+      const masStars = getTotalStars(this.progress, 'master');
       const gmStars = getTotalStars(this.progress, 'grandmaster');
       const ch = getChapterForLevel(this.progress.highestUnlocked);
-      this.el.settingsProgressSummary.textContent = `Unlocked up to Level ${this.progress.highestUnlocked} / ${LEVELS.length} (Chapter ${ch.roman}) • ★ ${tacStars} Tactical / ★ ${gmStars} Grandmaster`;
+      this.el.settingsProgressSummary.textContent = `Unlocked up to Level ${this.progress.highestUnlocked} / ${LEVELS.length} (Chapter ${ch.roman}) • ★ ${novStars} Novice / ★ ${masStars} Master / ★ ${gmStars} Grandmaster`;
     }
   }
 
@@ -10462,11 +10930,15 @@ class TowerDeChessApp {
 
   _refreshSaveModalStats() {
     const maxStars = LEVELS.length * 3;
-    const tacStars = getTotalStars(this.progress, 'standard');
+    const novStars = getTotalStars(this.progress, 'novice');
+    const masStars = getTotalStars(this.progress, 'master');
     const gmStars = getTotalStars(this.progress, 'grandmaster');
-    this.el.saveTacticalStars.textContent = `★ ${tacStars} / ${maxStars}`;
-    this.el.saveGmStars.textContent = `★ ${gmStars} / ${maxStars}`;
-    this.el.saveUnlockedLv.textContent = `Lv. ${this.progress.highestUnlocked} / ${LEVELS.length}`;
+    if (this.el.saveNoviceStars) this.el.saveNoviceStars.textContent = `★ ${novStars} / ${maxStars}`;
+    if (this.el.saveMasterStars) this.el.saveMasterStars.textContent = `★ ${masStars} / ${maxStars}`;
+    if (this.el.saveGmStars) this.el.saveGmStars.textContent = `★ ${gmStars} / ${maxStars}`;
+    if (this.el.saveUnlockedLv) {
+      this.el.saveUnlockedLv.textContent = `Lv. ${this.progress.highestUnlocked} / ${LEVELS.length}`;
+    }
   }
 
   _setSaveStatus(msg, isError) {
@@ -10475,10 +10947,17 @@ class TowerDeChessApp {
   }
 
   _syncDifficultyUi() {
-    const isGm = this.difficulty === 'grandmaster';
-    this.el.btnDiffStandard.classList.toggle('active', !isGm);
-    this.el.btnDiffGrandmaster.classList.toggle('active', isGm);
-    this.el.btnDiffGrandmaster.classList.toggle('grandmaster', true);
+    const active = normalizeDifficulty(this.difficulty);
+    this.difficulty = active;
+    for (const btn of this.el.diffButtons || []) {
+      const isSelected = btn.dataset.diff === active;
+      btn.classList.toggle('active', isSelected);
+      btn.setAttribute('aria-pressed', String(isSelected));
+    }
+    if (this.el.qmDiffDesc) {
+      const preset = DIFFICULTY_PRESETS[active] || DIFFICULTY_PRESETS.novice;
+      this.el.qmDiffDesc.textContent = preset.desc;
+    }
   }
 
   _syncMuteIcon() {
@@ -10504,7 +10983,12 @@ class TowerDeChessApp {
     const revealedMax = frontierId;
 
     if (this.el.campaignTotalStars) {
-      const modeTag = this.difficulty === 'grandmaster' ? 'GM ' : '';
+      const modeTag =
+        this.difficulty === 'grandmaster'
+          ? 'GM '
+          : this.difficulty === 'master'
+            ? 'Master '
+            : '';
       this.el.campaignTotalStars.textContent = `${modeTag}★ ${modeStars} / ${maxStars}`;
     }
     if (this.el.campaignRevealedPill) {
@@ -11073,30 +11557,9 @@ class TowerDeChessApp {
   }
 
   _startQuickMatch() {
-    // Pick a varied arena across all 3 Chapter biomes & weather effects
-    const pool = LEVELS.filter((l) => l.id !== this._lastQuickMatchId);
-    const base = pool[Math.floor(Math.random() * pool.length)] || LEVELS[0];
-    this._lastQuickMatchId = base.id;
-    const ch = getChapterForLevel(base.id);
-
-    const skirmishLevel = {
-      ...base,
-      isQuickMatch: true,
-      unlockAllPieces: true,
-      startingGold: 320,
-      startingLives: 12,
-      subtitle: `Quick Match • Chapter ${ch.roman}`,
-      waves: [
-        { groups: [{ type: 'footman', count: 10, interval: 0.72 }, { type: 'lancer', count: 4, interval: 0.56, delay: 0.9 }] },
-        { groups: [{ type: 'lancer', count: 9, interval: 0.48 }, { type: 'bastion', count: 2, interval: 1.8, delay: 0.9 }] },
-        { groups: [{ type: 'footman', count: 12, interval: 0.55 }, { type: 'cleric', count: 3, interval: 1.25, delay: 0.8 }, { type: 'bastion', count: 2, interval: 1.7, delay: 0.9 }] },
-        { groups: [{ type: 'lancer', count: 12, interval: 0.42 }, { type: 'cleric', count: 4, interval: 1.05, delay: 0.7 }, { type: 'footman', count: 10, interval: 0.5, delay: 0.8 }] },
-        { groups: [{ type: 'bastion', count: 5, interval: 1.4 }, { type: 'cleric', count: 4, interval: 1.0, delay: 0.7 }, { type: 'lancer', count: 10, interval: 0.42, delay: 0.8 }] },
-        { groups: [{ type: 'footman', count: 14, interval: 0.44 }, { type: 'bastion', count: 5, interval: 1.35, delay: 0.7 }, { type: 'cleric', count: 5, interval: 0.95, delay: 0.7 }] },
-        { groups: [{ type: 'warlord', count: 1, interval: 2.0 }, { type: 'cleric', count: 4, interval: 1.0, delay: 0.9 }, { type: 'bastion', count: 4, interval: 1.35, delay: 1.0 }, { type: 'lancer', count: 12, interval: 0.4, delay: 1.1 }] },
-      ],
-    };
-
+    // Procedurally generate a random 8x8 chessboard path + random battlefield backdrop
+    const skirmishLevel = generateQuickMatchLevel(this._lastQuickMatchBgId);
+    this._lastQuickMatchBgId = skirmishLevel.bgLevelId;
     this._launchLevelBoard(skirmishLevel);
   }
 
@@ -11109,28 +11572,32 @@ class TowerDeChessApp {
       this.selectedMapLevelId = lvl.id;
     }
 
+    const bgId = lvl.bgLevelId || lvl.id;
+
     // Apply per-level painted battlefield backdrop at low opacity behind the 2.5D board
     if (this.el.gameBgArt) {
-      const bgUrl = getLevelBgUrl(lvl.id);
+      const bgUrl = getLevelBgUrl(bgId);
       this.el.gameBgArt.style.backgroundImage = bgUrl ? `url("${bgUrl}")` : '';
     }
 
     this.el.modalBriefing.classList.add('hidden');
+    this.el.modalQuickmatch?.classList.add('hidden');
     this.el.screenHome.classList.remove('active');
     this.el.screenCampaign.classList.remove('active');
     this.el.screenGame.classList.add('active');
+
+    const diffPreset = DIFFICULTY_PRESETS[normalizeDifficulty(this.difficulty)] || DIFFICULTY_PRESETS.novice;
     if (lvl.isQuickMatch) {
-      const ch = getChapterForLevel(lvl.id);
-      this.el.hudLevelNum.textContent = `QUICK MATCH • CH. ${ch.roman}`;
+      this.el.hudLevelNum.textContent = `QUICK MATCH • ${diffPreset.label.toUpperCase()}`;
     } else {
-      const diffTag = this.difficulty === 'grandmaster' ? ' • GRANDMASTER' : '';
+      const diffTag = diffPreset.shortTag ? ` • ${diffPreset.shortTag}` : '';
       this.el.hudLevelNum.textContent = `LEVEL ${lvl.id}${diffTag}`;
     }
     this.el.hudLevelName.textContent = lvl.name;
 
     this.engine.loadLevel(lvl, this.difficulty);
     if (this.weatherEnabled) {
-      this.weather?.start(lvl.weather || 'sunrays', lvl.id);
+      this.weather?.start(lvl.weather || 'sunrays', bgId);
     } else {
       this.weather?.stop();
     }
@@ -11606,7 +12073,8 @@ class TowerDeChessApp {
 
   _renderCodexChronicles() {
     const beatFinal =
-      getStarsForLevel(this.progress, LEVELS.length, 'standard') > 0 ||
+      getStarsForLevel(this.progress, LEVELS.length, 'novice') > 0 ||
+      getStarsForLevel(this.progress, LEVELS.length, 'master') > 0 ||
       getStarsForLevel(this.progress, LEVELS.length, 'grandmaster') > 0;
 
     const cards = CUTSCENE_ORDER.map((id) => {

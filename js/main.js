@@ -13,7 +13,7 @@ import {
 } from './assets.js';
 import { sound } from './audio.js';
 import { CutscenePlayer } from './cutscene.js';
-import { LEVELS, CHAPTERS, getChapterForLevel } from './data/levels.js';
+import { LEVELS, CHAPTERS, getChapterForLevel, generateQuickMatchLevel } from './data/levels.js';
 import {
   PIECE_REGISTRY,
   PIECE_ORDER,
@@ -23,7 +23,7 @@ import {
   getUpgradeInfo,
   getUnlockedPiecesForLevel,
 } from './data/pieces.js';
-import { ENEMY_TYPES } from './data/enemies.js';
+import { ENEMY_TYPES, DIFFICULTY_PRESETS, normalizeDifficulty } from './data/enemies.js';
 import {
   CUTSCENES,
   CUTSCENE_ORDER,
@@ -49,13 +49,14 @@ class TowerDeChessApp {
   constructor() {
     this.progress = loadProgressSync();
     localStorage.removeItem('towerdechess_sandbox');
-    this.difficulty = localStorage.getItem('towerdechess_difficulty') || 'standard';
+    this.difficulty = normalizeDifficulty(localStorage.getItem('towerdechess_difficulty'));
     this.weatherEnabled = localStorage.getItem('towerdechess_weather_enabled') !== 'false';
     this.selectedMapLevelId = Math.min(LEVELS.length, this.progress.highestUnlocked || 1);
     this.justUnlockedLevelId = null;
     this.pendingProgression = null;
     this._progressionTimers = [];
     this._mapNodeY = new Map();
+    this._lastQuickMatchBgId = null;
     this.currentLevel = null;
     this.engine = null;
     this.bannerTimer = null;
@@ -85,8 +86,7 @@ class TowerDeChessApp {
       btnPlayChapterStory: document.getElementById('btn-play-chapter-story'),
       campaignMapViewport: document.getElementById('campaign-map-viewport'),
       campaignMapCanvas: document.getElementById('campaign-map-canvas'),
-      btnDiffStandard: document.getElementById('btn-diff-standard'),
-      btnDiffGrandmaster: document.getElementById('btn-diff-grandmaster'),
+      diffButtons: Array.from(document.querySelectorAll('.diff-btn[data-diff]')),
       btnOpenCodex: document.getElementById('btn-open-codex'),
       btnInstallPwa: document.getElementById('btn-install-pwa'),
 
@@ -171,8 +171,16 @@ class TowerDeChessApp {
       // Save Data Modal
       modalSave: document.getElementById('modal-save'),
       btnCloseSave: document.getElementById('btn-close-save'),
-      saveTacticalStars: document.getElementById('save-tactical-stars'),
+      saveNoviceStars: document.getElementById('save-novice-stars'),
+      saveMasterStars: document.getElementById('save-master-stars'),
       saveGmStars: document.getElementById('save-gm-stars'),
+
+      // Quick Match Modal
+      modalQuickmatch: document.getElementById('modal-quickmatch'),
+      btnCloseQuickmatch: document.getElementById('btn-close-quickmatch'),
+      btnQmCancel: document.getElementById('btn-qm-cancel'),
+      btnQmStart: document.getElementById('btn-qm-start'),
+      qmDiffDesc: document.getElementById('qm-diff-desc'),
       saveUnlockedLv: document.getElementById('save-unlocked-lv'),
       inputSaveCode: document.getElementById('input-save-code'),
       saveStatusMsg: document.getElementById('save-status-msg'),
@@ -327,13 +335,17 @@ class TowerDeChessApp {
     });
 
     const setDiff = (mode) => {
-      this.difficulty = mode;
-      localStorage.setItem('towerdechess_difficulty', mode);
+      const normalized = normalizeDifficulty(mode);
+      this.difficulty = normalized;
+      localStorage.setItem('towerdechess_difficulty', normalized);
+      sound.unlock();
+      sound.playSelect();
       this._syncDifficultyUi();
       this._renderCampaign(false);
     };
-    this.el.btnDiffStandard.addEventListener('click', () => setDiff('standard'));
-    this.el.btnDiffGrandmaster.addEventListener('click', () => setDiff('grandmaster'));
+    for (const btn of this.el.diffButtons || []) {
+      btn.addEventListener('click', () => setDiff(btn.dataset.diff));
+    }
 
     this.el.btnOpenCodex.addEventListener('click', () => this._openCodex());
     this.el.codexTabs?.addEventListener('click', (e) => {
@@ -383,6 +395,18 @@ class TowerDeChessApp {
     this.el.btnModeQuickmatch?.addEventListener('click', () => {
       sound.unlock();
       sound.playSelect();
+      this._openQuickMatchModal();
+    });
+
+    this.el.btnCloseQuickmatch?.addEventListener('click', () => this._closeQuickMatchModal());
+    this.el.btnQmCancel?.addEventListener('click', () => this._closeQuickMatchModal());
+    this.el.modalQuickmatch?.addEventListener('click', (e) => {
+      if (e.target === this.el.modalQuickmatch) this._closeQuickMatchModal();
+    });
+    this.el.btnQmStart?.addEventListener('click', () => {
+      sound.unlock();
+      sound.playSelect();
+      this.el.modalQuickmatch?.classList.add('hidden');
       this._startQuickMatch();
     });
 
@@ -524,7 +548,10 @@ class TowerDeChessApp {
       localStorage.setItem('towerdechess_weather_enabled', String(this.weatherEnabled));
       if (this.el.screenGame.classList.contains('active') && this.currentLevel) {
         if (this.weatherEnabled) {
-          this.weather?.start(this.currentLevel.weather || 'sunrays', this.currentLevel.id);
+          this.weather?.start(
+            this.currentLevel.weather || 'sunrays',
+            this.currentLevel.bgLevelId || this.currentLevel.id
+          );
         } else {
           this.weather?.stop();
         }
@@ -601,6 +628,7 @@ class TowerDeChessApp {
     return (
       Boolean(this.cutscene?.isOpen()) ||
       !this.el.modalSettings?.classList.contains('hidden') ||
+      !this.el.modalQuickmatch?.classList.contains('hidden') ||
       !this.el.modalSave?.classList.contains('hidden') ||
       !this.el.modalCodex?.classList.contains('hidden') ||
       !this.el.modalBriefing?.classList.contains('hidden') ||
@@ -645,6 +673,10 @@ class TowerDeChessApp {
       this._closeSettings();
       return true;
     }
+    if (!this.el.modalQuickmatch?.classList.contains('hidden')) {
+      this._closeQuickMatchModal();
+      return true;
+    }
     if (!this.el.modalSave?.classList.contains('hidden')) {
       this._closeSaveModal();
       return true;
@@ -671,6 +703,17 @@ class TowerDeChessApp {
       return true;
     }
     return false;
+  }
+
+  _openQuickMatchModal() {
+    this._syncDifficultyUi();
+    this.el.modalQuickmatch?.classList.remove('hidden');
+    this._syncHistoryGuard();
+  }
+
+  _closeQuickMatchModal() {
+    this.el.modalQuickmatch?.classList.add('hidden');
+    this._syncHistoryGuard();
   }
 
   _closeCodex() {
@@ -763,10 +806,11 @@ class TowerDeChessApp {
       this.el.settingsTrackName.textContent = `${tr.name} • ${tr.subtitle}`;
     }
     if (this.el.settingsProgressSummary) {
-      const tacStars = getTotalStars(this.progress, 'standard');
+      const novStars = getTotalStars(this.progress, 'novice');
+      const masStars = getTotalStars(this.progress, 'master');
       const gmStars = getTotalStars(this.progress, 'grandmaster');
       const ch = getChapterForLevel(this.progress.highestUnlocked);
-      this.el.settingsProgressSummary.textContent = `Unlocked up to Level ${this.progress.highestUnlocked} / ${LEVELS.length} (Chapter ${ch.roman}) • ★ ${tacStars} Tactical / ★ ${gmStars} Grandmaster`;
+      this.el.settingsProgressSummary.textContent = `Unlocked up to Level ${this.progress.highestUnlocked} / ${LEVELS.length} (Chapter ${ch.roman}) • ★ ${novStars} Novice / ★ ${masStars} Master / ★ ${gmStars} Grandmaster`;
     }
   }
 
@@ -798,11 +842,15 @@ class TowerDeChessApp {
 
   _refreshSaveModalStats() {
     const maxStars = LEVELS.length * 3;
-    const tacStars = getTotalStars(this.progress, 'standard');
+    const novStars = getTotalStars(this.progress, 'novice');
+    const masStars = getTotalStars(this.progress, 'master');
     const gmStars = getTotalStars(this.progress, 'grandmaster');
-    this.el.saveTacticalStars.textContent = `★ ${tacStars} / ${maxStars}`;
-    this.el.saveGmStars.textContent = `★ ${gmStars} / ${maxStars}`;
-    this.el.saveUnlockedLv.textContent = `Lv. ${this.progress.highestUnlocked} / ${LEVELS.length}`;
+    if (this.el.saveNoviceStars) this.el.saveNoviceStars.textContent = `★ ${novStars} / ${maxStars}`;
+    if (this.el.saveMasterStars) this.el.saveMasterStars.textContent = `★ ${masStars} / ${maxStars}`;
+    if (this.el.saveGmStars) this.el.saveGmStars.textContent = `★ ${gmStars} / ${maxStars}`;
+    if (this.el.saveUnlockedLv) {
+      this.el.saveUnlockedLv.textContent = `Lv. ${this.progress.highestUnlocked} / ${LEVELS.length}`;
+    }
   }
 
   _setSaveStatus(msg, isError) {
@@ -811,10 +859,17 @@ class TowerDeChessApp {
   }
 
   _syncDifficultyUi() {
-    const isGm = this.difficulty === 'grandmaster';
-    this.el.btnDiffStandard.classList.toggle('active', !isGm);
-    this.el.btnDiffGrandmaster.classList.toggle('active', isGm);
-    this.el.btnDiffGrandmaster.classList.toggle('grandmaster', true);
+    const active = normalizeDifficulty(this.difficulty);
+    this.difficulty = active;
+    for (const btn of this.el.diffButtons || []) {
+      const isSelected = btn.dataset.diff === active;
+      btn.classList.toggle('active', isSelected);
+      btn.setAttribute('aria-pressed', String(isSelected));
+    }
+    if (this.el.qmDiffDesc) {
+      const preset = DIFFICULTY_PRESETS[active] || DIFFICULTY_PRESETS.novice;
+      this.el.qmDiffDesc.textContent = preset.desc;
+    }
   }
 
   _syncMuteIcon() {
@@ -840,7 +895,12 @@ class TowerDeChessApp {
     const revealedMax = frontierId;
 
     if (this.el.campaignTotalStars) {
-      const modeTag = this.difficulty === 'grandmaster' ? 'GM ' : '';
+      const modeTag =
+        this.difficulty === 'grandmaster'
+          ? 'GM '
+          : this.difficulty === 'master'
+            ? 'Master '
+            : '';
       this.el.campaignTotalStars.textContent = `${modeTag}★ ${modeStars} / ${maxStars}`;
     }
     if (this.el.campaignRevealedPill) {
@@ -1409,30 +1469,9 @@ class TowerDeChessApp {
   }
 
   _startQuickMatch() {
-    // Pick a varied arena across all 3 Chapter biomes & weather effects
-    const pool = LEVELS.filter((l) => l.id !== this._lastQuickMatchId);
-    const base = pool[Math.floor(Math.random() * pool.length)] || LEVELS[0];
-    this._lastQuickMatchId = base.id;
-    const ch = getChapterForLevel(base.id);
-
-    const skirmishLevel = {
-      ...base,
-      isQuickMatch: true,
-      unlockAllPieces: true,
-      startingGold: 320,
-      startingLives: 12,
-      subtitle: `Quick Match • Chapter ${ch.roman}`,
-      waves: [
-        { groups: [{ type: 'footman', count: 10, interval: 0.72 }, { type: 'lancer', count: 4, interval: 0.56, delay: 0.9 }] },
-        { groups: [{ type: 'lancer', count: 9, interval: 0.48 }, { type: 'bastion', count: 2, interval: 1.8, delay: 0.9 }] },
-        { groups: [{ type: 'footman', count: 12, interval: 0.55 }, { type: 'cleric', count: 3, interval: 1.25, delay: 0.8 }, { type: 'bastion', count: 2, interval: 1.7, delay: 0.9 }] },
-        { groups: [{ type: 'lancer', count: 12, interval: 0.42 }, { type: 'cleric', count: 4, interval: 1.05, delay: 0.7 }, { type: 'footman', count: 10, interval: 0.5, delay: 0.8 }] },
-        { groups: [{ type: 'bastion', count: 5, interval: 1.4 }, { type: 'cleric', count: 4, interval: 1.0, delay: 0.7 }, { type: 'lancer', count: 10, interval: 0.42, delay: 0.8 }] },
-        { groups: [{ type: 'footman', count: 14, interval: 0.44 }, { type: 'bastion', count: 5, interval: 1.35, delay: 0.7 }, { type: 'cleric', count: 5, interval: 0.95, delay: 0.7 }] },
-        { groups: [{ type: 'warlord', count: 1, interval: 2.0 }, { type: 'cleric', count: 4, interval: 1.0, delay: 0.9 }, { type: 'bastion', count: 4, interval: 1.35, delay: 1.0 }, { type: 'lancer', count: 12, interval: 0.4, delay: 1.1 }] },
-      ],
-    };
-
+    // Procedurally generate a random 8x8 chessboard path + random battlefield backdrop
+    const skirmishLevel = generateQuickMatchLevel(this._lastQuickMatchBgId);
+    this._lastQuickMatchBgId = skirmishLevel.bgLevelId;
     this._launchLevelBoard(skirmishLevel);
   }
 
@@ -1445,28 +1484,32 @@ class TowerDeChessApp {
       this.selectedMapLevelId = lvl.id;
     }
 
+    const bgId = lvl.bgLevelId || lvl.id;
+
     // Apply per-level painted battlefield backdrop at low opacity behind the 2.5D board
     if (this.el.gameBgArt) {
-      const bgUrl = getLevelBgUrl(lvl.id);
+      const bgUrl = getLevelBgUrl(bgId);
       this.el.gameBgArt.style.backgroundImage = bgUrl ? `url("${bgUrl}")` : '';
     }
 
     this.el.modalBriefing.classList.add('hidden');
+    this.el.modalQuickmatch?.classList.add('hidden');
     this.el.screenHome.classList.remove('active');
     this.el.screenCampaign.classList.remove('active');
     this.el.screenGame.classList.add('active');
+
+    const diffPreset = DIFFICULTY_PRESETS[normalizeDifficulty(this.difficulty)] || DIFFICULTY_PRESETS.novice;
     if (lvl.isQuickMatch) {
-      const ch = getChapterForLevel(lvl.id);
-      this.el.hudLevelNum.textContent = `QUICK MATCH • CH. ${ch.roman}`;
+      this.el.hudLevelNum.textContent = `QUICK MATCH • ${diffPreset.label.toUpperCase()}`;
     } else {
-      const diffTag = this.difficulty === 'grandmaster' ? ' • GRANDMASTER' : '';
+      const diffTag = diffPreset.shortTag ? ` • ${diffPreset.shortTag}` : '';
       this.el.hudLevelNum.textContent = `LEVEL ${lvl.id}${diffTag}`;
     }
     this.el.hudLevelName.textContent = lvl.name;
 
     this.engine.loadLevel(lvl, this.difficulty);
     if (this.weatherEnabled) {
-      this.weather?.start(lvl.weather || 'sunrays', lvl.id);
+      this.weather?.start(lvl.weather || 'sunrays', bgId);
     } else {
       this.weather?.stop();
     }
@@ -1942,7 +1985,8 @@ class TowerDeChessApp {
 
   _renderCodexChronicles() {
     const beatFinal =
-      getStarsForLevel(this.progress, LEVELS.length, 'standard') > 0 ||
+      getStarsForLevel(this.progress, LEVELS.length, 'novice') > 0 ||
+      getStarsForLevel(this.progress, LEVELS.length, 'master') > 0 ||
       getStarsForLevel(this.progress, LEVELS.length, 'grandmaster') > 0;
 
     const cards = CUTSCENE_ORDER.map((id) => {

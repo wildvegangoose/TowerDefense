@@ -14,13 +14,16 @@ const IDB_NAME = 'TowerDeChessDB';
 const IDB_STORE = 'saves';
 const IDB_KEY = 'campaign_progress';
 
+const DIFFICULTY_MODES = ['novice', 'master', 'grandmaster'];
+
 export function createEmptyProgress() {
   return {
-    version: 2,
+    version: 3,
     highestUnlocked: 1,
     stars: {}, // levelId -> best stars across difficulties (0..3)
     starsByDifficulty: {
-      standard: {},
+      novice: {},
+      master: {},
       grandmaster: {},
     },
     bestScores: {}, // levelId -> highest score
@@ -41,23 +44,28 @@ function normalizeProgress(raw) {
     }
   }
 
-  if (raw.starsByDifficulty && typeof raw.starsByDifficulty === 'object') {
-    for (const mode of ['standard', 'grandmaster']) {
-      const src = raw.starsByDifficulty[mode];
-      if (src && typeof src === 'object') {
-        for (const [k, v] of Object.entries(src)) {
-          const n = Math.max(0, Math.min(3, Number(v) || 0));
-          if (n > 0) {
-            base.starsByDifficulty[mode][k] = n;
-            base.stars[k] = Math.max(base.stars[k] || 0, n);
-          }
-        }
+  const copyModeStars = (src, targetMode) => {
+    if (!src || typeof src !== 'object') return;
+    for (const [k, v] of Object.entries(src)) {
+      const n = Math.max(0, Math.min(3, Number(v) || 0));
+      if (n > 0) {
+        base.starsByDifficulty[targetMode][k] = Math.max(base.starsByDifficulty[targetMode][k] || 0, n);
+        base.stars[k] = Math.max(base.stars[k] || 0, n);
       }
     }
+  };
+
+  if (raw.starsByDifficulty && typeof raw.starsByDifficulty === 'object') {
+    const rawVer = Number(raw.version) || 1;
+    // Migrate legacy `standard` -> `novice`, and pre-v3 `grandmaster` -> `master`
+    copyModeStars(raw.starsByDifficulty.standard, 'novice');
+    copyModeStars(raw.starsByDifficulty.novice, 'novice');
+    copyModeStars(raw.starsByDifficulty.master, 'master');
+    copyModeStars(raw.starsByDifficulty.grandmaster, rawVer < 3 ? 'master' : 'grandmaster');
   } else {
-    // Legacy save only had top-level `stars` — mirror into `standard` so nothing looks empty
+    // Legacy save only had top-level `stars` — mirror into `novice` so nothing looks empty
     for (const [k, v] of Object.entries(base.stars)) {
-      base.starsByDifficulty.standard[k] = v;
+      base.starsByDifficulty.novice[k] = v;
     }
   }
 
@@ -87,7 +95,7 @@ export function mergeProgress(a, b) {
     out.stars[k] = Math.max(pA.stars[k] || 0, pB.stars[k] || 0);
   }
 
-  for (const mode of ['standard', 'grandmaster']) {
+  for (const mode of DIFFICULTY_MODES) {
     const keys = new Set([
       ...Object.keys(pA.starsByDifficulty[mode]),
       ...Object.keys(pB.starsByDifficulty[mode]),
@@ -265,13 +273,20 @@ export function saveProgress(progress) {
   return normalized;
 }
 
+function normalizeMode(difficulty) {
+  if (difficulty === 'master' || difficulty === 'grandmaster' || difficulty === 'novice') {
+    return difficulty;
+  }
+  return 'novice';
+}
+
 export function recordLevelVictory(
   progress,
   { levelId, stars, score, difficulty, totalLevels, allowUnlockAdvance = true }
 ) {
   const next = normalizeProgress(progress);
   const key = String(levelId);
-  const mode = difficulty === 'grandmaster' ? 'grandmaster' : 'standard';
+  const mode = normalizeMode(difficulty);
 
   next.stars[key] = Math.max(next.stars[key] || 0, stars);
   next.starsByDifficulty[mode][key] = Math.max(next.starsByDifficulty[mode][key] || 0, stars);
@@ -295,15 +310,16 @@ export function markCutsceneSeen(progress, cutsceneId) {
 
 export function getStarsForLevel(progress, levelId, difficulty = null) {
   const key = String(levelId);
-  if (difficulty && progress?.starsByDifficulty?.[difficulty]) {
-    return progress.starsByDifficulty[difficulty][key] || 0;
+  if (difficulty) {
+    const mode = normalizeMode(difficulty);
+    return progress?.starsByDifficulty?.[mode]?.[key] || 0;
   }
   return progress?.stars?.[key] || 0;
 }
 
 export function getTotalStars(progress, difficulty = null) {
   const map = difficulty
-    ? progress?.starsByDifficulty?.[difficulty] || {}
+    ? progress?.starsByDifficulty?.[normalizeMode(difficulty)] || {}
     : progress?.stars || {};
   return Object.values(map).reduce((sum, n) => sum + (Number(n) || 0), 0);
 }

@@ -4,7 +4,7 @@
 
 import { BOARD_SIZE, expandWaypoints } from '../data/levels.js';
 import { PIECE_REGISTRY, getPieceStats, getUpgradeInfo } from '../data/pieces.js';
-import { createEnemyConfig, DIFFICULTY_PRESETS } from '../data/enemies.js';
+import { createEnemyConfig, DIFFICULTY_PRESETS, normalizeDifficulty } from '../data/enemies.js';
 import { CHAPTER_BOSS_BY_LEVEL } from '../data/story.js';
 import { SPRITES, SHEETS, SHEET_META } from '../assets.js';
 import { sound } from '../audio.js';
@@ -88,7 +88,7 @@ export class GameEngine {
     this.callbacks = callbacks || {};
 
     this.level = null;
-    this.difficulty = 'standard';
+    this.difficulty = 'novice';
     this.pathTiles = [];
     this.pathSet = new Set();
 
@@ -234,10 +234,11 @@ export class GameEngine {
     this.originY = (availH - boardDiamondH) * 0.5 - this.tileH * 0.22;
   }
 
-  loadLevel(level, difficulty = 'standard') {
+  loadLevel(level, difficulty = 'novice') {
     this.level = level;
-    this.difficulty = difficulty;
-    const diff = DIFFICULTY_PRESETS[difficulty] || DIFFICULTY_PRESETS.standard;
+    const normDiff = normalizeDifficulty(difficulty);
+    this.difficulty = normDiff;
+    const diff = DIFFICULTY_PRESETS[normDiff] || DIFFICULTY_PRESETS.novice;
     this.pathTiles = expandWaypoints(level.waypoints);
     this.pathSet = new Set(this.pathTiles.map(([c, r]) => `${c},${r}`));
 
