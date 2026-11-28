@@ -10,7 +10,9 @@ import {
   getMapNodeUrl,
   getLevelBgUrl,
   getUiIconUrl,
+  getTacticIconUrl,
 } from './assets.js';
+import { adService, REWARDED_AD_BONUS_CHARGES } from './ads.js';
 import { sound } from './audio.js';
 import { CutscenePlayer } from './cutscene.js';
 import { LEVELS, CHAPTERS, getChapterForLevel, generateQuickMatchLevel } from './data/levels.js';
@@ -32,6 +34,16 @@ import {
   ENEMY_LORE,
   LEVEL_DISPATCHES,
 } from './data/story.js';
+import {
+  TACTICS,
+  TACTIC_ORDER,
+  TACTICS_MIN_LEVEL,
+  areTacticsEnabledForLevel,
+  getUnlockedTacticsForContext,
+  getUnlockedTacticsForProgress,
+  getTacticUnlockedAtLevel,
+  computeVictoryTacticReward,
+} from './data/tactics.js';
 import { GameEngine } from './engine/game.js';
 import { WeatherRenderer } from './engine/weather.js';
 import {
@@ -44,6 +56,10 @@ import {
   getTotalStars,
   exportSaveCode,
   importSaveCode,
+  getTacticCharges,
+  addTacticCharges,
+  consumeTacticCharge,
+  ensureTacticStarterGrants,
 } from './storage.js';
 
 class TowerDeChessApp {
@@ -89,8 +105,10 @@ class TowerDeChessApp {
     this.bannerTimer = null;
     this.deferredInstallPrompt = null;
     this.activeCodexTab = 'defenders';
+    this.selectedAdTacticId = 'pin';
     this.cutscene = new CutscenePlayer();
 
+    this._syncTacticStarterGrants();
     this._cacheDom();
     this._bindGlobalEvents();
     this._registerServiceWorker();
@@ -120,6 +138,7 @@ class TowerDeChessApp {
       // Game HUD
       canvas: document.getElementById('game-canvas'),
       gameWeatherCanvas: document.getElementById('game-weather-canvas'),
+      tacticsRail: document.getElementById('tactics-rail'),
       btnBackMenu: document.getElementById('btn-back-menu'),
       hudLevelNum: document.getElementById('hud-level-num'),
       hudLevelName: document.getElementById('hud-level-name'),
@@ -173,6 +192,13 @@ class TowerDeChessApp {
       briefPieceName: document.getElementById('brief-piece-name'),
       briefPiecePattern: document.getElementById('brief-piece-pattern'),
       briefDesc: document.getElementById('brief-desc'),
+      briefTacticsPanel: document.getElementById('brief-tactics-panel'),
+      briefTacticsKicker: document.getElementById('brief-tactics-kicker'),
+      briefTacticsNote: document.getElementById('brief-tactics-note'),
+      briefTacticsChips: document.getElementById('brief-tactics-chips'),
+      btnBriefWatchAd: document.getElementById('btn-brief-watch-ad'),
+      briefAdBtnLabel: document.getElementById('brief-ad-btn-label'),
+      briefAdStatus: document.getElementById('brief-ad-status'),
       btnBriefStart: document.getElementById('btn-brief-start'),
 
       // Result Modal
@@ -181,10 +207,17 @@ class TowerDeChessApp {
       resultTitle: document.getElementById('result-title'),
       resultStars: document.getElementById('result-stars'),
       resultSummary: document.getElementById('result-summary'),
+      resultTacticReward: document.getElementById('result-tactic-reward'),
       resultNextUnlock: document.getElementById('result-next-unlock'),
       resultNextImg: document.getElementById('result-next-img'),
       resultNextName: document.getElementById('result-next-name'),
       resultNextPattern: document.getElementById('result-next-pattern'),
+      resultTacticsPanel: document.getElementById('result-tactics-panel'),
+      resultTacticsNote: document.getElementById('result-tactics-note'),
+      resultTacticsChips: document.getElementById('result-tactics-chips'),
+      btnResultWatchAd: document.getElementById('btn-result-watch-ad'),
+      resultAdBtnLabel: document.getElementById('result-ad-btn-label'),
+      resultAdStatus: document.getElementById('result-ad-status'),
       btnResultMenu: document.getElementById('btn-result-menu'),
       btnResultRetry: document.getElementById('btn-result-retry'),
       btnResultNext: document.getElementById('btn-result-next'),
@@ -301,6 +334,7 @@ class TowerDeChessApp {
 
   async _init() {
     this._setupHistoryNavigation();
+    adService.init();
     this._studioIntroDone = this._playStudioIntro();
     this._syncDifficultyUi();
     this._syncMuteIcon();
@@ -310,6 +344,7 @@ class TowerDeChessApp {
     hydrateProgressFromBackup(this.progress).then(async ({ progress, changed }) => {
       if (changed) {
         this.progress = progress;
+        this._syncTacticStarterGrants();
         this.selectedMapLevelId = Math.min(LEVELS.length, this.progress.highestUnlocked || 1);
         this._renderCampaign(true);
       }
@@ -492,6 +527,9 @@ class TowerDeChessApp {
         this._syncHistoryGuard();
       }
     });
+
+    this.el.btnBriefWatchAd?.addEventListener('click', () => this._handleWatchRewardedAd('brief'));
+    this.el.btnResultWatchAd?.addEventListener('click', () => this._handleWatchRewardedAd('result'));
 
     this.el.btnResultMenu.addEventListener('click', () => {
       this.el.modalResult.classList.add('hidden');
@@ -1430,30 +1468,320 @@ class TowerDeChessApp {
     vp.scrollTo({ top: targetTop, behavior: smooth ? 'smooth' : 'auto' });
   }
 
+  _syncTacticStarterGrants(minLevel = null) {
+    const effectiveMax = Math.max(this.progress.highestUnlocked || 1, minLevel || 1);
+    if (effectiveMax < TACTICS_MIN_LEVEL) return [];
+    const unlocked = getUnlockedTacticsForProgress(effectiveMax);
+    const { progress, newlyGranted } = ensureTacticStarterGrants(this.progress, unlocked);
+    this.progress = progress;
+    return newlyGranted;
+  }
+
+  _pickDefaultAdTactic(unlockedTactics) {
+    if (!unlockedTactics || unlockedTactics.length === 0) return 'pin';
+    if (unlockedTactics.some((t) => t.id === this.selectedAdTacticId)) {
+      return this.selectedAdTacticId;
+    }
+    // Prefer the unlocked tactic with the fewest charges so the player can restock right away
+    let lowest = unlockedTactics[0];
+    let lowestCount = getTacticCharges(this.progress, lowest.id);
+    for (const t of unlockedTactics) {
+      const c = getTacticCharges(this.progress, t.id);
+      if (c < lowestCount) {
+        lowest = t;
+        lowestCount = c;
+      }
+    }
+    this.selectedAdTacticId = lowest.id;
+    return lowest.id;
+  }
+
+  _renderBetweenLevelTacticsPanel(target, levelContext, newlyUnlockedTactic = null) {
+    const isBrief = target === 'brief';
+    const panel = isBrief ? this.el.briefTacticsPanel : this.el.resultTacticsPanel;
+    const chipsEl = isBrief ? this.el.briefTacticsChips : this.el.resultTacticsChips;
+    const btnEl = isBrief ? this.el.btnBriefWatchAd : this.el.btnResultWatchAd;
+    const btnLabelEl = isBrief ? this.el.briefAdBtnLabel : this.el.resultAdBtnLabel;
+    const statusEl = isBrief ? this.el.briefAdStatus : this.el.resultAdStatus;
+    const noteEl = isBrief ? this.el.briefTacticsNote : this.el.resultTacticsNote;
+    if (!panel || !chipsEl || !btnEl) return;
+
+    if (!areTacticsEnabledForLevel(levelContext, this.progress.highestUnlocked)) {
+      panel.classList.add('hidden');
+      return;
+    }
+
+    const unlocked = getUnlockedTacticsForContext(levelContext, this.progress.highestUnlocked);
+    if (unlocked.length === 0) {
+      panel.classList.add('hidden');
+      return;
+    }
+
+    if (newlyUnlockedTactic && unlocked.some((t) => t.id === newlyUnlockedTactic.id)) {
+      this.selectedAdTacticId = newlyUnlockedTactic.id;
+    } else {
+      this._pickDefaultAdTactic(unlocked);
+    }
+
+    if (isBrief && this.el.briefTacticsKicker) {
+      this.el.briefTacticsKicker.textContent = newlyUnlockedTactic
+        ? `NEW ROYAL TACTIC UNLOCKED • ${newlyUnlockedTactic.name.toUpperCase()} (+${newlyUnlockedTactic.starterCharges} STARTER)`
+        : 'ROYAL TACTICS STOCKPILE';
+    }
+    if (noteEl) {
+      noteEl.textContent = newlyUnlockedTactic
+        ? `${newlyUnlockedTactic.shortDesc} — Tap a tactic below or watch an ad for +${REWARDED_AD_BONUS_CHARGES} extra charges.`
+        : `Select a tactic to restock (+${REWARDED_AD_BONUS_CHARGES} charges per rewarded ad between levels).`;
+    }
+
+    chipsEl.innerHTML = '';
+    for (const t of unlocked) {
+      const count = getTacticCharges(this.progress, t.id);
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = `tactic-chip${this.selectedAdTacticId === t.id ? ' selected' : ''}`;
+      chip.dataset.tacticId = t.id;
+      chip.title = `${t.name}: ${t.description}`;
+      chip.innerHTML = `
+        <img src="${getTacticIconUrl(t.icon)}" alt="${t.name}" />
+        <span>${t.name}</span>
+        <span class="tactic-chip-count">&times;${count}</span>
+      `;
+      chip.addEventListener('click', () => {
+        sound.unlock();
+        sound.playSelect();
+        this.selectedAdTacticId = t.id;
+        if (statusEl) statusEl.textContent = '';
+        this._renderBetweenLevelTacticsPanel(target, levelContext, null);
+      });
+      chipsEl.appendChild(chip);
+    }
+
+    const chosen = TACTICS[this.selectedAdTacticId] || unlocked[0];
+    if (btnLabelEl && chosen) {
+      btnLabelEl.textContent = `Watch Ad for +${REWARDED_AD_BONUS_CHARGES} ${chosen.name}`;
+    }
+    btnEl.disabled = false;
+    panel.classList.remove('hidden');
+  }
+
+  async _handleWatchRewardedAd(target) {
+    const isBrief = target === 'brief';
+    const levelContext = isBrief ? this._pendingBriefLevel : this.currentLevel;
+    if (!areTacticsEnabledForLevel(levelContext, this.progress.highestUnlocked)) return;
+
+    const unlocked = getUnlockedTacticsForContext(levelContext, this.progress.highestUnlocked);
+    const chosen = TACTICS[this.selectedAdTacticId] || unlocked[0];
+    if (!chosen) return;
+
+    const btnEl = isBrief ? this.el.btnBriefWatchAd : this.el.btnResultWatchAd;
+    const statusEl = isBrief ? this.el.briefAdStatus : this.el.resultAdStatus;
+
+    sound.unlock();
+    sound.playSelect();
+    if (btnEl) btnEl.disabled = true;
+    if (statusEl) statusEl.textContent = 'Preparing rewarded ad...';
+
+    const res = await adService.showRewardedAd({
+      rewardLabel: `+${REWARDED_AD_BONUS_CHARGES} Charges`,
+      tacticName: chosen.name,
+    });
+
+    if (res.rewarded) {
+      this.progress = addTacticCharges(this.progress, chosen.id, REWARDED_AD_BONUS_CHARGES);
+      sound.playPlace();
+      this._renderBetweenLevelTacticsPanel(target, levelContext, null);
+      if (statusEl) {
+        statusEl.textContent = `+${REWARDED_AD_BONUS_CHARGES} ${chosen.name} added!`;
+      }
+      // Also keep active board rail synced if visible underneath
+      this._renderTacticsRail(this.engine?.getTacticsState());
+    } else {
+      if (btnEl) btnEl.disabled = false;
+      if (statusEl) {
+        statusEl.textContent =
+          res.reason === 'dismissed_early'
+            ? 'Ad skipped early — no charges added.'
+            : 'Ad unavailable right now. Try again shortly.';
+      }
+    }
+  }
+
+  _renderTacticsRail(tacticsState = null) {
+    const rail = this.el.tacticsRail;
+    if (!rail) return;
+
+    if (!this.currentLevel || !areTacticsEnabledForLevel(this.currentLevel, this.progress.highestUnlocked)) {
+      rail.classList.add('hidden');
+      rail.innerHTML = '';
+      return;
+    }
+
+    const unlocked = getUnlockedTacticsForContext(this.currentLevel, this.progress.highestUnlocked);
+    if (unlocked.length === 0) {
+      rail.classList.add('hidden');
+      rail.innerHTML = '';
+      return;
+    }
+
+    rail.classList.remove('hidden');
+    const activeMap = tacticsState?.active || {};
+    const cdMap = tacticsState?.cooldowns || {};
+    const shortLabels = {
+      pin: 'Pin',
+      fork: 'Fork',
+      skewer: 'Skewer',
+      castling: 'Castle',
+      checkmate: 'Mate',
+    };
+
+    // Rebuild rail buttons only when the unlocked tactic list changes, then patch live states smoothly
+    const keySig = unlocked.map((t) => t.id).join(',');
+    if (rail.dataset.tacticSig !== keySig) {
+      rail.dataset.tacticSig = keySig;
+      rail.innerHTML = '';
+      for (const t of unlocked) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'tactic-btn';
+        btn.dataset.tacticId = t.id;
+        btn.title = `${t.name} (${t.badge}): ${t.description}`;
+        btn.innerHTML = `
+          <span class="tactic-medallion" style="--tactic-accent: ${t.accent};">
+            <img src="${getTacticIconUrl(t.icon)}" alt="${t.name}" class="tactic-icon-img" />
+            <span class="tactic-timer-overlay hidden"></span>
+          </span>
+          <span class="tactic-count-badge">0</span>
+          <span class="tactic-label">${shortLabels[t.id] || t.name}</span>
+        `;
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this._handleActivateTactic(t.id);
+        });
+        rail.appendChild(btn);
+      }
+    }
+
+    for (const t of unlocked) {
+      const btn = rail.querySelector(`.tactic-btn[data-tactic-id="${t.id}"]`);
+      if (!btn) continue;
+      const count = getTacticCharges(this.progress, t.id);
+      const act = activeMap[t.id];
+      const cd = cdMap[t.id] || 0;
+      const isActive = Boolean(act && act.remaining > 0);
+      const isCooldown = !isActive && cd > 0;
+
+      btn.classList.toggle('is-active', isActive);
+      btn.classList.toggle('is-cooldown', isCooldown);
+      btn.classList.toggle('is-empty', count <= 0);
+
+      const medallion = btn.querySelector('.tactic-medallion');
+      const timerEl = btn.querySelector('.tactic-timer-overlay');
+      const badgeEl = btn.querySelector('.tactic-count-badge');
+
+      if (badgeEl) {
+        badgeEl.textContent = String(count);
+      }
+      if (medallion) {
+        const progressRatio = isActive
+          ? Math.max(0, Math.min(1, act.remaining / Math.max(0.1, act.duration)))
+          : isCooldown
+          ? Math.max(0, Math.min(1, 1 - cd / Math.max(0.1, t.cooldown)))
+          : 1;
+        medallion.style.setProperty('--tactic-progress', progressRatio.toFixed(3));
+      }
+      if (timerEl) {
+        if (isActive) {
+          timerEl.textContent = `${act.remaining.toFixed(1)}s`;
+          timerEl.classList.remove('hidden');
+        } else if (isCooldown) {
+          timerEl.textContent = `${Math.ceil(cd)}s`;
+          timerEl.classList.remove('hidden');
+        } else {
+          timerEl.textContent = '';
+          timerEl.classList.add('hidden');
+        }
+      }
+    }
+  }
+
+  _handleActivateTactic(tacticId) {
+    sound.unlock();
+    const def = TACTICS[tacticId];
+    if (!def || !this.engine || !this.currentLevel) return;
+
+    if (this.engine.gameState !== 'playing') {
+      this._showBanner('Resume battle to activate Royal Tactics.');
+      return;
+    }
+
+    const state = this.engine.getTacticsState();
+    if ((state.active[tacticId]?.remaining || 0) > 0) {
+      this._showBanner(`${def.name} is already active!`);
+      return;
+    }
+    if ((state.cooldowns[tacticId] || 0) > 0) {
+      this._showBanner(`${def.name} recharging (${Math.ceil(state.cooldowns[tacticId])}s)...`);
+      return;
+    }
+
+    const available = getTacticCharges(this.progress, tacticId);
+    if (available <= 0) {
+      sound.playSelect();
+      this._showBanner(`No ${def.name} charges! Win battles or watch an ad between levels.`);
+      return;
+    }
+
+    const result = this.engine.activateTactic(tacticId);
+    if (result.ok) {
+      const consumed = consumeTacticCharge(this.progress, tacticId);
+      this.progress = consumed.progress;
+      this._renderTacticsRail(this.engine.getTacticsState());
+    }
+  }
+
   _openLevelBriefing(levelId) {
     const lvl = LEVELS.find((l) => l.id === levelId);
     if (!lvl) return;
 
     this._pendingBriefLevel = lvl;
     const ch = getChapterForLevel(lvl.id);
+    const unlockedTacticHere = getTacticUnlockedAtLevel(lvl.id);
+    if (lvl.id >= TACTICS_MIN_LEVEL) {
+      this._syncTacticStarterGrants(lvl.id);
+    }
+
     const pieceId = lvl.unlocksPiece || lvl.featuredPiece || 'pawn';
     const piece = PIECE_REGISTRY[pieceId];
     this.el.briefKicker.textContent = `CHAPTER ${ch.roman} • LEVEL ${lvl.id} • ${lvl.subtitle.toUpperCase()}`;
     this.el.briefTitle.textContent = lvl.name;
-    this.el.briefPieceImg.src = getSpriteUrl(piece.sprite);
-    this.el.briefPieceImg.alt = piece.name;
-    this.el.briefUnlockBadge.textContent = lvl.unlocksPiece
-      ? piece.category === 'mythic'
-        ? 'NON-CHESS RELIC UNLOCKED'
-        : lvl.id === 1
-        ? 'STARTING CHESS PIECE'
-        : 'NEW CHESS PIECE UNLOCKED'
-      : lvl.isChapterBoss
-      ? 'CHAPTER FINALE • KEY COMMANDER'
-      : 'RECOMMENDED COMMANDER';
-    this.el.briefPieceName.textContent = `${piece.name} — ${piece.title}`;
-    this.el.briefPiecePattern.textContent = piece.patternLabel;
+
+    // On levels that unlock a new Royal Tactic without unlocking a chess piece (Lv 8, 11, 14, 17), spotlight the tactic!
+    if (unlockedTacticHere && !lvl.unlocksPiece) {
+      this.el.briefPieceImg.src = getTacticIconUrl(unlockedTacticHere.icon);
+      this.el.briefPieceImg.alt = unlockedTacticHere.name;
+      this.el.briefUnlockBadge.textContent = 'NEW ROYAL TACTIC UNLOCKED';
+      this.el.briefPieceName.textContent = `${unlockedTacticHere.name} — ${unlockedTacticHere.badge}`;
+      this.el.briefPiecePattern.textContent = unlockedTacticHere.shortDesc;
+    } else {
+      this.el.briefPieceImg.src = getSpriteUrl(piece.sprite);
+      this.el.briefPieceImg.alt = piece.name;
+      this.el.briefUnlockBadge.textContent = lvl.unlocksPiece
+        ? piece.category === 'mythic'
+          ? 'NON-CHESS RELIC UNLOCKED'
+          : lvl.id === 1
+          ? 'STARTING CHESS PIECE'
+          : 'NEW CHESS PIECE UNLOCKED'
+        : lvl.isChapterBoss
+        ? 'CHAPTER FINALE • KEY COMMANDER'
+        : 'RECOMMENDED COMMANDER';
+      this.el.briefPieceName.textContent = `${piece.name} — ${piece.title}`;
+      this.el.briefPiecePattern.textContent = piece.patternLabel;
+    }
+
     this.el.briefDesc.textContent = LEVEL_DISPATCHES[lvl.id] || lvl.description;
+    if (this.el.briefAdStatus) this.el.briefAdStatus.textContent = '';
+    this._renderBetweenLevelTacticsPanel('brief', lvl, unlockedTacticHere);
     this.el.modalBriefing.classList.remove('hidden');
     this._syncHistoryGuard();
   }
@@ -1533,6 +1861,9 @@ class TowerDeChessApp {
     this.currentLevel = lvl;
     if (!lvl.isQuickMatch) {
       this.selectedMapLevelId = lvl.id;
+      if (lvl.id >= TACTICS_MIN_LEVEL) {
+        this._syncTacticStarterGrants(lvl.id);
+      }
     }
 
     const bgId = lvl.bgLevelId || lvl.id;
@@ -1559,6 +1890,7 @@ class TowerDeChessApp {
     this.el.hudLevelName.textContent = lvl.name;
 
     this.engine.loadLevel(lvl, this.difficulty);
+    this._renderTacticsRail(this.engine.getTacticsState());
     if (this.weatherEnabled) {
       this.weather?.start(lvl.weather || 'sunrays', bgId);
     } else {
@@ -1594,6 +1926,7 @@ class TowerDeChessApp {
     this.el.hudGold.textContent = state.gold;
     this.el.hudLives.textContent = state.lives;
     this.el.hudWave.textContent = `${Math.max(0, state.waveIndex + 1)}/${state.totalWaves}`;
+    this._renderTacticsRail(state.tacticsState);
 
     if (this.el.speedBadge) {
       this.el.speedBadge.textContent = `${state.speedMult}x`;
@@ -1776,10 +2109,13 @@ class TowerDeChessApp {
   // ==================== VICTORY / DEFEAT ====================
 
   _handleGameEnd(result) {
+    if (this.el.resultAdStatus) this.el.resultAdStatus.textContent = '';
+
     if (result.level?.isQuickMatch) {
       const modal = this.el.modalResult;
       modal.classList.remove('hidden');
       this.el.resultNextUnlock.classList.add('hidden');
+      this.el.resultTacticReward?.classList.add('hidden');
       this.el.btnResultMenu.textContent = 'Main Menu';
       this.el.btnResultMenu.classList.remove('hidden');
       this.el.btnResultRetry.textContent = 'Replay';
@@ -1798,15 +2134,32 @@ class TowerDeChessApp {
         this.el.resultSummary.textContent =
           'The Obsidian Legion broke through! Try a fresh formation or deploy onto another random arena.';
       }
+      this._renderBetweenLevelTacticsPanel('result', result.level, null);
       return;
     }
 
     this.el.btnResultMenu.textContent = 'Campaign';
     this.el.btnResultRetry.textContent = 'Replay';
 
+    let victoryTacticReward = null;
+
     const showResultModal = () => {
       const modal = this.el.modalResult;
       modal.classList.remove('hidden');
+
+      if (this.el.resultTacticReward) {
+        if (victoryTacticReward) {
+          const { tactic, amount } = victoryTacticReward;
+          const bonusNote = amount > 1 ? ' (3★ Bonus!)' : '';
+          this.el.resultTacticReward.innerHTML = `
+            <img src="${getTacticIconUrl(tactic.icon)}" alt="${tactic.name}" />
+            <span>+${amount} ${tactic.name} Charge${amount > 1 ? 's' : ''} Earned${bonusNote}</span>
+          `;
+          this.el.resultTacticReward.classList.remove('hidden');
+        } else {
+          this.el.resultTacticReward.classList.add('hidden');
+        }
+      }
 
       if (result.victory) {
         this.el.resultKicker.textContent =
@@ -1826,15 +2179,24 @@ class TowerDeChessApp {
         if (nextLevel) {
           const nextPieceId = nextLevel.unlocksPiece || nextLevel.featuredPiece || 'king';
           const nextPiece = PIECE_REGISTRY[nextPieceId];
+          const nextTactic = getTacticUnlockedAtLevel(nextLevel.id);
           const nextCh = getChapterForLevel(nextLevel.id);
           const tagEl = this.el.resultNextUnlock.querySelector('.unlock-tag');
           this.el.resultNextUnlock.classList.remove('hidden');
-          this.el.resultNextImg.src = getSpriteUrl(nextPiece.sprite);
           if (nextLevel.unlocksPiece) {
+            this.el.resultNextImg.src = getSpriteUrl(nextPiece.sprite);
             if (tagEl) tagEl.textContent = 'NEXT LEVEL UNLOCKS';
             this.el.resultNextName.textContent = `${nextPiece.name} — ${nextPiece.title}`;
-            this.el.resultNextPattern.textContent = nextPiece.patternLabel;
+            this.el.resultNextPattern.textContent = nextTactic
+              ? `${nextPiece.patternLabel} • + Royal Tactic: ${nextTactic.name}`
+              : nextPiece.patternLabel;
+          } else if (nextTactic) {
+            this.el.resultNextImg.src = getTacticIconUrl(nextTactic.icon);
+            if (tagEl) tagEl.textContent = 'NEXT LEVEL UNLOCKS ROYAL TACTIC';
+            this.el.resultNextName.textContent = `${nextTactic.name} — ${nextTactic.badge}`;
+            this.el.resultNextPattern.textContent = nextTactic.shortDesc;
           } else {
+            this.el.resultNextImg.src = getSpriteUrl(nextPiece.sprite);
             if (tagEl) tagEl.textContent = `REVEALED ON MAP • CHAPTER ${nextCh.roman}`;
             this.el.resultNextName.textContent = `Level ${nextLevel.id}: ${nextLevel.name}`;
             this.el.resultNextPattern.textContent = `${nextCh.name} — ${nextLevel.subtitle}`;
@@ -1854,6 +2216,9 @@ class TowerDeChessApp {
         this.el.btnResultMenu.classList.remove('hidden');
         this.el.btnResultNext.classList.add('hidden');
       }
+
+      // Strictly hide between-level Rewarded Ad restock on Levels 1–5; show from Level 6 onward
+      this._renderBetweenLevelTacticsPanel('result', result.level, null);
     };
 
     if (result.victory) {
@@ -1865,6 +2230,21 @@ class TowerDeChessApp {
         difficulty: this.difficulty,
         totalLevels: LEVELS.length,
       });
+
+      // Grant starter charges for newly unlocked tactics & earn victory charges on Level 6+
+      this._syncTacticStarterGrants();
+      victoryTacticReward = computeVictoryTacticReward(
+        result.level,
+        this.progress.highestUnlocked,
+        result.stars
+      );
+      if (victoryTacticReward) {
+        this.progress = addTacticCharges(
+          this.progress,
+          victoryTacticReward.tacticId,
+          victoryTacticReward.amount
+        );
+      }
 
       const newlyUnlocked = this.progress.highestUnlocked > prevUnlocked;
       const nextLevel = LEVELS.find((l) => l.id === result.level.id + 1);
@@ -1908,7 +2288,9 @@ class TowerDeChessApp {
       btn.classList.toggle('active', btn.dataset.tab === tab);
     }
 
-    if (tab === 'enemies') {
+    if (tab === 'tactics') {
+      this._renderCodexTactics();
+    } else if (tab === 'enemies') {
       this._renderCodexEnemies();
     } else if (tab === 'villains') {
       this._renderCodexVillains();
@@ -1917,6 +2299,38 @@ class TowerDeChessApp {
     } else {
       this._renderCodexDefenders();
     }
+  }
+
+  _renderCodexTactics() {
+    const cards = TACTIC_ORDER.map((id) => {
+      const t = TACTICS[id];
+      const unlocked = (this.progress.highestUnlocked || 1) >= t.unlockLevel;
+      const count = getTacticCharges(this.progress, t.id);
+      return `
+        <div class="codex-item ${unlocked ? '' : 'locked'}">
+          <img src="${getTacticIconUrl(t.icon)}" alt="${t.name}" style="border-radius: 50%;" />
+          <div class="codex-item-info">
+            <h4>
+              ${t.name}
+              <span class="codex-badge">${unlocked ? `Stock: ×${count} • ${t.badge}` : `Unlocks Lv.${t.unlockLevel}`}</span>
+            </h4>
+            <p class="codex-item-pattern">${t.shortDesc}</p>
+            <p class="codex-item-tip">${t.description}</p>
+            <p class="codex-item-tip" style="font-style: italic; opacity: 0.85;">${t.flavor}</p>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    this.el.codexBody.innerHTML = `
+      <div>
+        <h3 class="codex-section-title">Timed Royal Chess Tactics (Unlocked After Level 5)</h3>
+        <p class="result-summary" style="margin-bottom: 12px; text-align: left;">
+          Starting at Level 6, timed Chess Tactics appear on the left edge of the board. Earn consumable charges by conquering Level 6+ stages or watching optional rewarded ads between battles.
+        </p>
+        <div class="codex-grid">${cards}</div>
+      </div>
+    `;
   }
 
   _renderCodexDefenders() {

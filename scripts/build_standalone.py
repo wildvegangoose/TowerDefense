@@ -70,7 +70,9 @@ JS_FILES_IN_ORDER = [
     "js/data/pieces.js",
     "js/data/enemies.js",
     "js/data/story.js",
+    "js/data/tactics.js",
     "js/audio.js",
+    "js/ads.js",
     "js/storage.js",
     "js/cutscene.js",
     "js/engine/targeting.js",
@@ -184,6 +186,19 @@ def build() -> str:
         if os.path.exists(icon_path):
             inline_ui_icons[key] = encode_webp_data_uri(icon_path, size=96, quality=88)
 
+    tactic_icon_keys = [
+        "tactic_pin",
+        "tactic_fork",
+        "tactic_skewer",
+        "tactic_castling",
+        "tactic_checkmate",
+    ]
+    inline_tactic_icons = {}
+    for key in tactic_icon_keys:
+        tpath = os.path.join(REPO_DIR, "assets", "ui", f"{key}.png")
+        if os.path.exists(tpath):
+            inline_tactic_icons[key] = encode_webp_data_uri(tpath, size=112, quality=86)
+
     game_logo_path = os.path.join(REPO_DIR, "assets", "ui", "game_logo.png")
     game_logo_uri = (
         encode_webp_data_uri(game_logo_path, size=160, quality=90)
@@ -238,6 +253,7 @@ const INLINE_MAP_BG_URIS = {json.dumps(inline_map_bgs)};
 const INLINE_MAP_NODE_URIS = {json.dumps(inline_map_nodes)};
 const INLINE_LEVEL_BG_URIS = {json.dumps(inline_level_bgs)};
 const INLINE_UI_ICON_URIS = {json.dumps(inline_ui_icons)};
+const INLINE_TACTIC_ICON_URIS = {json.dumps(inline_tactic_icons)};
 const SHEET_META = {json.dumps(SHEET_META)};
 const SPRITES = {{}};
 const SHEETS = {{}};
@@ -261,6 +277,9 @@ function getLevelBgUrl(levelId) {{
 }}
 function getUiIconUrl(key) {{
   return INLINE_UI_ICON_URIS[key] || '';
+}}
+function getTacticIconUrl(key) {{
+  return INLINE_TACTIC_ICON_URIS[key] || '';
 }}
 // Videos are not inlined: video cutscenes play their painted slides instead
 function getVideoUrl(key) {{

@@ -6,6 +6,7 @@ import { BOARD_SIZE, expandWaypoints } from '../data/levels.js';
 import { PIECE_REGISTRY, getPieceStats, getUpgradeInfo } from '../data/pieces.js';
 import { createEnemyConfig, DIFFICULTY_PRESETS, normalizeDifficulty } from '../data/enemies.js';
 import { CHAPTER_BOSS_BY_LEVEL } from '../data/story.js';
+import { TACTICS } from '../data/tactics.js';
 import { SPRITES, SHEETS, SHEET_META } from '../assets.js';
 import { sound } from '../audio.js';
 import { getPatternTiles, selectTarget, getEnemiesOnRay } from './targeting.js';
@@ -127,6 +128,11 @@ export class GameEngine {
     this.shakeIntensity = 0;
     this.rafId = null;
     this.lastFrameTime = 0;
+
+    // Active timed Chess Tactics (Pin, Fork, Skewer, Castling, Checkmate)
+    this.activeTactics = {};
+    this.tacticCooldowns = {};
+    this._tacticHudTick = 0;
 
     // Layout metrics for high-angle 2.5D Diagonal Aerial Isometric projection
     this.canvasW = 0;
@@ -260,6 +266,9 @@ export class GameEngine {
     this.particles = [];
     this.floatTexts = [];
     this.spawnQueue = [];
+    this.activeTactics = {};
+    this.tacticCooldowns = {};
+    this._tacticHudTick = 0;
 
     this.selectedBuildPieceId = level.unlocksPiece || 'pawn';
     this.previewTile = null;
@@ -591,6 +600,233 @@ export class GameEngine {
     }
   }
 
+  // ==================== TIMED CHESS TACTICS (PIN, FORK, SKEWER, CASTLING, CHECKMATE) ====================
+
+  getTacticsState() {
+    const active = {};
+    for (const [id, st] of Object.entries(this.activeTactics)) {
+      if (st && st.remaining > 0) {
+        active[id] = {
+          remaining: st.remaining,
+          duration: st.duration,
+          shieldsLeft: st.shieldsLeft || 0,
+        };
+      }
+    }
+    const cooldowns = {};
+    for (const [id, cd] of Object.entries(this.tacticCooldowns)) {
+      if (cd > 0) cooldowns[id] = cd;
+    }
+    return { active, cooldowns };
+  }
+
+  activateTactic(tacticId) {
+    const def = TACTICS[tacticId];
+    if (!def || !this.level) return { ok: false, reason: 'invalid' };
+    if (this.gameState !== 'playing') return { ok: false, reason: 'not_playing' };
+    if ((this.activeTactics[tacticId]?.remaining || 0) > 0) {
+      return { ok: false, reason: 'already_active' };
+    }
+    if ((this.tacticCooldowns[tacticId] || 0) > 0) {
+      return { ok: false, reason: 'cooldown' };
+    }
+
+    const levelScale = Math.max(6, this.level.id || 6);
+    this.tacticCooldowns[tacticId] = def.cooldown;
+
+    if (tacticId === 'pin') {
+      this.activeTactics.pin = { remaining: def.duration, duration: def.duration };
+      for (const e of this.enemies) {
+        if (!e.alive) continue;
+        e.pinFreezeTimer = Math.max(e.pinFreezeTimer || 0, e.isBoss ? 1.6 : 2.5);
+        this.beams.push({
+          x1: e.x,
+          y1: e.y,
+          z1: 2.8,
+          x2: e.x,
+          y2: e.y,
+          z2: 0.12,
+          color: '#ffd460',
+          glowColor: 'rgba(240, 184, 72, 0.55)',
+          width: 4,
+          life: 0.36,
+          maxLife: 0.36,
+        });
+        this._spawnRing(e.x, e.y, 0.72, '#f0b848', 0.45);
+      }
+      this._spawnRing(4, 4, 4.4, '#f0b848', 0.55);
+      sound.playAttack('frost_pulse');
+      this._triggerShake(0.22, 3.2);
+      this._emitBanner('PIN! Invaders locked in place (7s)');
+    } else if (tacticId === 'fork') {
+      this.activeTactics.fork = { remaining: def.duration, duration: def.duration };
+      for (const t of this.towers) {
+        this._spawnRing(t.col + 0.5, t.row + 0.5, 0.75, '#ffcf5c', 0.42);
+        this._spawnDustBurst(t.col + 0.5, t.row + 0.5, '#ffe082', 6);
+      }
+      sound.playUpgrade();
+      this._triggerShake(0.18, 2.6);
+      this._emitBanner('FORK! Defenders gain +45% Haste & Twin-Strike (8.5s)');
+    } else if (tacticId === 'skewer') {
+      this.activeTactics.skewer = {
+        remaining: def.duration,
+        duration: def.duration,
+        pulsesLeft: 3,
+        pulseTimer: 0,
+      };
+      this._fireSkewerPulse(levelScale);
+      this.activeTactics.skewer.pulsesLeft = 2;
+      this.activeTactics.skewer.pulseTimer = 2.0;
+      this._emitBanner('SKEWER! 3 piercing royal lances sweep the march (6s)');
+    } else if (tacticId === 'castling') {
+      const prevLives = this.lives;
+      if (this.lives < this.maxLives) {
+        this.lives = Math.min(this.maxLives, this.lives + 3);
+      } else {
+        this.lives += 1;
+      }
+      const gained = this.lives - prevLives;
+      this.activeTactics.castling = {
+        remaining: def.duration,
+        duration: def.duration,
+        shieldsLeft: 2,
+      };
+      const gateTile = this.pathTiles[this.pathTiles.length - 1] || [4, 4];
+      const gx = gateTile[0] + 0.5;
+      const gy = gateTile[1] + 0.5;
+      this._spawnRing(gx, gy, 2.2, '#78d4ff', 0.65);
+      this._spawnRing(gx, gy, 1.35, '#ffd460', 0.52);
+      this._spawnDustBurst(gx, gy, '#a6e4ff', 16);
+      if (gained > 0) {
+        this._spawnFloatText(gx, gy - 0.35, `+${gained} ♥ Castling`, '#78e8a8');
+      }
+      sound.playUpgrade();
+      this._triggerShake(0.2, 2.8);
+      this._emitBanner('CASTLING! Citadel fortified & +30% Defender DMG (10s)');
+    } else if (tacticId === 'checkmate') {
+      this.activeTactics.checkmate = { remaining: def.duration, duration: def.duration };
+      const baseBlast = 110 + levelScale * 16;
+      this._spawnRing(4, 4, 5.2, '#ffd866', 0.65);
+      this._spawnRing(4, 4, 3.6, '#ff9a44', 0.5);
+      for (const e of this.enemies) {
+        if (!e.alive) continue;
+        const pctDmg = Math.round(e.hp * (e.isBoss ? 0.18 : 0.35));
+        const totalDmg = baseBlast + pctDmg;
+        this.beams.push({
+          x1: e.x,
+          y1: e.y,
+          z1: 4.2,
+          x2: e.x,
+          y2: e.y,
+          z2: 0.18,
+          color: '#fff0a8',
+          glowColor: 'rgba(255, 198, 72, 0.72)',
+          width: 7,
+          life: 0.36,
+          maxLife: 0.36,
+        });
+        this._spawnRing(e.x, e.y, 0.95, '#ffd452', 0.44);
+        this._applyDamage(e, totalDmg, 0.85, null, true);
+        if (e.alive) {
+          e.pinFreezeTimer = Math.max(e.pinFreezeTimer || 0, e.isBoss ? 1.8 : 3.0);
+          e.sunderAmount = Math.max(e.sunderAmount, 0.35);
+          e.sunderTimer = Math.max(e.sunderTimer, def.duration);
+        }
+      }
+      sound.playAttack('aura_smite');
+      this._triggerShake(0.45, 7.2);
+      this._emitBanner('CHECKMATE! Sovereign judgment shatters the board (5s)');
+    }
+
+    this._emitHud();
+    return { ok: true };
+  }
+
+  _fireSkewerPulse(levelScale) {
+    const dmg = Math.round(52 + levelScale * 9);
+    sound.playAttack('diagonal_beam');
+    this._triggerShake(0.24, 4.0);
+
+    // Draw sweeping piercing royal lance-rays along major straight segments of the enemy path
+    const pts = this.pathTiles;
+    if (pts.length >= 2) {
+      const step = Math.max(1, Math.floor((pts.length - 1) / 4));
+      for (let i = 0; i < pts.length - 1; i += step) {
+        const j = Math.min(pts.length - 1, i + step);
+        this.beams.push({
+          x1: pts[i][0] + 0.5,
+          y1: pts[i][1] + 0.5,
+          z1: 0.55,
+          x2: pts[j][0] + 0.5,
+          y2: pts[j][1] + 0.5,
+          z2: 0.55,
+          color: '#ff9658',
+          glowColor: 'rgba(255, 118, 62, 0.65)',
+          width: 8,
+          life: 0.34,
+          maxLife: 0.34,
+        });
+      }
+    }
+
+    for (const e of this.enemies) {
+      if (!e.alive) continue;
+      this._applyDamage(e, dmg, 1.0, null, false);
+      if (e.alive) {
+        e.sunderAmount = Math.max(e.sunderAmount, 0.3);
+        e.sunderTimer = Math.max(e.sunderTimer, 3.0);
+        this._spawnDustBurst(e.x, e.y, '#ffb36b', 6);
+      }
+    }
+  }
+
+  _updateTactics(dt) {
+    let anyTiming = false;
+    let stateChanged = false;
+
+    for (const [id, st] of Object.entries(this.activeTactics)) {
+      if (!st || st.remaining <= 0) continue;
+      anyTiming = true;
+      st.remaining = Math.max(0, st.remaining - dt);
+
+      if (id === 'skewer' && st.pulsesLeft > 0) {
+        st.pulseTimer -= dt;
+        if (st.pulseTimer <= 0) {
+          st.pulsesLeft -= 1;
+          st.pulseTimer = 2.0;
+          this._fireSkewerPulse(Math.max(6, this.level?.id || 6));
+        }
+      }
+
+      if (st.remaining <= 0) {
+        delete this.activeTactics[id];
+        stateChanged = true;
+      }
+    }
+
+    for (const id of Object.keys(this.tacticCooldowns)) {
+      if (this.tacticCooldowns[id] > 0) {
+        anyTiming = true;
+        this.tacticCooldowns[id] = Math.max(0, this.tacticCooldowns[id] - dt);
+        if (this.tacticCooldowns[id] <= 0) {
+          delete this.tacticCooldowns[id];
+          stateChanged = true;
+        }
+      }
+    }
+
+    if (anyTiming) {
+      this._tacticHudTick += dt;
+      if (stateChanged || this._tacticHudTick >= 0.12) {
+        this._tacticHudTick = 0;
+        this._emitHud();
+      }
+    } else if (stateChanged) {
+      this._tacticHudTick = 0;
+      this._emitHud();
+    }
+  }
+
   // ==================== SIMULATION UPDATE ====================
 
   update(dt) {
@@ -599,6 +835,10 @@ export class GameEngine {
     if (this.shakeTime > 0) {
       this.shakeTime = Math.max(0, this.shakeTime - dt);
     }
+
+    this._updateTactics(dt);
+    const pinActive = (this.activeTactics.pin?.remaining || 0) > 0;
+    const forkActive = (this.activeTactics.fork?.remaining || 0) > 0;
 
     // 1. Spawn queued enemies
     if (this.spawnQueue.length > 0) {
@@ -626,9 +866,12 @@ export class GameEngine {
       if (e.staggerTimer > 0) {
         e.staggerTimer = Math.max(0, e.staggerTimer - dt);
       }
+      if (e.pinFreezeTimer > 0) {
+        e.pinFreezeTimer = Math.max(0, e.pinFreezeTimer - dt);
+      }
 
       // Cleric AoE heal pulse
-      if (e.healAmount > 0) {
+      if (e.healAmount > 0 && !(e.pinFreezeTimer > 0)) {
         e.healTimer -= dt;
         if (e.healTimer <= 0) {
           e.healTimer = e.healCooldown;
@@ -648,8 +891,14 @@ export class GameEngine {
 
       // Move along waypoints & advance true walk/gallop animation proportional to actual speed
       const slowResist = e.isBoss ? 0.55 : 1.0;
-      const effSlow = e.slowAmount * slowResist;
-      const moveSpeed = e.staggerTimer > 0 ? e.speed * 0.15 : e.speed * (1 - effSlow);
+      const pinSlow = pinActive ? (e.isBoss ? 0.45 : 0.75) : 0;
+      const effSlow = Math.max(e.slowAmount * slowResist, pinSlow);
+      const moveSpeed =
+        e.pinFreezeTimer > 0
+          ? 0
+          : e.staggerTimer > 0
+          ? e.speed * 0.15
+          : e.speed * (1 - effSlow);
       const stepDist = moveSpeed * dt;
       e.animTime += dt * (moveSpeed / Math.max(0.45, e.speed));
 
@@ -692,6 +941,24 @@ export class GameEngine {
 
       // Reached Citadel Gate
       if (e.tileIdx >= this.pathTiles.length - 1) {
+        // Castling Royal Aegis repels up to 2 breaches during its 10s shield window!
+        const castling = this.activeTactics.castling;
+        if (castling && castling.remaining > 0 && castling.shieldsLeft > 0) {
+          castling.shieldsLeft -= 1;
+          const pushIdx = Math.max(0, e.tileIdx - 2);
+          e.tileIdx = pushIdx;
+          e.x = this.pathTiles[pushIdx][0] + 0.5;
+          e.y = this.pathTiles[pushIdx][1] + 0.5;
+          e.pinFreezeTimer = Math.max(e.pinFreezeTimer || 0, 1.4);
+          this._spawnRing(e.x, e.y, 1.35, '#78d4ff', 0.52);
+          this._spawnFloatText(e.x, e.y - 0.35, 'AEGIS REPELLED!', '#8ae2ff');
+          this._applyDamage(e, Math.round(e.maxHp * (e.isBoss ? 0.25 : 0.55)), 1.0, null, true);
+          sound.playImpact('knight_arc');
+          this._triggerShake(0.28, 4.5);
+          this._emitHud();
+          continue;
+        }
+
         e.alive = false;
         this.lives = Math.max(0, this.lives - e.livesCost);
         sound.playLeak();
@@ -730,7 +997,7 @@ export class GameEngine {
 
       if (tower.cooldown > 0 || !selected) continue;
 
-      const effectiveRate = stats.fireRate * tower.buffRateMult;
+      const effectiveRate = stats.fireRate * tower.buffRateMult * (forkActive ? 1.45 : 1.0);
       tower.cooldown = 1 / effectiveRate;
       tower.recoil = 1.0;
       tower.attackAnim = 1.0;
@@ -824,8 +1091,39 @@ export class GameEngine {
   _executeTowerAttack(tower, stats, target, hitMeta) {
     const tx = tower.col + 0.5;
     const ty = tower.row + 0.5;
-    const baseDmg = stats.damage * tower.buffDamageMult;
+    const castlingDmgMult = (this.activeTactics.castling?.remaining || 0) > 0 ? 1.3 : 1.0;
+    const baseDmg = stats.damage * tower.buffDamageMult * castlingDmgMult;
     sound.playAttack(stats.attackType);
+
+    // Fork tactic: every tower strike also arcs golden lightning to a second nearby enemy!
+    if ((this.activeTactics.fork?.remaining || 0) > 0 && target?.alive) {
+      let forkEnemy = null;
+      let bestDist = 3.2;
+      for (const cand of this.enemies) {
+        if (!cand.alive || cand.id === target.id) continue;
+        const d = Math.hypot(cand.x - target.x, cand.y - target.y);
+        if (d < bestDist) {
+          bestDist = d;
+          forkEnemy = cand;
+        }
+      }
+      if (forkEnemy) {
+        this.beams.push({
+          x1: target.x,
+          y1: target.y,
+          z1: 0.48,
+          x2: forkEnemy.x,
+          y2: forkEnemy.y,
+          z2: 0.42,
+          color: '#ffe88a',
+          glowColor: 'rgba(255, 207, 92, 0.58)',
+          width: 3.4,
+          life: 0.2,
+          maxLife: 0.2,
+        });
+        this._applyDamage(forkEnemy, baseDmg * 0.75, stats.armorPierce, tower, false);
+      }
+    }
 
     if (stats.attackType === 'spear') {
       // Instant melee/short spear thrust + diagonal crit!
@@ -1029,8 +1327,9 @@ export class GameEngine {
 
   _applyDamage(enemy, rawDmg, armorPierce, tower, isCrit) {
     if (!enemy.alive) return;
+    const exposedMult = (this.activeTactics.checkmate?.remaining || 0) > 0 ? 1.35 : 1.0;
     const effArmor = Math.max(0, enemy.armor * (1 - enemy.sunderAmount) * (1 - (armorPierce || 0)));
-    const finalDmg = Math.max(2, Math.round(rawDmg * (1 - effArmor)));
+    const finalDmg = Math.max(2, Math.round(rawDmg * exposedMult * (1 - effArmor)));
 
     enemy.hp -= finalDmg;
     enemy.hitFlash = 1.0;
@@ -1158,6 +1457,7 @@ export class GameEngine {
       selectedBuildPieceId: this.selectedBuildPieceId,
       previewTile: this.previewTile,
       selectedTower: this.getSelectedTower(),
+      tacticsState: this.getTacticsState(),
       towers: this.towers,
       nextWaveDef:
         this.level && this.waveIndex + 1 < this.level.waves.length
@@ -1909,6 +2209,54 @@ export class GameEngine {
   }
 
   _drawProjectilesAndVfx(ctx) {
+    // 0. Active Timed Tactic Auras (Pin lock rings & Castling Royal Aegis dome)
+    if ((this.activeTactics.pin?.remaining || 0) > 0) {
+      const pulse = 0.72 + Math.sin(this.time * 8) * 0.18;
+      ctx.save();
+      ctx.strokeStyle = `rgba(240, 184, 72, ${pulse.toFixed(2)})`;
+      ctx.lineWidth = 2.2;
+      for (const e of this.enemies) {
+        if (!e.alive) continue;
+        const c = this.boardToScreen(e.x, e.y, 0.08);
+        const rx = this.tileW * (e.pinFreezeTimer > 0 ? 0.34 : 0.27);
+        ctx.beginPath();
+        ctx.ellipse(c.x, c.y, rx, rx * this.isoRatio, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    const castling = this.activeTactics.castling;
+    if (castling && castling.remaining > 0 && this.pathTiles.length > 0) {
+      const [gx, gy] = this.pathTiles[this.pathTiles.length - 1];
+      const gateCenter = this.boardToScreen(gx + 0.5, gy + 0.5, 0.32);
+      const pulse = 0.85 + Math.sin(this.time * 5.2) * 0.15;
+      const domeR = this.tileW * 0.78 * pulse;
+      ctx.save();
+      const grad = ctx.createRadialGradient(
+        gateCenter.x,
+        gateCenter.y - domeR * 0.25,
+        domeR * 0.1,
+        gateCenter.x,
+        gateCenter.y,
+        domeR
+      );
+      grad.addColorStop(0, 'rgba(130, 224, 255, 0.32)');
+      grad.addColorStop(0.7, 'rgba(120, 212, 255, 0.16)');
+      grad.addColorStop(1, 'rgba(240, 198, 96, 0.02)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(gateCenter.x, gateCenter.y, domeR, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle =
+        castling.shieldsLeft > 0 ? 'rgba(148, 232, 255, 0.82)' : 'rgba(240, 198, 96, 0.65)';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.arc(gateCenter.x, gateCenter.y, domeR, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
     // 1. Isometric ground-plane rings (Frost Nova, Knight shockwave, Rook blast, Cleric heal)
     for (const r of this.rings) {
       const progress = 1 - r.life / r.maxLife;

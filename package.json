@@ -12,6 +12,7 @@
     "build:standalone": "python3 scripts/build_standalone.py"
   },
   "dependencies": {
+    "@capacitor-community/admob": "^7.2.0",
     "@capacitor/app": "^7.0.0",
     "@capacitor/core": "^7.0.0"
   },

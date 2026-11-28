@@ -188,6 +188,8 @@
       <div class="battle-layout">
         <!-- Chessboard Stage -->
         <div class="board-stage">
+          <!-- Progressive Timed Chess Tactics Rail (left middle of board, unlocked after Level 5) -->
+          <div id="tactics-rail" class="tactics-rail hidden" role="toolbar" aria-label="Royal Chess Tactics"></div>
           <div class="board-wrapper">
             <canvas id="game-canvas" aria-label="8 by 8 Chess Tower Defense Board"></canvas>
             <div id="battle-banner" class="battle-banner hidden" aria-live="polite"></div>
@@ -280,6 +282,22 @@
             <p id="brief-desc" class="spotlight-desc"></p>
           </div>
         </div>
+        <div id="brief-tactics-panel" class="tactics-ad-panel hidden">
+          <div class="tactics-ad-head">
+            <div>
+              <span id="brief-tactics-kicker" class="tactics-ad-kicker">ROYAL TACTICS STOCKPILE</span>
+              <p id="brief-tactics-note" class="tactics-ad-note">Select a tactic to restock between battles.</p>
+            </div>
+          </div>
+          <div id="brief-tactics-chips" class="tactics-ad-chips"></div>
+          <div class="tactics-ad-cta-row">
+            <button id="btn-brief-watch-ad" class="btn btn-ad-reward" type="button">
+              <span class="ad-pill-badge">AD</span>
+              <span id="brief-ad-btn-label">Watch Ad for +2 Pin</span>
+            </button>
+            <span id="brief-ad-status" class="tactics-ad-status"></span>
+          </div>
+        </div>
         <div class="modal-actions">
           <button id="btn-brief-start" class="btn btn-gold" type="button">Enter the Board</button>
         </div>
@@ -293,12 +311,29 @@
         <h2 id="result-title">Victory!</h2>
         <div id="result-stars" class="result-stars"></div>
         <p id="result-summary" class="result-summary"></p>
+        <div id="result-tactic-reward" class="result-tactic-reward hidden"></div>
         <div id="result-next-unlock" class="unlock-spotlight compact hidden">
           <img id="result-next-img" src="" alt="" class="spotlight-sprite sm" />
           <div class="spotlight-copy">
             <span class="unlock-tag">NEXT LEVEL UNLOCKS</span>
             <h3 id="result-next-name"></h3>
             <p id="result-next-pattern" class="spotlight-pattern"></p>
+          </div>
+        </div>
+        <div id="result-tactics-panel" class="tactics-ad-panel compact hidden">
+          <div class="tactics-ad-head">
+            <div>
+              <span class="tactics-ad-kicker">RESTOCK ROYAL TACTICS</span>
+              <p id="result-tactics-note" class="tactics-ad-note">Earn +2 bonus tactic charges before the next battle.</p>
+            </div>
+          </div>
+          <div id="result-tactics-chips" class="tactics-ad-chips"></div>
+          <div class="tactics-ad-cta-row">
+            <button id="btn-result-watch-ad" class="btn btn-ad-reward" type="button">
+              <span class="ad-pill-badge">AD</span>
+              <span id="result-ad-btn-label">Watch Ad for +2 Pin</span>
+            </button>
+            <span id="result-ad-status" class="tactics-ad-status"></span>
           </div>
         </div>
         <div class="modal-actions">
@@ -321,6 +356,7 @@
         </div>
         <div id="codex-tabs" class="codex-tabs" role="tablist">
           <button class="codex-tab active" data-tab="defenders" type="button" role="tab">Defenders</button>
+          <button class="codex-tab" data-tab="tactics" type="button" role="tab">Tactics</button>
           <button class="codex-tab" data-tab="enemies" type="button" role="tab">Enemies</button>
           <button class="codex-tab" data-tab="villains" type="button" role="tab">Villains</button>
           <button class="codex-tab" data-tab="chronicles" type="button" role="tab">Chronicles</button>
@@ -584,6 +620,33 @@
             <span id="cutscene-slide-counter" class="cutscene-counter">1 / 3</span>
             <button id="btn-cutscene-next" class="btn btn-gold btn-sm" type="button">Next Scene →</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== REWARDED AD PREVIEW MODAL (WEB / PWA) ==================== -->
+    <div id="modal-reward-ad" class="modal-backdrop hidden reward-ad-backdrop" role="dialog" aria-modal="true" aria-labelledby="reward-ad-heading">
+      <div class="modal-card reward-ad-card">
+        <div class="reward-ad-header">
+          <span class="ad-pill-badge ad-pill-lg">REWARDED AD</span>
+          <span id="reward-ad-countdown" class="reward-ad-countdown">5s</span>
+        </div>
+        <div class="reward-ad-stage">
+          <div class="reward-ad-emblem">&#9813;</div>
+          <h3 id="reward-ad-heading">Royal Patron Dispatch</h3>
+          <p class="reward-ad-sub">Android builds present a live Google AdMob Rewarded Video here. On Web &amp; PWA, this preview simulates the full rewarded flow.</p>
+          <div class="reward-ad-prize-pill">
+            <span>Reward:</span>
+            <strong id="reward-ad-prize">+2 Tactic Charges</strong>
+          </div>
+          <div class="reward-ad-progress-track">
+            <div id="reward-ad-progress-fill" class="reward-ad-progress-fill"></div>
+          </div>
+          <p id="reward-ad-status" class="reward-ad-status">Watch until the timer finishes to claim</p>
+        </div>
+        <div class="modal-actions reward-ad-actions">
+          <button id="btn-reward-ad-close" class="btn btn-secondary" type="button">Skip (No Reward)</button>
+          <button id="btn-reward-ad-claim" class="btn btn-gold hidden" type="button">Claim +2 Charges</button>
         </div>
       </div>
     </div>

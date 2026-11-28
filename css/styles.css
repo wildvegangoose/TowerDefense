@@ -2157,7 +2157,9 @@ body {
   letter-spacing: 0.04em;
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
   pointer-events: none;
-  white-space: nowrap;
+  max-width: calc(100% - 20px);
+  text-align: center;
+  line-height: 1.25;
   z-index: 10;
 }
 
@@ -2867,11 +2869,11 @@ body {
   display: none;
 }
 
-/* Royal Archives 4-Tab Bar */
+/* Royal Archives 5-Tab Bar */
 .codex-tabs {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
   margin-bottom: 14px;
   padding: 4px;
   background: var(--surface-inset);
@@ -3706,5 +3708,456 @@ body {
     display: none;
   }
 }
+
+/* ==================== LEFT-MIDDLE TIMED CHESS TACTICS RAIL (LV 6+) ==================== */
+
+.tactics-rail {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 16;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 7px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(44, 29, 18, 0.92), rgba(24, 15, 10, 0.94));
+  border: 1px solid rgba(218, 174, 96, 0.42);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.52),
+    inset 0 1px 0 rgba(255, 224, 156, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.tactics-rail.hidden {
+  display: none !important;
+}
+
+.tactic-btn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 2px;
+  background: transparent;
+  border: none;
+  color: var(--ivory);
+  cursor: pointer;
+  transition: transform 0.14s ease, filter 0.14s ease, opacity 0.16s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tactic-btn:hover:not(:disabled) {
+  transform: scale(1.06);
+}
+
+.tactic-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.tactic-medallion {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  padding: 3px;
+  background: radial-gradient(circle at 30% 25%, #e6bc6a, #7a5422);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.55),
+    inset 0 1px 2px rgba(255, 240, 196, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tactic-btn.is-active .tactic-medallion {
+  background: conic-gradient(
+    var(--tactic-accent, #ffd25a) calc(var(--tactic-progress, 1) * 360deg),
+    rgba(34, 22, 14, 0.92) 0deg
+  );
+  box-shadow:
+    0 0 16px rgba(255, 206, 92, 0.72),
+    0 4px 12px rgba(0, 0, 0, 0.55);
+  animation: tacticActivePulse 1.3s ease-in-out infinite;
+}
+
+.tactic-btn.is-cooldown:not(.is-active) .tactic-medallion {
+  background: conic-gradient(
+    rgba(218, 174, 96, 0.55) calc(var(--tactic-progress, 0) * 360deg),
+    rgba(24, 16, 11, 0.92) 0deg
+  );
+  filter: saturate(0.45) brightness(0.8);
+}
+
+.tactic-btn.is-empty:not(.is-active) {
+  opacity: 0.52;
+}
+
+.tactic-btn.is-empty:not(.is-active) .tactic-medallion {
+  background: linear-gradient(180deg, #5a4634, #332419);
+  filter: grayscale(0.65);
+}
+
+.tactic-icon-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  border: 1px solid rgba(22, 13, 8, 0.85);
+}
+
+.tactic-timer-overlay {
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: rgba(16, 10, 6, 0.62);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #ffe388;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+  pointer-events: none;
+}
+
+.tactic-count-badge {
+  position: absolute;
+  top: -3px;
+  right: -4px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #f3ca72, #b87e28);
+  color: #1f1207;
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 20px;
+  text-align: center;
+  border: 1.5px solid #22140b;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+}
+
+.tactic-btn.is-empty .tactic-count-badge {
+  background: #3a2b20;
+  color: #b7a28a;
+  border-color: rgba(212, 168, 96, 0.25);
+}
+
+.tactic-label {
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #ead6b0;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+  line-height: 1;
+}
+
+@keyframes tacticActivePulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+/* ==================== BETWEEN-LEVEL TACTICS RESTOCK & REWARDED AD PANEL ==================== */
+
+.tactics-ad-panel {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(48, 31, 19, 0.92), rgba(29, 19, 12, 0.96));
+  border: 1px solid rgba(224, 180, 98, 0.36);
+  box-shadow: inset 0 1px 0 rgba(255, 226, 160, 0.14);
+  text-align: left;
+}
+
+.tactics-ad-panel.compact {
+  margin-top: 10px;
+  padding: 10px 12px;
+}
+
+.tactics-ad-kicker {
+  display: inline-block;
+  font-family: 'Cinzel', Georgia, serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #f0c975;
+}
+
+.tactics-ad-note {
+  margin: 2px 0 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.tactics-ad-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.tactic-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px 5px 5px;
+  border-radius: 999px;
+  background: rgba(24, 15, 9, 0.82);
+  border: 1px solid rgba(212, 168, 96, 0.28);
+  color: var(--ivory);
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.12s ease;
+}
+
+.tactic-chip:hover {
+  border-color: rgba(242, 200, 112, 0.65);
+}
+
+.tactic-chip.selected {
+  background: linear-gradient(180deg, rgba(132, 92, 34, 0.52), rgba(76, 50, 18, 0.78));
+  border-color: #f3ca72;
+  box-shadow: 0 0 10px rgba(243, 202, 114, 0.28);
+}
+
+.tactic-chip img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(240, 198, 110, 0.5);
+}
+
+.tactic-chip-count {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(243, 202, 114, 0.18);
+  color: #f7d688;
+  font-weight: 800;
+  font-size: 0.72rem;
+}
+
+.tactics-ad-cta-row {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-ad-reward {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #3c6946, #24452c);
+  border: 1px solid rgba(142, 224, 158, 0.45);
+  color: #f4fff6;
+  font-weight: 700;
+  font-size: 0.84rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.btn-ad-reward:hover:not(:disabled) {
+  background: linear-gradient(180deg, #477b53, #2c5536);
+  transform: translateY(-1px);
+}
+
+.btn-ad-reward:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.ad-pill-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: #f3ca72;
+  color: #211307;
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+
+.ad-pill-badge.ad-pill-lg {
+  font-size: 0.72rem;
+  padding: 3px 8px;
+}
+
+.tactics-ad-status {
+  font-size: 0.78rem;
+  color: #96e4ab;
+  font-weight: 600;
+}
+
+.result-tactic-reward {
+  margin: 8px auto 4px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(243, 202, 114, 0.13);
+  border: 1px solid rgba(243, 202, 114, 0.38);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.84rem;
+  color: #f8dfa2;
+  font-weight: 700;
+}
+
+.result-tactic-reward img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* ==================== WEB REWARDED AD PREVIEW MODAL ==================== */
+
+.reward-ad-backdrop {
+  z-index: 120;
+}
+
+.reward-ad-card {
+  max-width: 440px;
+  text-align: center;
+  border: 1px solid rgba(243, 202, 114, 0.52);
+}
+
+.reward-ad-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.reward-ad-countdown {
+  min-width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(243, 202, 114, 0.15);
+  border: 2px solid #f3ca72;
+  color: #ffe38f;
+  font-weight: 800;
+  font-size: 0.92rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.reward-ad-stage {
+  padding: 18px 14px;
+  border-radius: 14px;
+  background: radial-gradient(circle at 50% 0%, rgba(243, 202, 114, 0.14), rgba(20, 12, 7, 0.92));
+  border: 1px solid rgba(218, 174, 96, 0.26);
+}
+
+.reward-ad-emblem {
+  font-size: 2.3rem;
+  line-height: 1;
+  color: #f3ca72;
+  margin-bottom: 6px;
+  text-shadow: 0 0 18px rgba(243, 202, 114, 0.5);
+}
+
+.reward-ad-stage h3 {
+  margin: 0 0 6px;
+  font-family: 'Cinzel', Georgia, serif;
+  color: #f8e3b5;
+}
+
+.reward-ad-sub {
+  margin: 0 0 14px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.reward-ad-prize-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(58, 102, 68, 0.32);
+  border: 1px solid rgba(142, 224, 158, 0.42);
+  font-size: 0.82rem;
+  color: #d9f9e1;
+  margin-bottom: 14px;
+}
+
+.reward-ad-progress-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.reward-ad-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, #d89b36, #ffe082);
+  transition: width 0.08s linear;
+}
+
+.reward-ad-status {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #e9d2a4;
+}
+
+.reward-ad-actions {
+  margin-top: 14px;
+  justify-content: space-between;
+}
+
+@media (max-width: 720px) {
+  .tactics-rail {
+    left: 6px;
+    padding: 6px 4px;
+    gap: 5px;
+    border-radius: 16px;
+  }
+
+  .tactic-medallion {
+    width: 39px;
+    height: 39px;
+    padding: 2.5px;
+  }
+
+  .tactic-count-badge {
+    min-width: 17px;
+    height: 17px;
+    line-height: 17px;
+    font-size: 0.62rem;
+    padding: 0 4px;
+  }
+
+  .tactic-label {
+    font-size: 0.54rem;
+  }
+
+  .tactic-timer-overlay {
+    font-size: 0.64rem;
+  }
+}
+
 
 

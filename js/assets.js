@@ -75,6 +75,10 @@ export function getUiIconUrl(key) {
   return `assets/ui/ui_${key}.png`;
 }
 
+export function getTacticIconUrl(key) {
+  return `assets/ui/${key}.png`;
+}
+
 function loadImage(url) {
   return new Promise((resolve) => {
     const img = new Image();

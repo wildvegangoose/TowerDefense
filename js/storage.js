@@ -18,7 +18,7 @@ const DIFFICULTY_MODES = ['novice', 'master', 'grandmaster'];
 
 export function createEmptyProgress() {
   return {
-    version: 3,
+    version: 4,
     highestUnlocked: 1,
     stars: {}, // levelId -> best stars across difficulties (0..3)
     starsByDifficulty: {
@@ -28,6 +28,8 @@ export function createEmptyProgress() {
     },
     bestScores: {}, // levelId -> highest score
     seenCutscenes: [],
+    tacticCharges: {}, // tacticId -> consumable charge count (0..99)
+    grantedTacticUnlocks: [], // tacticIds that already received their one-time starter grant
     updatedAt: Date.now(),
   };
 }
@@ -80,6 +82,19 @@ function normalizeProgress(raw) {
     base.seenCutscenes = [...new Set(raw.seenCutscenes.filter((s) => typeof s === 'string'))];
   }
 
+  if (raw.tacticCharges && typeof raw.tacticCharges === 'object') {
+    for (const [k, v] of Object.entries(raw.tacticCharges)) {
+      const n = Math.max(0, Math.min(99, Math.floor(Number(v) || 0)));
+      base.tacticCharges[k] = n;
+    }
+  }
+
+  if (Array.isArray(raw.grantedTacticUnlocks)) {
+    base.grantedTacticUnlocks = [
+      ...new Set(raw.grantedTacticUnlocks.filter((s) => typeof s === 'string')),
+    ];
+  }
+
   base.updatedAt = Number(raw.updatedAt) || Date.now();
   return base;
 }
@@ -118,6 +133,25 @@ export function mergeProgress(a, b) {
   }
 
   out.seenCutscenes = [...new Set([...pA.seenCutscenes, ...pB.seenCutscenes])];
+  out.grantedTacticUnlocks = [
+    ...new Set([...pA.grantedTacticUnlocks, ...pB.grantedTacticUnlocks]),
+  ];
+
+  // Prefer the fresher stockpile when both saves have tactic data so spent charges stay spent
+  const aHasTactics =
+    pA.grantedTacticUnlocks.length > 0 || Object.keys(pA.tacticCharges).length > 0;
+  const bHasTactics =
+    pB.grantedTacticUnlocks.length > 0 || Object.keys(pB.tacticCharges).length > 0;
+  const tacticSource =
+    aHasTactics && bHasTactics
+      ? pA.updatedAt >= pB.updatedAt
+        ? pA
+        : pB
+      : aHasTactics
+      ? pA
+      : pB;
+  out.tacticCharges = { ...tacticSource.tacticCharges };
+
   out.updatedAt = Math.max(pA.updatedAt, pB.updatedAt);
   return out;
 }
@@ -306,6 +340,46 @@ export function markCutsceneSeen(progress, cutsceneId) {
     return saveProgress(next);
   }
   return next;
+}
+
+export function getTacticCharges(progress, tacticId) {
+  return Math.max(0, Math.floor(Number(progress?.tacticCharges?.[tacticId]) || 0));
+}
+
+export function addTacticCharges(progress, tacticId, delta = 1) {
+  const next = normalizeProgress(progress);
+  const current = Math.max(0, Math.floor(Number(next.tacticCharges[tacticId]) || 0));
+  next.tacticCharges[tacticId] = Math.max(0, Math.min(99, current + Math.floor(Number(delta) || 0)));
+  return saveProgress(next);
+}
+
+export function consumeTacticCharge(progress, tacticId) {
+  const next = normalizeProgress(progress);
+  const current = Math.max(0, Math.floor(Number(next.tacticCharges[tacticId]) || 0));
+  if (current <= 0) {
+    return { progress: next, ok: false };
+  }
+  next.tacticCharges[tacticId] = current - 1;
+  return { progress: saveProgress(next), ok: true };
+}
+
+export function ensureTacticStarterGrants(progress, unlockedTactics = []) {
+  const next = normalizeProgress(progress);
+  const newlyGranted = [];
+  for (const t of unlockedTactics) {
+    if (!t?.id) continue;
+    if (!next.grantedTacticUnlocks.includes(t.id)) {
+      next.grantedTacticUnlocks.push(t.id);
+      const current = Math.max(0, Math.floor(Number(next.tacticCharges[t.id]) || 0));
+      const grant = Math.max(1, Number(t.starterCharges) || 2);
+      next.tacticCharges[t.id] = Math.min(99, current + grant);
+      newlyGranted.push({ tactic: t, amount: grant });
+    }
+  }
+  if (newlyGranted.length > 0) {
+    return { progress: saveProgress(next), newlyGranted };
+  }
+  return { progress: next, newlyGranted: [] };
 }
 
 export function getStarsForLevel(progress, levelId, difficulty = null) {
