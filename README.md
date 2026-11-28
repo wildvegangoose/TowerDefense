@@ -267,3 +267,11 @@ All defenders are data-driven in `js/data/pieces.js`:
 1. Add a static transparent PNG to `assets/sprites/piece_<id>.png` (and optionally a `4×2` animation sheet to `assets/sheets/piece_<id>.png`, registered in `SHEET_META` inside `js/assets.js` and `scripts/build_standalone.py`).
 2. Register the defender in `PIECE_REGISTRY` and `PIECE_ORDER` inside `js/data/pieces.js` with `category: 'mythic'`, its attack `pattern`, `attackType`, base stats, and `upgrades` (Rank II & Rank III).
 3. Bump `CACHE_NAME` in `sw.js`, rebuild standalone HTML, and run `npm run android:sync`.
+
+---
+
+## License & Copyright
+
+**Proprietary — All Rights Reserved.** Copyright © 2026 `wildvegangoose`.
+
+No open-source or permissive license is granted. Copying, modifying, redistributing, re-hosting, or publishing **TowerDeChess** (or any derivative/rebranded build, artwork, audio, video, or story assets) to the **Google Play Store**, Apple App Store, or any other distribution platform without prior express written permission is strictly prohibited. See [`LICENSE`](LICENSE) for full terms.

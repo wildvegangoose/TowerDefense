@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "TowerDeChess — 2.5D Isometric Chess Tower Defense for Android & Web",
   "private": true,
+  "license": "UNLICENSED",
   "scripts": {
     "prepare:web": "node scripts/sync_web.mjs",
     "android:sync": "npm run prepare:web && npx cap sync android",
