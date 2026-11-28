@@ -27,6 +27,9 @@ export class CutscenePlayer {
       caption: document.getElementById('cutscene-caption'),
       progressBar: document.getElementById('cutscene-progress-bar'),
       slideCounter: document.getElementById('cutscene-slide-counter'),
+      dots: document.getElementById('cutscene-dots'),
+      btnPrev: document.getElementById('btn-cutscene-prev'),
+      btnPause: document.getElementById('btn-cutscene-pause'),
       btnNext: document.getElementById('btn-cutscene-next'),
       btnSkip: document.getElementById('btn-cutscene-skip'),
     };
@@ -36,6 +39,7 @@ export class CutscenePlayer {
     this.mode = 'slides'; // 'slides' | 'video'
     this.slideIndex = 0;
     this.slideElapsed = 0;
+    this.paused = false;
     this.cueStarts = [];
     this.videoNeedsTap = false;
     this.rafId = null;
@@ -52,6 +56,8 @@ export class CutscenePlayer {
       sound.unlock();
       this.stop(true);
     });
+    this.el.btnPrev?.addEventListener('click', () => this._prevSlide());
+    this.el.btnPause?.addEventListener('click', () => this._togglePause());
     this.el.btnNext?.addEventListener('click', () => this._advanceSlide());
     this.el.soundHint?.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -60,7 +66,7 @@ export class CutscenePlayer {
     });
     this.el.modal?.addEventListener('pointerdown', (e) => {
       if (!this.activeCutscene) return;
-      if (e.target.closest('#btn-cutscene-skip, #btn-cutscene-next')) return;
+      if (e.target.closest('#btn-cutscene-skip, #btn-cutscene-prev, #btn-cutscene-pause, #btn-cutscene-next, #cutscene-dots')) return;
       sound.unlock();
       if (this.mode === 'video') {
         this._resumeVideoWithSound();
@@ -68,6 +74,20 @@ export class CutscenePlayer {
       }
       if (!sound.musicMuted && sound.musicIntensity !== 'off') {
         sound.setMusicIntensity(this.activeCutscene.musicMode || 'prep');
+      }
+    });
+
+    window.addEventListener('keydown', (e) => {
+      if (!this.activeCutscene) return;
+      if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        this._advanceSlide();
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        this._prevSlide();
+      } else if (e.key === ' ') {
+        e.preventDefault();
+        this._togglePause();
       }
     });
 
@@ -89,7 +109,7 @@ export class CutscenePlayer {
       if (!this.activeCutscene || this.mode !== 'video') return;
       if (document.hidden) {
         video?.pause();
-      } else if (!this.videoNeedsTap) {
+      } else if (!this.videoNeedsTap && !this.paused) {
         this._playVideo();
       }
     });
@@ -120,10 +140,13 @@ export class CutscenePlayer {
     this.activeCutscene = data;
     this.slideIndex = 0;
     this.slideElapsed = 0;
+    this.paused = false;
     this.onComplete = onComplete;
 
     this.el.chapter.textContent = data.chapterLabel;
     this.el.title.textContent = data.title;
+    this._renderSceneDots();
+    this._syncPauseButton();
     this.el.modal.classList.remove('hidden');
 
     this._resizeCanvas();
@@ -156,6 +179,8 @@ export class CutscenePlayer {
     const cb = this.onComplete;
     this.activeCutscene = null;
     this.onComplete = null;
+    this.paused = false;
+    this._syncPauseButton();
     this._teardownVideo();
     this.mode = 'slides';
     this.el.modal?.classList.add('hidden');
@@ -213,6 +238,75 @@ export class CutscenePlayer {
     });
   }
 
+  _getSlideDuration(slide) {
+    const words = String(slide?.caption || '')
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean).length;
+    // Generous reading pace (~12–16s per caption) so players never feel rushed
+    const readingSec = Math.max(12.0, 5.0 + words * 0.34);
+    return Math.max(slide?.duration || 7.5, readingSec);
+  }
+
+  _renderSceneDots() {
+    const dotsEl = this.el.dots;
+    if (!dotsEl || !this.activeCutscene) return;
+    dotsEl.innerHTML = '';
+    const total = this.activeCutscene.slides.length;
+    for (let i = 0; i < total; i++) {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = `cutscene-dot${i === this.slideIndex ? ' active' : ''}`;
+      dot.dataset.sceneIdx = String(i);
+      dot.setAttribute('role', 'tab');
+      dot.setAttribute('aria-label', `Scene ${i + 1} of ${total}`);
+      dot.setAttribute('aria-selected', String(i === this.slideIndex));
+      dot.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._goToSlide(i);
+      });
+      dotsEl.appendChild(dot);
+    }
+  }
+
+  _syncPauseButton() {
+    const btn = this.el.btnPause;
+    if (!btn) return;
+    btn.classList.toggle('is-paused', this.paused);
+    btn.setAttribute('aria-pressed', String(this.paused));
+    btn.textContent = this.paused ? '▶ Play' : '⏸ Pause';
+    btn.setAttribute('aria-label', this.paused ? 'Resume Cutscene' : 'Pause Cutscene');
+  }
+
+  _togglePause() {
+    sound.unlock();
+    if (!this.activeCutscene) return;
+    sound.playSelect();
+    this.paused = !this.paused;
+    this._syncPauseButton();
+
+    if (this.mode === 'video' && this.el.video) {
+      if (this.paused) {
+        this.el.video.pause();
+      } else if (!this.el.video.ended) {
+        this._playVideo();
+      }
+    }
+  }
+
+  _goToSlide(idx) {
+    sound.unlock();
+    if (!this.activeCutscene) return;
+    const total = this.activeCutscene.slides.length;
+    if (idx < 0 || idx >= total) return;
+    sound.playSelect();
+    if (this.mode === 'video') {
+      this._seekToCue(idx);
+    } else {
+      this._loadSlide(idx);
+    }
+  }
+
   _showCaption(idx) {
     const slides = this.activeCutscene.slides;
     const slide = slides[idx];
@@ -220,7 +314,23 @@ export class CutscenePlayer {
     this.el.speaker.textContent = slide?.speaker || '';
     this.el.caption.textContent = slide?.caption || '';
     this.el.slideCounter.textContent = `${idx + 1} / ${slides.length}`;
-    this.el.btnNext.textContent = idx === slides.length - 1 ? 'Continue →' : 'Next Scene →';
+    if (this.el.btnPrev) {
+      this.el.btnPrev.disabled = idx <= 0;
+    }
+    this.el.btnNext.textContent = idx === slides.length - 1 ? 'Continue →' : 'Next →';
+
+    const dots = this.el.dots?.querySelectorAll('.cutscene-dot') || [];
+    for (const dot of dots) {
+      const isCurrent = Number(dot.dataset.sceneIdx) === idx;
+      dot.classList.toggle('active', isCurrent);
+      dot.setAttribute('aria-selected', String(isCurrent));
+    }
+  }
+
+  _prevSlide() {
+    sound.unlock();
+    if (!this.activeCutscene || this.slideIndex <= 0) return;
+    this._goToSlide(this.slideIndex - 1);
   }
 
   _advanceSlide() {
@@ -429,8 +539,11 @@ export class CutscenePlayer {
     const slide = slides[this.slideIndex];
     if (!slide) return;
 
-    this.slideElapsed += dt;
-    const frac = Math.min(1, this.slideElapsed / (slide.duration || 7.5));
+    const slideDur = this._getSlideDuration(slide);
+    if (!this.paused) {
+      this.slideElapsed += dt;
+    }
+    const frac = Math.min(1, this.slideElapsed / slideDur);
     this._applyKenBurns(slide, frac);
 
     const overall = (this.slideIndex + frac) / slides.length;
@@ -438,9 +551,12 @@ export class CutscenePlayer {
       this.el.progressBar.style.width = `${(overall * 100).toFixed(2)}%`;
     }
 
-    this._renderParticles(dt, slide.particleTheme || this.activeCutscene.particleTheme || 'gold');
+    this._renderParticles(
+      this.paused ? dt * 0.35 : dt,
+      slide.particleTheme || this.activeCutscene.particleTheme || 'gold'
+    );
 
-    if (this.slideElapsed >= (slide.duration || 7.5)) {
+    if (!this.paused && this.slideElapsed >= slideDur) {
       if (this.slideIndex + 1 < slides.length) {
         this._loadSlide(this.slideIndex + 1);
       } else {

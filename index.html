@@ -617,8 +617,15 @@
             <div id="cutscene-progress-bar" class="cutscene-progress-bar"></div>
           </div>
           <div class="cutscene-controls">
-            <span id="cutscene-slide-counter" class="cutscene-counter">1 / 3</span>
-            <button id="btn-cutscene-next" class="btn btn-gold btn-sm" type="button">Next Scene →</button>
+            <div class="cutscene-meta-group">
+              <span id="cutscene-slide-counter" class="cutscene-counter">1 / 4</span>
+              <div id="cutscene-dots" class="cutscene-dots" role="tablist" aria-label="Cutscene Scenes"></div>
+            </div>
+            <div class="cutscene-nav-group">
+              <button id="btn-cutscene-prev" class="btn btn-secondary btn-sm" type="button" aria-label="Previous Scene">← Prev</button>
+              <button id="btn-cutscene-pause" class="btn btn-secondary btn-sm" type="button" aria-pressed="false" aria-label="Pause Cutscene">⏸ Pause</button>
+              <button id="btn-cutscene-next" class="btn btn-gold btn-sm" type="button">Next →</button>
+            </div>
           </div>
         </div>
       </div>
