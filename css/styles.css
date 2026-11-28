@@ -156,8 +156,8 @@ body {
   color: var(--text-ivory);
   border: 1px solid var(--border-brass);
   border-radius: var(--radius-sm);
-  min-width: 40px;
-  height: 40px;
+  min-width: 42px;
+  height: 42px;
   padding: 0 8px;
   font-size: 1rem;
   font-weight: 700;
@@ -165,7 +165,7 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.14s ease, border-color 0.14s ease, transform 0.12s ease;
+  transition: background-color 0.14s ease, border-color 0.14s ease, box-shadow 0.16s ease, transform 0.12s ease;
 }
 
 .icon-btn:hover {
@@ -178,21 +178,96 @@ body {
 }
 
 .icon-btn.active-toggle {
-  background: rgba(223, 169, 68, 0.22);
+  background: linear-gradient(180deg, rgba(223, 169, 68, 0.3) 0%, rgba(168, 112, 28, 0.28) 100%);
   border-color: var(--gold-bright);
   color: var(--gold-bright);
+  box-shadow: 0 0 12px rgba(245, 202, 109, 0.28), inset 0 1px 0 rgba(255, 238, 188, 0.35);
+}
+
+/* Sculpted Royal Tabletop in-game topbar action medallions */
+.hud-action-btn {
+  position: relative;
+  min-width: 46px;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #3c2b1f 0%, #261a12 100%);
+  border: 1.5px solid rgba(218, 174, 96, 0.52);
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.48),
+    inset 0 1px 0 rgba(255, 236, 190, 0.18),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.45);
+}
+
+.hud-action-btn:hover {
+  background: linear-gradient(180deg, #4b3526 0%, #2f2016 100%);
+  border-color: rgba(245, 202, 109, 0.85);
+  box-shadow:
+    0 5px 14px rgba(0, 0, 0, 0.56),
+    0 0 10px rgba(245, 202, 109, 0.2),
+    inset 0 1px 0 rgba(255, 236, 190, 0.28);
+}
+
+.hud-btn-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  display: block;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.72));
+}
+
+.hud-speed-btn .hud-btn-icon {
+  width: 24px;
+  height: 24px;
+  transform: translateY(-4px);
+}
+
+.hud-speed-badge {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-display);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  color: var(--text-ivory);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
+  pointer-events: none;
+}
+
+.hud-speed-btn.active-toggle .hud-speed-badge {
+  color: #fff2c4;
+}
+
+.btn-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-ui-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  display: block;
+  flex-shrink: 0;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.65));
 }
 
 .icon-btn-sm {
-  min-width: 34px;
-  height: 34px;
-  font-size: 0.85rem;
+  min-width: 36px;
+  height: 36px;
+  font-size: 0.88rem;
 }
 
 .text-btn {
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-family: var(--font-sans);
-  min-width: 42px;
+  min-width: 44px;
 }
 
 /* ==================== HOME / CAMPAIGN SCREEN ==================== */
@@ -347,15 +422,45 @@ body {
 /* ==================== SETTINGS MODAL ==================== */
 
 .settings-card {
-  max-width: 500px;
+  max-width: 520px;
+}
+
+.settings-title-lockup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-emblem-socket {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #3a291d 0%, #20150e 100%);
+  border: 1.5px solid rgba(223, 169, 68, 0.55);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 236, 190, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.settings-emblem-img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.7));
 }
 
 .settings-section {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 14px 0;
+  gap: 11px;
+  padding: 15px 0;
   border-top: 1px solid var(--border-subtle);
+}
+
+.settings-section.hidden {
+  display: none;
 }
 
 .settings-section:last-of-type {
@@ -366,9 +471,41 @@ body {
   margin: 0;
   font-family: var(--font-display);
   font-size: 0.86rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--gold-bright);
+}
+
+.settings-battle-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.settings-royal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 10px 14px;
+  border-radius: 11px;
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 238, 194, 0.18);
+}
+
+.settings-btn-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.6));
+}
+
+.settings-btn-icon-danger {
+  filter: sepia(0.4) hue-rotate(-35deg) saturate(1.4) drop-shadow(0 2px 3px rgba(0, 0, 0, 0.65));
 }
 
 .setting-row {
@@ -376,16 +513,48 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding: 11px 12px;
-  background: var(--surface-inset);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  background: linear-gradient(180deg, rgba(35, 24, 17, 0.92) 0%, rgba(25, 17, 12, 0.96) 100%);
+  border: 1px solid rgba(212, 168, 92, 0.24);
+  border-radius: 12px;
   cursor: pointer;
-  transition: border-color 0.14s ease;
+  transition: border-color 0.14s ease, background-color 0.14s ease;
 }
 
-.setting-row:hover {
-  border-color: var(--border-brass);
+.setting-row-static {
+  cursor: default;
+}
+
+.setting-row:not(.setting-row-static):hover {
+  border-color: var(--border-brass-strong);
+}
+
+.setting-row-lead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.setting-icon-socket {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, #37261b 0%, #1f150e 100%);
+  border: 1px solid rgba(218, 174, 96, 0.42);
+  box-shadow: inset 0 1px 0 rgba(255, 236, 190, 0.16), 0 3px 8px rgba(0, 0, 0, 0.45);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.setting-row-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  display: block;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.68));
 }
 
 .setting-copy {
@@ -396,12 +565,12 @@ body {
 }
 
 .setting-copy strong {
-  font-size: 0.92rem;
+  font-size: 0.94rem;
   color: var(--text-ivory);
 }
 
 .setting-copy span {
-  font-size: 0.74rem;
+  font-size: 0.75rem;
   color: var(--text-parchment);
   line-height: 1.35;
 }
@@ -421,35 +590,38 @@ body {
 }
 
 .switch-track {
-  width: 48px;
-  height: 27px;
+  width: 54px;
+  height: 30px;
   border-radius: 999px;
-  background: #3a2b22;
-  border: 1px solid rgba(255, 236, 204, 0.16);
+  background: linear-gradient(180deg, #271b14 0%, #3a2a20 100%);
+  border: 1.5px solid rgba(212, 168, 92, 0.34);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.65);
   position: relative;
-  transition: background-color 0.18s ease, border-color 0.18s ease;
+  transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .switch-thumb {
   position: absolute;
   top: 2px;
   left: 2px;
-  width: 21px;
-  height: 21px;
+  width: 23px;
+  height: 23px;
   border-radius: 50%;
-  background: #cbb89d;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
-  transition: transform 0.18s ease, background-color 0.18s ease;
+  background: radial-gradient(circle at 35% 30%, #e4d4ba 0%, #a58f70 100%);
+  border: 1px solid rgba(255, 245, 224, 0.4);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
+  transition: transform 0.18s ease, background 0.18s ease;
 }
 
 .switch-control input:checked + .switch-track {
-  background: linear-gradient(180deg, #e5b34f 0%, #b88022 100%);
-  border-color: #f6d58b;
+  background: linear-gradient(180deg, #e7b552 0%, #ad751c 100%);
+  border-color: #fae09b;
+  box-shadow: 0 0 12px rgba(245, 202, 109, 0.35), inset 0 1px 2px rgba(255, 244, 212, 0.4);
 }
 
 .switch-control input:checked + .switch-track .switch-thumb {
-  transform: translateX(21px);
-  background: #fff7e2;
+  transform: translateX(24px);
+  background: radial-gradient(circle at 35% 30%, #fffdf5 0%, #f1d496 100%);
 }
 
 .switch-control input:focus-visible + .switch-track {
@@ -464,10 +636,9 @@ body {
 }
 
 .settings-data-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .clear-save-confirm {
@@ -1490,7 +1661,7 @@ body {
 .topbar-controls {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 12px;
 }
 
 /* Main Battle Layout: Mobile Portrait First */
@@ -2109,50 +2280,73 @@ body {
 @media (max-width: 899px) {
   .game-topbar {
     flex-wrap: wrap;
-    padding: 6px 10px;
-    row-gap: 6px;
+    padding: 8px 10px;
+    row-gap: 8px;
   }
 
   .topbar-left {
     order: 1;
     flex: 1 1 auto;
+    gap: 10px;
   }
 
   .topbar-controls {
     order: 2;
-    gap: 5px;
+    gap: 10px;
   }
 
   .hud-stats {
     order: 3;
     flex: 1 0 100%;
     justify-content: space-between;
-    padding-top: 2px;
+    padding-top: 4px;
     border-top: 1px solid var(--border-subtle);
   }
 
   .level-badge strong {
-    font-size: 0.8rem;
-    max-width: 122px;
+    font-size: 0.84rem;
+    max-width: 146px;
   }
 
   .stat-chip {
     flex: 1;
     justify-content: center;
-    padding: 4px 8px;
+    padding: 5px 8px;
     font-size: 0.84rem;
   }
 
   .icon-btn {
-    min-width: 32px;
-    height: 34px;
-    font-size: 0.88rem;
-    padding: 0 5px;
+    min-width: 40px;
+    height: 40px;
+    font-size: 0.94rem;
+    padding: 0 7px;
+  }
+
+  .hud-action-btn {
+    min-width: 44px;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+  }
+
+  .hud-btn-icon {
+    width: 26px;
+    height: 26px;
+  }
+
+  .hud-speed-btn .hud-btn-icon {
+    width: 22px;
+    height: 22px;
+  }
+
+  .settings-battle-grid,
+  .settings-data-actions {
+    grid-template-columns: 1fr;
   }
 
   .text-btn {
-    min-width: 34px;
-    font-size: 0.76rem;
+    min-width: 42px;
+    font-size: 0.8rem;
   }
 
   /* When inspecting a tower on compact mobile screens, hide roster cleanly to keep board huge! */

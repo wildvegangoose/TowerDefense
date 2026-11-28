@@ -22,6 +22,7 @@ const DIRS = [
   'assets/videos',
   'assets/audio',
   'assets/icons',
+  'assets/ui',
 ];
 
 fs.rmSync(WWW, { recursive: true, force: true });

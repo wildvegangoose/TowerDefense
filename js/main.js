@@ -9,6 +9,7 @@ import {
   getMapBgUrl,
   getMapNodeUrl,
   getLevelBgUrl,
+  getUiIconUrl,
 } from './assets.js';
 import { sound } from './audio.js';
 import { CutscenePlayer } from './cutscene.js';
@@ -82,7 +83,6 @@ class TowerDeChessApp {
       btnDiffStandard: document.getElementById('btn-diff-standard'),
       btnDiffGrandmaster: document.getElementById('btn-diff-grandmaster'),
       btnOpenCodex: document.getElementById('btn-open-codex'),
-      btnGameCodex: document.getElementById('btn-game-codex'),
       btnInstallPwa: document.getElementById('btn-install-pwa'),
 
       // Game HUD
@@ -95,9 +95,10 @@ class TowerDeChessApp {
       hudLives: document.getElementById('hud-lives'),
       hudWave: document.getElementById('hud-wave'),
       btnSpeed: document.getElementById('btn-speed'),
+      speedBadge: document.getElementById('speed-badge'),
       btnPause: document.getElementById('btn-pause'),
-      btnMusic: document.getElementById('btn-music'),
-      btnMute: document.getElementById('btn-mute'),
+      btnPauseIcon: document.getElementById('btn-pause-icon'),
+      btnGameSettings: document.getElementById('btn-game-settings'),
       battleBanner: document.getElementById('battle-banner'),
 
       // Touch Confirm
@@ -176,6 +177,11 @@ class TowerDeChessApp {
       btnOpenSettings: document.getElementById('btn-open-settings'),
       modalSettings: document.getElementById('modal-settings'),
       btnCloseSettings: document.getElementById('btn-close-settings'),
+      settingsBattleSection: document.getElementById('settings-battle-section'),
+      btnSettingsResume: document.getElementById('btn-settings-resume'),
+      btnSettingsCodex: document.getElementById('btn-settings-codex'),
+      btnSettingsRestart: document.getElementById('btn-settings-restart'),
+      btnSettingsMap: document.getElementById('btn-settings-map'),
       toggleSettingMusic: document.getElementById('toggle-setting-music'),
       toggleSettingSfx: document.getElementById('toggle-setting-sfx'),
       settingsTrackName: document.getElementById('settings-track-name'),
@@ -330,7 +336,6 @@ class TowerDeChessApp {
     this.el.btnDiffGrandmaster.addEventListener('click', () => setDiff('grandmaster'));
 
     this.el.btnOpenCodex.addEventListener('click', () => this._openCodex());
-    this.el.btnGameCodex.addEventListener('click', () => this._openCodex());
     this.el.codexTabs?.addEventListener('click', (e) => {
       const btn = e.target.closest('.codex-tab[data-tab]');
       if (!btn) return;
@@ -340,9 +345,19 @@ class TowerDeChessApp {
     });
     this.el.btnCloseCodex.addEventListener('click', () => {
       this.el.modalCodex.classList.add('hidden');
+      if (this._pausedBySettings && this.el.screenGame.classList.contains('active')) {
+        if (this.engine?.gameState === 'paused') this.engine.togglePause();
+        this._pausedBySettings = false;
+      }
     });
     this.el.modalCodex.addEventListener('click', (e) => {
-      if (e.target === this.el.modalCodex) this.el.modalCodex.classList.add('hidden');
+      if (e.target === this.el.modalCodex) {
+        this.el.modalCodex.classList.add('hidden');
+        if (this._pausedBySettings && this.el.screenGame.classList.contains('active')) {
+          if (this.engine?.gameState === 'paused') this.engine.togglePause();
+          this._pausedBySettings = false;
+        }
+      }
     });
 
     this.el.btnCloseSave.addEventListener('click', () => {
@@ -383,16 +398,7 @@ class TowerDeChessApp {
       sound.unlock();
       this.engine?.togglePause();
     });
-    this.el.btnMusic.addEventListener('click', () => {
-      sound.unlock();
-      sound.toggleMusic();
-      this._syncMuteIcon();
-    });
-    this.el.btnMute.addEventListener('click', () => {
-      sound.unlock();
-      sound.toggleMute();
-      this._syncMuteIcon();
-    });
+    this.el.btnGameSettings?.addEventListener('click', () => this._openSettings());
 
     // Touch Confirm Placement
     this.el.btnCancelPreview.addEventListener('click', () => this.engine?.clearSelection());
@@ -442,13 +448,35 @@ class TowerDeChessApp {
       this.deferredInstallPrompt = null;
       this.el.btnInstallPwa.classList.add('hidden');
     });
-    // Settings Modal
+
+    // Settings Modal (accessible both from Campaign Map & inside Battle)
     this.el.btnOpenSettings?.addEventListener('click', () => this._openSettings());
-    this.el.btnCloseSettings?.addEventListener('click', () => {
-      this.el.modalSettings.classList.add('hidden');
-    });
+    this.el.btnCloseSettings?.addEventListener('click', () => this._closeSettings());
     this.el.modalSettings?.addEventListener('click', (e) => {
-      if (e.target === this.el.modalSettings) this.el.modalSettings.classList.add('hidden');
+      if (e.target === this.el.modalSettings) this._closeSettings();
+    });
+    this.el.btnSettingsResume?.addEventListener('click', () => {
+      sound.unlock();
+      sound.playSelect();
+      this._closeSettings();
+    });
+    this.el.btnSettingsCodex?.addEventListener('click', () => {
+      this.el.modalSettings.classList.add('hidden');
+      this._openCodex();
+    });
+    this.el.btnSettingsRestart?.addEventListener('click', () => {
+      sound.unlock();
+      sound.playSelect();
+      this._pausedBySettings = false;
+      this.el.modalSettings.classList.add('hidden');
+      if (this.currentLevel) this._startLevel(this.currentLevel.id, false);
+    });
+    this.el.btnSettingsMap?.addEventListener('click', () => {
+      sound.unlock();
+      sound.playSelect();
+      this._pausedBySettings = false;
+      this.el.modalSettings.classList.add('hidden');
+      this._returnToCampaign();
     });
     this.el.toggleSettingMusic?.addEventListener('change', (e) => {
       sound.unlock();
@@ -486,7 +514,7 @@ class TowerDeChessApp {
           return;
         }
         if (!this.el.modalSettings?.classList.contains('hidden')) {
-          this.el.modalSettings.classList.add('hidden');
+          this._closeSettings();
           return;
         }
         if (!this.el.modalSave?.classList.contains('hidden')) {
@@ -538,10 +566,30 @@ class TowerDeChessApp {
   _openSettings() {
     sound.unlock();
     sound.playSelect();
+    const inGame = this.el.screenGame.classList.contains('active');
+    if (this.el.settingsBattleSection) {
+      this.el.settingsBattleSection.classList.toggle('hidden', !inGame);
+    }
+    // Auto-pause active gameplay while Royal Settings is open
+    this._pausedBySettings = false;
+    if (inGame && this.engine?.gameState === 'playing') {
+      this.engine.togglePause();
+      this._pausedBySettings = true;
+    }
     this._refreshSettingsUi();
     this.el.clearSaveConfirm.classList.add('hidden');
     this.el.settingsStatusMsg.textContent = '';
     this.el.modalSettings.classList.remove('hidden');
+  }
+
+  _closeSettings() {
+    this.el.modalSettings.classList.add('hidden');
+    if (this._pausedBySettings && this.el.screenGame.classList.contains('active')) {
+      if (this.engine?.gameState === 'paused') {
+        this.engine.togglePause();
+      }
+      this._pausedBySettings = false;
+    }
   }
 
   _refreshSettingsUi() {
@@ -610,12 +658,6 @@ class TowerDeChessApp {
   }
 
   _syncMuteIcon() {
-    this.el.btnMute.textContent = sound.sfxMuted ? '🔇' : '🔊';
-    this.el.btnMute.classList.toggle('active-toggle', sound.sfxMuted);
-    if (this.el.btnMusic) {
-      this.el.btnMusic.textContent = sound.musicMuted ? '🚫' : '🎵';
-      this.el.btnMusic.classList.toggle('active-toggle', sound.musicMuted);
-    }
     if (this.el.toggleSettingMusic) {
       this.el.toggleSettingMusic.checked = !sound.musicMuted;
     }
@@ -1199,10 +1241,20 @@ class TowerDeChessApp {
     this.el.hudLives.textContent = state.lives;
     this.el.hudWave.textContent = `${Math.max(0, state.waveIndex + 1)}/${state.totalWaves}`;
 
-    this.el.btnSpeed.textContent = `${state.speedMult}x`;
+    if (this.el.speedBadge) {
+      this.el.speedBadge.textContent = `${state.speedMult}x`;
+    }
     this.el.btnSpeed.classList.toggle('active-toggle', state.speedMult > 1);
-    this.el.btnPause.textContent = state.gameState === 'paused' ? '▶' : '❚❚';
-    this.el.btnPause.classList.toggle('active-toggle', state.gameState === 'paused');
+    const isPaused = state.gameState === 'paused';
+    if (this.el.btnPauseIcon) {
+      const nextIcon = getUiIconUrl(isPaused ? 'play' : 'pause');
+      if (this.el.btnPauseIcon.getAttribute('src') !== nextIcon) {
+        this.el.btnPauseIcon.setAttribute('src', nextIcon);
+      }
+    }
+    this.el.btnPause.title = isPaused ? 'Resume Battle' : 'Pause Battle';
+    this.el.btnPause.setAttribute('aria-label', isPaused ? 'Resume Battle' : 'Pause Battle');
+    this.el.btnPause.classList.toggle('active-toggle', isPaused);
 
     // Wave Launch Button & Next Wave Enemy Preview
     const nextWaveNum = state.waveIndex + 2;

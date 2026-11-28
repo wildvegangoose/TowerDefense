@@ -159,6 +159,16 @@ def build() -> str:
         if os.path.exists(lbg_path):
             inline_level_bgs[str(lvl_id)] = encode_scene_webp_data_uri(lbg_path, width=480, height=270, quality=68)
 
+    ui_icon_keys = [
+        "settings", "back", "pause", "play", "speed",
+        "music", "sfx", "codex", "restart", "scroll",
+    ]
+    inline_ui_icons = {}
+    for key in ui_icon_keys:
+        icon_path = os.path.join(REPO_DIR, "assets", "ui", f"ui_{key}.png")
+        if os.path.exists(icon_path):
+            inline_ui_icons[key] = encode_webp_data_uri(icon_path, size=96, quality=88)
+
     music_path = os.path.join(REPO_DIR, "assets", "audio", f"{MUSIC_KEY}.mp3")
     inline_music_b64 = encode_music_base64(music_path) if os.path.exists(music_path) else ""
 
@@ -185,6 +195,8 @@ def build() -> str:
     body_inner = body_inner.replace('src="assets/icons/icon-192.png"', f'src="{app_icon_uri}"')
     if studio_logo_uri:
         body_inner = body_inner.replace('src="assets/icons/wildgoose_logo.png"', f'src="{studio_logo_uri}"')
+    for key, uri in inline_ui_icons.items():
+        body_inner = body_inner.replace(f'src="assets/ui/ui_{key}.png"', f'src="{uri}"')
 
     # Inline assets.js replacement backed by base64 data URIs
     assets_js = f"""
@@ -194,6 +206,7 @@ const INLINE_SCENE_URIS = {json.dumps(inline_scenes)};
 const INLINE_MAP_BG_URIS = {json.dumps(inline_map_bgs)};
 const INLINE_MAP_NODE_URIS = {json.dumps(inline_map_nodes)};
 const INLINE_LEVEL_BG_URIS = {json.dumps(inline_level_bgs)};
+const INLINE_UI_ICON_URIS = {json.dumps(inline_ui_icons)};
 const SHEET_META = {json.dumps(SHEET_META)};
 const SPRITES = {{}};
 const SHEETS = {{}};
@@ -214,6 +227,9 @@ function getMapNodeUrl(levelId) {{
 }}
 function getLevelBgUrl(levelId) {{
   return INLINE_LEVEL_BG_URIS[String(levelId)] || '';
+}}
+function getUiIconUrl(key) {{
+  return INLINE_UI_ICON_URIS[key] || '';
 }}
 // Videos are not inlined: video cutscenes play their painted slides instead
 function getVideoUrl(key) {{

@@ -56,8 +56,14 @@
           </div>
         </div>
         <div class="home-actions">
-          <button id="btn-open-codex" class="btn btn-secondary" type="button">Codex &amp; Lore</button>
-          <button id="btn-open-settings" class="btn btn-secondary" type="button">&#9881; Settings</button>
+          <button id="btn-open-codex" class="btn btn-secondary btn-with-icon" type="button">
+            <img src="assets/ui/ui_codex.png" alt="" class="btn-ui-icon" aria-hidden="true" />
+            <span>Codex &amp; Lore</span>
+          </button>
+          <button id="btn-open-settings" class="btn btn-secondary btn-with-icon" type="button">
+            <img src="assets/ui/ui_settings.png" alt="" class="btn-ui-icon" aria-hidden="true" />
+            <span>Settings</span>
+          </button>
           <button id="btn-install-pwa" class="btn btn-gold hidden" type="button">Install App</button>
         </div>
       </header>
@@ -103,8 +109,8 @@
       <canvas id="game-weather-canvas" class="game-weather-canvas" aria-hidden="true"></canvas>
       <header class="game-topbar">
         <div class="topbar-left">
-          <button id="btn-back-menu" class="icon-btn" type="button" aria-label="Back to Campaign" title="Campaign Map">
-            &#8592;
+          <button id="btn-back-menu" class="icon-btn hud-action-btn" type="button" aria-label="Back to Campaign" title="Campaign Map">
+            <img src="assets/ui/ui_back.png" alt="" class="hud-btn-icon" aria-hidden="true" />
           </button>
           <div class="level-badge">
             <span id="hud-level-num" class="level-kicker">LEVEL 1</span>
@@ -128,11 +134,16 @@
         </div>
 
         <div class="topbar-controls">
-          <button id="btn-speed" class="icon-btn text-btn" type="button" title="Toggle Game Speed">1x</button>
-          <button id="btn-pause" class="icon-btn" type="button" title="Pause">&#10074;&#10074;</button>
-          <button id="btn-music" class="icon-btn" type="button" title="Toggle Battle Music">&#127925;</button>
-          <button id="btn-mute" class="icon-btn" type="button" title="Toggle Sound Effects">&#128266;</button>
-          <button id="btn-game-codex" class="icon-btn" type="button" title="Piece Codex">&#128214;</button>
+          <button id="btn-speed" class="icon-btn hud-action-btn hud-speed-btn" type="button" aria-label="Toggle Game Speed" title="Toggle Game Speed">
+            <img src="assets/ui/ui_speed.png" alt="" class="hud-btn-icon" aria-hidden="true" />
+            <span id="speed-badge" class="hud-speed-badge">1x</span>
+          </button>
+          <button id="btn-pause" class="icon-btn hud-action-btn" type="button" aria-label="Pause Battle" title="Pause">
+            <img id="btn-pause-icon" src="assets/ui/ui_pause.png" alt="" class="hud-btn-icon" aria-hidden="true" />
+          </button>
+          <button id="btn-game-settings" class="icon-btn hud-action-btn" type="button" aria-label="Battle Settings" title="Settings &amp; Codex">
+            <img src="assets/ui/ui_settings.png" alt="" class="hud-btn-icon" aria-hidden="true" />
+          </button>
         </div>
       </header>
 
@@ -307,20 +318,53 @@
     <div id="modal-settings" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
       <div class="modal-card settings-card">
         <div class="codex-header">
-          <div>
-            <span class="modal-kicker">PREFERENCES &amp; DATA</span>
-            <h2 id="settings-modal-title">Settings</h2>
+          <div class="settings-title-lockup">
+            <div class="settings-emblem-socket" aria-hidden="true">
+              <img src="assets/ui/ui_settings.png" alt="" class="settings-emblem-img" />
+            </div>
+            <div>
+              <span class="modal-kicker">ROYAL COURT PREFERENCES</span>
+              <h2 id="settings-modal-title">Settings</h2>
+            </div>
           </div>
           <button id="btn-close-settings" class="icon-btn" type="button" aria-label="Close Settings">&#10005;</button>
         </div>
 
+        <!-- Shown only when Settings is opened during an active battle -->
+        <div id="settings-battle-section" class="settings-section hidden">
+          <h3 class="settings-section-title">Battlefield</h3>
+          <div class="settings-battle-grid">
+            <button id="btn-settings-resume" class="btn btn-gold settings-royal-btn" type="button">
+              <img src="assets/ui/ui_play.png" alt="" class="settings-btn-icon" aria-hidden="true" />
+              <span>Resume Battle</span>
+            </button>
+            <button id="btn-settings-codex" class="btn btn-secondary settings-royal-btn" type="button">
+              <img src="assets/ui/ui_codex.png" alt="" class="settings-btn-icon" aria-hidden="true" />
+              <span>Codex &amp; Lore</span>
+            </button>
+            <button id="btn-settings-restart" class="btn btn-secondary settings-royal-btn" type="button">
+              <img src="assets/ui/ui_restart.png" alt="" class="settings-btn-icon" aria-hidden="true" />
+              <span>Restart Level</span>
+            </button>
+            <button id="btn-settings-map" class="btn btn-secondary settings-royal-btn" type="button">
+              <img src="assets/ui/ui_back.png" alt="" class="settings-btn-icon" aria-hidden="true" />
+              <span>Campaign Map</span>
+            </button>
+          </div>
+        </div>
+
         <div class="settings-section">
-          <h3 class="settings-section-title">Audio</h3>
+          <h3 class="settings-section-title">Royal Audio</h3>
 
           <label class="setting-row" for="toggle-setting-music">
-            <div class="setting-copy">
-              <strong>Battle Music</strong>
-              <span>Dynamic soundtrack during board prep, waves, and Warlord bosses</span>
+            <div class="setting-row-lead">
+              <span class="setting-icon-socket" aria-hidden="true">
+                <img src="assets/ui/ui_music.png" alt="" class="setting-row-icon" />
+              </span>
+              <div class="setting-copy">
+                <strong>Battle Music</strong>
+                <span>Dynamic soundtrack during board prep, waves, and Warlord bosses</span>
+              </div>
             </div>
             <span class="switch-control">
               <input type="checkbox" id="toggle-setting-music" />
@@ -329,9 +373,14 @@
           </label>
 
           <label class="setting-row" for="toggle-setting-sfx">
-            <div class="setting-copy">
-              <strong>Sound Effects</strong>
-              <span>Tower strikes, armor impacts, promotions, and victory fanfares</span>
+            <div class="setting-row-lead">
+              <span class="setting-icon-socket" aria-hidden="true">
+                <img src="assets/ui/ui_sfx.png" alt="" class="setting-row-icon" />
+              </span>
+              <div class="setting-copy">
+                <strong>Sound Effects</strong>
+                <span>Tower strikes, armor impacts, War Horn promotions &amp; fanfares</span>
+              </div>
             </div>
             <span class="switch-control">
               <input type="checkbox" id="toggle-setting-sfx" />
@@ -339,7 +388,7 @@
             </span>
           </label>
 
-          <div class="setting-row">
+          <div class="setting-row setting-row-static">
             <div class="setting-copy">
               <strong>Soundtrack</strong>
               <span id="settings-track-name">Before the Gates Break • Main Theme</span>
@@ -354,8 +403,14 @@
           </p>
 
           <div class="settings-data-actions">
-            <button id="btn-settings-open-save" class="btn btn-secondary btn-sm" type="button">Backup / Transfer Code</button>
-            <button id="btn-clear-save-init" class="btn btn-danger btn-sm" type="button">Clear Save Data</button>
+            <button id="btn-settings-open-save" class="btn btn-secondary settings-royal-btn" type="button">
+              <img src="assets/ui/ui_scroll.png" alt="" class="settings-btn-icon" aria-hidden="true" />
+              <span>Backup / Transfer Code</span>
+            </button>
+            <button id="btn-clear-save-init" class="btn btn-danger settings-royal-btn" type="button">
+              <img src="assets/ui/ui_restart.png" alt="" class="settings-btn-icon settings-btn-icon-danger" aria-hidden="true" />
+              <span>Clear Save Data</span>
+            </button>
           </div>
 
           <div id="clear-save-confirm" class="clear-save-confirm hidden">

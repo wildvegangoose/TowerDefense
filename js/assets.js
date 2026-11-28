@@ -71,6 +71,10 @@ export function getLevelBgUrl(levelId) {
   return `assets/backgrounds/level_${String(levelId).padStart(2, '0')}.jpg`;
 }
 
+export function getUiIconUrl(key) {
+  return `assets/ui/ui_${key}.png`;
+}
+
 function loadImage(url) {
   return new Promise((resolve) => {
     const img = new Image();
