@@ -34,8 +34,13 @@ class SoundEngine {
     this.reverbNode = null;
     this.noiseBuffer = null;
 
-    this.sfxMuted = localStorage.getItem('towerdechess_muted') === '1';
-    this.musicMuted = localStorage.getItem('towerdechess_music_muted') === '1';
+    try {
+      this.sfxMuted = localStorage.getItem('towerdechess_muted') === '1';
+      this.musicMuted = localStorage.getItem('towerdechess_music_muted') === '1';
+    } catch {
+      this.sfxMuted = false;
+      this.musicMuted = false;
+    }
     this.lastPlayed = {};
 
     // Streamed soundtrack state
@@ -163,7 +168,11 @@ class SoundEngine {
 
   setSfxMuted(muted) {
     this.sfxMuted = Boolean(muted);
-    localStorage.setItem('towerdechess_muted', this.sfxMuted ? '1' : '0');
+    try {
+      localStorage.setItem('towerdechess_muted', this.sfxMuted ? '1' : '0');
+    } catch {
+      // ignore storage restrictions
+    }
     if (this.sfxGain && this.ctx) {
       this.sfxGain.gain.setTargetAtTime(this.sfxMuted ? 0 : 0.95, this.ctx.currentTime, 0.02);
     }
@@ -176,7 +185,11 @@ class SoundEngine {
 
   setMusicMuted(muted) {
     this.musicMuted = Boolean(muted);
-    localStorage.setItem('towerdechess_music_muted', this.musicMuted ? '1' : '0');
+    try {
+      localStorage.setItem('towerdechess_music_muted', this.musicMuted ? '1' : '0');
+    } catch {
+      // ignore storage restrictions
+    }
     this._syncMusic();
     return this.musicMuted;
   }

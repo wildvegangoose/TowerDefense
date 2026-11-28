@@ -47,13 +47,14 @@ export class WeatherRenderer {
     this.time = 0;
     this.nextFlashAt = 4.2;
     this.flashStrength = 0;
+    this.active = false;
     this.reducedMotion =
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
   }
 
   resize() {
-    if (!this.canvas || !this.ctx) return;
+    if (!this.canvas || !this.ctx || !this.active || !this.weatherType) return;
     const rect = this.canvas.getBoundingClientRect();
     const w = Math.max(1, Math.round(rect.width));
     const h = Math.max(1, Math.round(rect.height));
@@ -65,24 +66,30 @@ export class WeatherRenderer {
     this.canvas.width = Math.round(w * dpr);
     this.canvas.height = Math.round(h * dpr);
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    if (this.weatherType) {
-      this._buildPool();
-      if (this.reducedMotion) this._drawFrame(0);
-    }
+    this._buildPool();
+    if (this.reducedMotion) this._drawFrame(0);
   }
 
   start(weatherType, levelSeed = 1) {
     if (!this.canvas || !this.ctx) return;
+    this.canvas.classList.remove('hidden');
+    this.active = true;
     this.weatherType = weatherType || 'sunrays';
     this.levelSeed = Number(levelSeed) || 1;
     this.time = 0;
     this.flashStrength = 0;
     this.nextFlashAt = 3.2 + (this.levelSeed % 3) * 1.4;
+    this.width = 0;
+    this.height = 0;
     this.resize();
     this._buildPool();
 
     if (this.reducedMotion) {
-      this.stop();
+      this.running = false;
+      if (this.rafId) {
+        cancelAnimationFrame(this.rafId);
+        this.rafId = null;
+      }
       this._drawFrame(0);
       return;
     }
@@ -95,14 +102,23 @@ export class WeatherRenderer {
   }
 
   stop() {
+    this.active = false;
     this.running = false;
+    this.weatherType = null;
+    this.particles = [];
+    this.rays = [];
+    this.flashStrength = 0;
     if (this.rafId) {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
     }
-    if (this.ctx && this.width > 0 && this.height > 0) {
-      this.ctx.clearRect(0, 0, this.width, this.height);
+    if (this.ctx && this.canvas) {
+      this.ctx.save();
+      this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.restore();
     }
+    this.canvas?.classList.add('hidden');
   }
 
   _buildPool() {

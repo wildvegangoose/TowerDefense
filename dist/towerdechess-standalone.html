@@ -882,9 +882,13 @@ body {
 
 .switch-control input {
   position: absolute;
+  inset: 0;
   opacity: 0;
-  width: 0;
-  height: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  cursor: pointer;
+  z-index: 2;
 }
 
 .switch-track {
@@ -895,6 +899,7 @@ body {
   border: 1.5px solid rgba(212, 168, 92, 0.34);
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.65);
   position: relative;
+  pointer-events: none;
   transition: background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
@@ -2010,6 +2015,11 @@ body {
   z-index: 0;
   pointer-events: none;
   display: block;
+}
+
+.game-weather-canvas.hidden {
+  display: none !important;
+  visibility: hidden;
 }
 
 .game-topbar,
@@ -5929,8 +5939,13 @@ class SoundEngine {
     this.reverbNode = null;
     this.noiseBuffer = null;
 
-    this.sfxMuted = localStorage.getItem('towerdechess_muted') === '1';
-    this.musicMuted = localStorage.getItem('towerdechess_music_muted') === '1';
+    try {
+      this.sfxMuted = localStorage.getItem('towerdechess_muted') === '1';
+      this.musicMuted = localStorage.getItem('towerdechess_music_muted') === '1';
+    } catch {
+      this.sfxMuted = false;
+      this.musicMuted = false;
+    }
     this.lastPlayed = {};
 
     // Streamed soundtrack state
@@ -6058,7 +6073,11 @@ class SoundEngine {
 
   setSfxMuted(muted) {
     this.sfxMuted = Boolean(muted);
-    localStorage.setItem('towerdechess_muted', this.sfxMuted ? '1' : '0');
+    try {
+      localStorage.setItem('towerdechess_muted', this.sfxMuted ? '1' : '0');
+    } catch {
+      // ignore storage restrictions
+    }
     if (this.sfxGain && this.ctx) {
       this.sfxGain.gain.setTargetAtTime(this.sfxMuted ? 0 : 0.95, this.ctx.currentTime, 0.02);
     }
@@ -6071,7 +6090,11 @@ class SoundEngine {
 
   setMusicMuted(muted) {
     this.musicMuted = Boolean(muted);
-    localStorage.setItem('towerdechess_music_muted', this.musicMuted ? '1' : '0');
+    try {
+      localStorage.setItem('towerdechess_music_muted', this.musicMuted ? '1' : '0');
+    } catch {
+      // ignore storage restrictions
+    }
     this._syncMusic();
     return this.musicMuted;
   }
@@ -9637,13 +9660,14 @@ class WeatherRenderer {
     this.time = 0;
     this.nextFlashAt = 4.2;
     this.flashStrength = 0;
+    this.active = false;
     this.reducedMotion =
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
   }
 
   resize() {
-    if (!this.canvas || !this.ctx) return;
+    if (!this.canvas || !this.ctx || !this.active || !this.weatherType) return;
     const rect = this.canvas.getBoundingClientRect();
     const w = Math.max(1, Math.round(rect.width));
     const h = Math.max(1, Math.round(rect.height));
@@ -9655,24 +9679,30 @@ class WeatherRenderer {
     this.canvas.width = Math.round(w * dpr);
     this.canvas.height = Math.round(h * dpr);
     this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    if (this.weatherType) {
-      this._buildPool();
-      if (this.reducedMotion) this._drawFrame(0);
-    }
+    this._buildPool();
+    if (this.reducedMotion) this._drawFrame(0);
   }
 
   start(weatherType, levelSeed = 1) {
     if (!this.canvas || !this.ctx) return;
+    this.canvas.classList.remove('hidden');
+    this.active = true;
     this.weatherType = weatherType || 'sunrays';
     this.levelSeed = Number(levelSeed) || 1;
     this.time = 0;
     this.flashStrength = 0;
     this.nextFlashAt = 3.2 + (this.levelSeed % 3) * 1.4;
+    this.width = 0;
+    this.height = 0;
     this.resize();
     this._buildPool();
 
     if (this.reducedMotion) {
-      this.stop();
+      this.running = false;
+      if (this.rafId) {
+        cancelAnimationFrame(this.rafId);
+        this.rafId = null;
+      }
       this._drawFrame(0);
       return;
     }
@@ -9685,14 +9715,23 @@ class WeatherRenderer {
   }
 
   stop() {
+    this.active = false;
     this.running = false;
+    this.weatherType = null;
+    this.particles = [];
+    this.rays = [];
+    this.flashStrength = 0;
     if (this.rafId) {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
     }
-    if (this.ctx && this.width > 0 && this.height > 0) {
-      this.ctx.clearRect(0, 0, this.width, this.height);
+    if (this.ctx && this.canvas) {
+      this.ctx.save();
+      this.ctx.setTransform(1, 0, 0, 1, 0, 0);
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.restore();
     }
+    this.canvas?.classList.add('hidden');
   }
 
   _buildPool() {
@@ -10134,11 +10173,36 @@ class WeatherRenderer {
 
 
 class TowerDeChessApp {
+  _readPref(key, fallback = null) {
+    try {
+      const val = localStorage.getItem(key);
+      return val === null ? fallback : val;
+    } catch {
+      return fallback;
+    }
+  }
+
+  _writePref(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      // ignore storage restrictions (e.g. sandboxed preview or private mode)
+    }
+  }
+
+  _removePref(key) {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // ignore storage restrictions
+    }
+  }
+
   constructor() {
     this.progress = loadProgressSync();
-    localStorage.removeItem('towerdechess_sandbox');
-    this.difficulty = normalizeDifficulty(localStorage.getItem('towerdechess_difficulty'));
-    this.weatherEnabled = localStorage.getItem('towerdechess_weather_enabled') !== 'false';
+    this._removePref('towerdechess_sandbox');
+    this.difficulty = normalizeDifficulty(this._readPref('towerdechess_difficulty'));
+    this.weatherEnabled = this._readPref('towerdechess_weather_enabled') !== 'false';
     this.selectedMapLevelId = Math.min(LEVELS.length, this.progress.highestUnlocked || 1);
     this.justUnlockedLevelId = null;
     this.pendingProgression = null;
@@ -10387,6 +10451,12 @@ class TowerDeChessApp {
     await preloadAssets();
 
     this.weather = new WeatherRenderer(this.el.gameWeatherCanvas);
+    if (!this.weatherEnabled) {
+      this.weather.stop();
+    }
+    if (this.el.toggleSettingWeather) {
+      this.el.toggleSettingWeather.checked = this.weatherEnabled;
+    }
 
     this.engine = new GameEngine(this.el.canvas, {
       onHudUpdate: (state) => this._renderHud(state),
@@ -10399,7 +10469,7 @@ class TowerDeChessApp {
       const ro = new ResizeObserver(() => {
         if (this.el.screenGame.classList.contains('active')) {
           this.engine.resize();
-          this.weather?.resize();
+          if (this.weatherEnabled) this.weather?.resize();
         }
       });
       ro.observe(stage);
@@ -10408,7 +10478,7 @@ class TowerDeChessApp {
     window.addEventListener('resize', () => {
       if (this.el.screenGame.classList.contains('active')) {
         this.engine.resize();
-        this.weather?.resize();
+        if (this.weatherEnabled) this.weather?.resize();
       }
     });
   }
@@ -10425,7 +10495,7 @@ class TowerDeChessApp {
     const setDiff = (mode) => {
       const normalized = normalizeDifficulty(mode);
       this.difficulty = normalized;
-      localStorage.setItem('towerdechess_difficulty', normalized);
+      this._writePref('towerdechess_difficulty', normalized);
       sound.unlock();
       sound.playSelect();
       this._syncDifficultyUi();
@@ -10633,15 +10703,17 @@ class TowerDeChessApp {
     this.el.toggleSettingWeather?.addEventListener('change', (e) => {
       sound.unlock();
       this.weatherEnabled = Boolean(e.target.checked);
-      localStorage.setItem('towerdechess_weather_enabled', String(this.weatherEnabled));
-      if (this.el.screenGame.classList.contains('active') && this.currentLevel) {
-        if (this.weatherEnabled) {
+      this._writePref('towerdechess_weather_enabled', String(this.weatherEnabled));
+      if (!this.weatherEnabled) {
+        this.weather?.stop();
+        this.el.gameWeatherCanvas?.classList.add('hidden');
+      } else {
+        this.el.gameWeatherCanvas?.classList.remove('hidden');
+        if (this.el.screenGame.classList.contains('active') && this.currentLevel) {
           this.weather?.start(
             this.currentLevel.weather || 'sunrays',
             this.currentLevel.bgLevelId || this.currentLevel.id
           );
-        } else {
-          this.weather?.stop();
         }
       }
       if (!sound.sfxMuted) sound.playSelect();
@@ -10904,7 +10976,7 @@ class TowerDeChessApp {
 
   async _handleClearSave() {
     this.progress = await clearProgress();
-    localStorage.removeItem('towerdechess_sandbox');
+    this._removePref('towerdechess_sandbox');
 
     this.selectedMapLevelId = 1;
     this.justUnlockedLevelId = null;
