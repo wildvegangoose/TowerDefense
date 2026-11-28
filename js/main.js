@@ -27,6 +27,7 @@ import { ENEMY_TYPES, DIFFICULTY_PRESETS, normalizeDifficulty } from './data/ene
 import {
   CUTSCENES,
   CUTSCENE_ORDER,
+  getCutsceneIdForLevel,
   VILLAINS,
   ENEMY_LORE,
   LEVEL_DISPATCHES,
@@ -360,8 +361,7 @@ class TowerDeChessApp {
     this.el.btnPlayChapterStory?.addEventListener('click', () => {
       sound.unlock();
       sound.playSelect();
-      const ch = getChapterForLevel(this.selectedMapLevelId || 1);
-      const cutsceneId = ch.id === 1 ? 'prologue' : ch.id === 2 ? 'chapter2' : 'chapter3';
+      const cutsceneId = getCutsceneIdForLevel(this.selectedMapLevelId || 1);
       this._playCutscene(cutsceneId);
     });
 
@@ -1397,12 +1397,13 @@ class TowerDeChessApp {
   }
 
   _syncRealmIndicator(levelId) {
-    const ch = getChapterForLevel(levelId || 1);
+    const lvlId = levelId || 1;
+    const ch = getChapterForLevel(lvlId);
     if (this.el.mapRealmIndicator) {
       this.el.mapRealmIndicator.textContent = `Chapter ${ch.roman} • ${ch.name}`;
     }
     if (this.el.btnPlayChapterStory) {
-      this.el.btnPlayChapterStory.title = `Watch Chapter ${ch.roman} Cinematic`;
+      this.el.btnPlayChapterStory.title = `Watch Level ${lvlId} Story`;
     }
   }
 
@@ -1457,10 +1458,10 @@ class TowerDeChessApp {
       return;
     }
 
-    // Auto-play Chapter II or Chapter III motion-comic cutscene the first time the player enters that realm
-    const chapterCutscene = lvl.id === 7 ? 'chapter2' : lvl.id === 13 ? 'chapter3' : null;
-    if (chapterCutscene && !this.progress.seenCutscenes?.includes(chapterCutscene)) {
-      this._playCutscene(chapterCutscene, () => {
+    // Auto-play each level's dedicated 30-second story the first time the player deploys into it
+    const levelCutscene = getCutsceneIdForLevel(lvl.id);
+    if (levelCutscene && !this.progress.seenCutscenes?.includes(levelCutscene)) {
+      this._playCutscene(levelCutscene, () => {
         this._launchLevelBoard(lvl);
       });
       return;

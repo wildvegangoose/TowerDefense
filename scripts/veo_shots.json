@@ -4,8 +4,10 @@
   "cutscenes": [
     {
       "id": "prologue",
+      "level_id": 1,
+      "chapter": 1,
       "title": "The Shattered Gambit",
-      "chapter_label": "PROLOGUE • CHAPTER I",
+      "chapter_label": "LEVEL 1 • PROLOGUE",
       "output_file": "assets/videos/prologue.mp4",
       "crossfade_seconds": 0.6,
       "shots": [
@@ -17,7 +19,7 @@
           "aspect_ratio": "16:9",
           "speaker": "CHRONICLE OF AETHELGARD",
           "caption": "For a thousand winters, Aethelgard endured under the Accord of Sixty-Four — an ancient pact binding Ivory and Obsidian to the Sacred Laws of the Board.",
-          "prompt": "Slow sweeping aerial dolly-in across a colossal sunlit marble chessboard kingdom stretching toward a grand medieval ivory citadel on golden cliffs. Golden sunbeams pierce drifting clouds while shimmering golden dust motes float gently through the air. Carved ivory chess warriors — armored Knights, hooded Bishops, towering Rooks, and royal sovereigns — stand in noble, breathing formation along the marble battlements, pennants and cloaks rippling gently in a warm highland breeze. Hand-painted fantasy oil painting aesthetic, 24fps cinematic lens. Audio: majestic swelling orchestral strings and distant warm French horns over soft mountain wind."
+          "prompt": "Slow sweeping aerial dolly-in across a colossal sunlit marble chessboard kingdom stretching toward a grand medieval ivory citadel on golden cliffs. Golden sunbeams pierce drifting clouds while shimmering golden dust motes float gently through the air. Carved ivory chess warriors — armored Knights, hooded Bishops, towering Rooks, and royal sovereigns — stand in noble, breathing formation along the marble battlements, pennants and cloaks rippling gently in a warm highland breeze. Audio: majestic swelling orchestral strings and distant warm French horns over soft mountain wind."
         },
         {
           "id": "prologue_02_shattering",
@@ -27,7 +29,7 @@
           "aspect_ratio": "16:9",
           "speaker": "MALAKOR, THE UNBOUND KING",
           "caption": "\"No sovereign kneels to sixty-four squares!\" Shattering his Black Crown at the edge of the world, Malakor tore open the Rift — unleashing an army bound by no rule of chess.",
-          "prompt": "Dramatic low-angle push-in at the shattered rim of a colossal dark chessboard under storm-torn crimson skies. The towering Obsidian Monarch Malakor in jagged volcanic armor raises his broken black crown and slams it downward, sending a shockwave of glowing molten cracks across the marble squares. Behind him, a swirling crimson abyssal Rift erupts with rising glowing embers as dark armored Obsidian Footmen and spiked Shadow Charger warhorses surge forward off the ruined board. Hand-painted dark-fantasy cinematic oil style, intense chiaroscuro rim lighting, 24fps. Audio: thunderous obsidian shatter, deep subterranean bass boom, roaring Rift fire, and a booming war horn."
+          "prompt": "Dramatic low-angle push-in at the shattered rim of a colossal dark chessboard under storm-torn crimson skies. The towering Obsidian Monarch Malakor in jagged volcanic armor raises his broken black crown and slams it downward, sending a shockwave of glowing molten cracks across the marble squares. Behind him, a swirling crimson abyssal Rift erupts with rising glowing embers as dark armored Obsidian Footmen and spiked Shadow Charger warhorses surge forward off the ruined board. Audio: thunderous obsidian shatter, deep subterranean bass boom, roaring Rift fire, and a booming war horn."
         },
         {
           "id": "prologue_03_vanguard",
@@ -37,74 +39,925 @@
           "aspect_ratio": "16:9",
           "speaker": "ROYAL VANGUARD DISPATCH",
           "caption": "The Court is scattered across the Ivory Ranks. Only a line of humble Pawns remains to hold the first bastion — rally the Royal Set before the Citadel Gate falls!",
-          "prompt": "Tight heroic tracking shot gliding low along a frontline rank of carved ivory Pawn spearmen standing guard upon a warm travertine marble chess square at dusk. Long dramatic shadows stretch across the chessboard as red stormlight flickers on the distant horizon. The ivory Pawns plant their halberds and raise their gilded shields in crisp unison, dust puffing off the marble tiles as distant crimson sparks drift across the sky. Tactile dark-fantasy oil painting in motion, 24fps. Audio: synchronized metallic spear plant on stone, crisp war drum pulse, and rising heroic brass motif."
+          "prompt": "Tight heroic tracking shot gliding low along a frontline rank of carved ivory Pawn spearmen standing guard upon a warm travertine marble chess square at dusk. Long dramatic shadows stretch across the chessboard as red stormlight flickers on the distant horizon. The ivory Pawns plant their halberds and raise their gilded shields in crisp unison, dust puffing off the marble tiles as distant crimson sparks drift across the sky. Audio: synchronized metallic spear plant on stone, crisp war drum pulse, and rising heroic brass motif."
+        }
+      ]
+    },
+    {
+      "id": "level_02",
+      "level_id": 2,
+      "chapter": 1,
+      "title": "The Knight's Fork",
+      "chapter_label": "LEVEL 2 • THE IVORY RANKS",
+      "output_file": "assets/videos/level_02.mp4",
+      "crossfade_seconds": 0.6,
+      "shots": [
+        {
+          "id": "level02_01_scouts",
+          "title": "Hoofbeats in the Autumn Pass",
+          "keyframe": "assets/scenes/scene_level_02.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "HIGHLAND WATCHTOWER",
+          "caption": "Dawn breaks amber over the Twin Hairpins, yet the valley trembles. Through swirling autumn leaves, scouts spot dark warhorses thundering off the broken border.",
+          "prompt": "Sweeping cinematic drone glide over winding sunlit marble chessboard hairpin roads carved into golden autumn highlands. Amber leaves spiral lazily across warm limestone squares as distant storm clouds gather on the far ridge and dark silhouettes of charging cavalry kick up crimson dust trails far below. Audio: crisp highland wind rustling autumn foliage, distant rhythmic thunder of iron hooves, and tense low strings."
+        },
+        {
+          "id": "level02_02_chargers",
+          "title": "The Bridleless Stampede",
+          "keyframe": "assets/scenes/scene_prologue_2.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "CAPTAIN AURELIAN",
+          "caption": "\"They have cast off the L-jump oath!\" Spiked Shadow Chargers tear straight through the hairpin switchbacks, too swift for solitary Pawns to catch alone.",
+          "prompt": "Low dynamic tracking shot racing alongside a pack of spiked dark obsidian Shadow Charger warhorses galloping furiously along a narrow marble chess trench. Sparks and ember trails spray from their iron hooves as crimson Rift-light glows beneath their riders' visors, bending sharply around a stone hairpin turn. Audio: pounding armored hooves on marble, metallic snorts, scraping steel, and urgent percussive war drums."
+        },
+        {
+          "id": "level02_03_knights_ride",
+          "title": "The Gilded Cavalry Awakes",
+          "keyframe": "assets/scenes/scene_level_02.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ROYAL CAVALRY ORDER",
+          "caption": "From the sunlit marble ridges above, the Ivory Knights answer the horn — gleaming warhorses lowering their gilded lances to leap clean across the chasm.",
+          "prompt": "Heroic medium push-in on a squadron of carved ivory-and-gold armored Knight warhorses rearing atop a sunlit marble highland cliff. Golden sunbeams glint off polished brass barding and flowing ivory banners as the lead Knight lowers his gilded lance and vaults dramatically off the ridge edge into open air. Audio: resonant brass cavalry horn call, ringing lance lock, and soaring heroic orchestral horns."
+        },
+        {
+          "id": "level02_04_fork",
+          "title": "Strike Across Two Lanes",
+          "keyframe": "assets/scenes/scene_level_02.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ROYAL VANGUARD DISPATCH",
+          "caption": "Vault over the stone wall and fork both hairpins at once! Command the central ridges and shatter the Shadow Charger raid before they turn the flank.",
+          "prompt": "Dramatic slow-motion aerial angle capturing a gilded Ivory Knight landing in a radiant golden shockwave upon a marble ridge square, lances striking simultaneously across both the upper and lower winding chess roads as dark Shadow Chargers recoil amid swirling autumn leaves and golden sparks. Audio: heavy golden impact shockwave, clashing steel, and triumphant rhythmic war drums."
+        }
+      ]
+    },
+    {
+      "id": "level_03",
+      "level_id": 3,
+      "chapter": 1,
+      "title": "The Bishop's Diagonal",
+      "chapter_label": "LEVEL 3 • THE IVORY RANKS",
+      "output_file": "assets/videos/level_03.mp4",
+      "crossfade_seconds": 0.6,
+      "shots": [
+        {
+          "id": "level03_01_staircase",
+          "title": "Mist on the Sunbeam Staircase",
+          "keyframe": "assets/scenes/scene_level_03.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "CHRONICLE OF AETHELGARD",
+          "caption": "High in the cliffside sanctuaries stands the Sunbeam Staircase — stepped marble terraces where light itself obeys the sacred diagonal geometry of the Board.",
+          "prompt": "Slow upward crane shot drifting over a monumental stepped white-and-gold marble chessboard staircase ascending through misty alpine cliffs. Silver fog curls along carved gothic balustrades while shafts of pale morning sunlight break through dark clouds above the upper sanctum. Audio: echoing mountain breeze, distant resonant cathedral bell, and solemn choral hum."
+        },
+        {
+          "id": "level03_02_clerics",
+          "title": "Lanterns of Corrupted Light",
+          "keyframe": "assets/scenes/scene_level_03.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ARCH-CANTOR'S DISCIPLES",
+          "caption": "From the gorge below climb hooded Blighted Clerics. Swinging lanterns of stolen Rift-fire, their dark chants knit shattered obsidian armor back together mid-stride.",
+          "prompt": "Atmospheric tracking shot along the lower mist-drenched marble steps as dark-robed Blighted Clerics march upward swinging glowing crimson ember lanterns. Ribbons of sinister red light coil out of the lanterns to seal glowing cracks across the dark iron armor of marching Obsidian Footmen beside them. Audio: eerie whispered litany, creaking metal lanterns, crackling crimson magic, and brooding low strings."
+        },
+        {
+          "id": "level03_03_bishops",
+          "title": "Seers of the Amber Spire",
+          "keyframe": "assets/scenes/scene_level_03.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "PRELATE SERAPHINA",
+          "caption": "\"Let the shadow flee the true diagonal!\" Stepping onto the gilded landings, the Ivory Bishops raise their sun-staves and draw down blazing beams of dawn.",
+          "prompt": "Majestic low-angle push-in on hooded Ivory Bishops in sculpted white-and-gold marble vestments stepping onto elevated checkered landings. Each Bishop raises an ornate brass crozier, gathering swirling golden sunlight into blinding orbs before firing razor-straight piercing beams of amber radiance diagonally down the staircase. Audio: crystalline harmonic chime swell, blazing solar beam ignition, and radiant brass chords."
+        },
+        {
+          "id": "level03_04_sunder",
+          "title": "Armor Sundered in Light",
+          "keyframe": "assets/scenes/scene_level_03.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ROYAL VANGUARD DISPATCH",
+          "caption": "Line your Bishops along the long diagonal terraces to cleave entire columns and sunder heavy armor — silence the Clerics before their dark chorus reaches the summit!",
+          "prompt": "Wide cinematic diagonal tracking shot watching intersecting golden solar beams slice straight down the checkered marble steps, burning away the grey mist and shattering crimson lantern-light as Blighted Clerics and obsidian soldiers stagger beneath golden sparks. Audio: resonant beam hum, shattering glass-and-ember burst, and driving heroic percussion."
+        }
+      ]
+    },
+    {
+      "id": "level_04",
+      "level_id": 4,
+      "chapter": 1,
+      "title": "The Rook's Siege",
+      "chapter_label": "LEVEL 4 • THE IVORY RANKS",
+      "output_file": "assets/videos/level_04.mp4",
+      "crossfade_seconds": 0.6,
+      "shots": [
+        {
+          "id": "level04_01_avenues",
+          "title": "The Grand Straightaways",
+          "keyframe": "assets/scenes/scene_level_04.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "FORTRESS QUARTERMASTER",
+          "caption": "Past the highland stairs stretch the Grand Straightaways — wide sandstone corridors built to let royal artillery command every rank and file without obstruction.",
+          "prompt": "Sweeping aerial tracking shot flying straight down a vast sunlit marble-and-sandstone fortress avenue flanked by medieval battlements and autumn trees. Golden autumn leaves drift across crisp checkerboard stone pavers bathed in warm late-afternoon amber light. Audio: distant siege horn, fluttering castle banners in crisp wind, and deep martial snare cadence."
+        },
+        {
+          "id": "level04_02_bastions",
+          "title": "March of the Hollow Keeps",
+          "keyframe": "assets/scenes/scene_level_04.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "VAELOR'S VANGUARD",
+          "caption": "The ground shudders beneath Ironclad Bastions — shattered Obsidian Rooks reforged into living siege golems whose molten iron plates shrug off light spears.",
+          "prompt": "Heavy ground-level trembling camera shot facing an advancing column of colossal molten-veined Ironclad Bastion golems stomping relentlessly down the straight marble avenue. Each footfall cracks checkered stone and sends glowing orange ash puffing upward as arrows bounce harmlessly off their thick obsidian pauldrons. Audio: earth-shaking iron footsteps, metallic clangs of deflected strikes, and ominous low brass drones."
+        },
+        {
+          "id": "level04_03_rooks",
+          "title": "Unchain the Culverins",
+          "keyframe": "assets/scenes/scene_level_04.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "MASTER ARTIFICER TORIN",
+          "caption": "\"Roll the Bastion Towers onto the file!\" Carved Ivory Rooks rumble into position at the corridor ends, locking four heavy bronze culverins on the enemy rank.",
+          "prompt": "Dramatic close-to-medium tracking shot along massive sculpted Ivory Rook watchtowers rolling on heavy timber-and-iron wheels onto key marble chessboard intersections. Ornate antique-brass culverin cannons extend from four crenellated embrasures, glowing fuses hissing as powder sparks fly in the dusk air. Audio: grinding heavy stone wheels, locking iron gears, sizzling fuses, and booming timpani build."
+        },
+        {
+          "id": "level04_04_barrage",
+          "title": "Thunder Down the File",
+          "keyframe": "assets/scenes/scene_level_04.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ROYAL VANGUARD DISPATCH",
+          "caption": "Anchor your Rooks at the ends of long straightaways! Their armor-piercing blasts will blow Vaelor's living keeps back to rubble.",
+          "prompt": "Explosive wide cinematic shot as a row of Ivory Rook towers unleashes synchronized blazing golden-orange cannon volleys straight down the chess avenue, shattering the lead Ironclad Bastion in a dramatic eruption of dark obsidian shards, white marble dust, and fiery sparks beneath drifting autumn leaves. Audio: thunderous synchronized cannon salvo, shattering stone-and-iron explosion, and bold heroic brass fanfare."
+        }
+      ]
+    },
+    {
+      "id": "level_05",
+      "level_id": 5,
+      "chapter": 1,
+      "title": "The Queen's Gambit",
+      "chapter_label": "LEVEL 5 • THE IVORY RANKS",
+      "output_file": "assets/videos/level_05.mp4",
+      "crossfade_seconds": 0.6,
+      "shots": [
+        {
+          "id": "level05_01_rain",
+          "title": "Storm Over the Spiral Court",
+          "keyframe": "assets/scenes/scene_level_05.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "CHRONICLE OF AETHELGARD",
+          "caption": "Black storm clouds swallow the sky above the Royal Spiral Court. Silver rain lashes concentric rings of marble as the obsidian tide closes in from every compass point.",
+          "prompt": "Moody high-angle aerial shot circling slowly above a monumental concentric spiral marble chess courtyard drenched in driving silver rain under dark slate storm clouds. Wet white and dark travertine squares shimmer with cold reflections as dark columns of obsidian soldiers coil inward along the outer rings. Audio: steady pouring rain on stone, rolling distant thunder, and tense pulsing cello ostinato."
+        },
+        {
+          "id": "level05_02_encirclement",
+          "title": "The Tightening Coil",
+          "keyframe": "assets/scenes/scene_level_05.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ROYAL GUARD CAPTAIN",
+          "caption": "\"They are flooding every lane of the spiral!\" Footmen, Bastions, and Clerics press inward in lockstep, threatening to drown the inner sanctum under sheer numbers.",
+          "prompt": "Urgent low-angle panning shot through pouring rain showing tightly packed dark obsidian Footmen, horned shields, and towering Bastions surging relentlessly around curved checkered stone corridors while crimson Cleric lanterns cast bloody reflections across the flooded marble tiles. Audio: splashing armored boots, clattering shields, distant war cries, and urgent percussion."
+        },
+        {
+          "id": "level05_03_queen",
+          "title": "Sovereign of Eight Lines",
+          "keyframe": "assets/scenes/scene_level_05.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "QUEEN ISOLDE OF THE IVORY COURT",
+          "caption": "\"Then let them gather around the center square.\" Descending onto the heart of the Spiral Court, the Ivory Queen raises her starlight diadem, illuminating every rank, file, and diagonal.",
+          "prompt": "Breathtaking heroic push-in on the majestic Ivory Queen standing upon the raised carved marble pedestal at the center of the rain-slick spiral courtyard. Her sculpted ivory armor and radiant golden starlight crown blaze through the gloom, raindrops vaporizing into golden mist around her outstretched hands. Audio: hushed raindrop shimmer, soaring luminous soprano choir note, and radiant harp-and-brass swell."
+        },
+        {
+          "id": "level05_04_volley",
+          "title": "The Eightfold Starlight",
+          "keyframe": "assets/scenes/scene_level_05.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ROYAL VANGUARD DISPATCH",
+          "caption": "Command the heart of the spiral with the Queen! Chain her starlight volleys across the wet corridors and break the encirclement before the Citadel gates are exposed.",
+          "prompt": "Dynamic overhead-angled wide shot as the Ivory Queen unleashes crackling arcs of golden starlight lightning simultaneously along all eight compass directions, bolts ricocheting from enemy to enemy across the rain-slicked concentric rings while obsidian soldiers scatter in dazzling golden reflections. Audio: crackling arcane starlight volleys, thunderclap crescendo, and triumphant orchestral theme."
+        }
+      ]
+    },
+    {
+      "id": "level_06",
+      "level_id": 6,
+      "chapter": 1,
+      "title": "The King's Citadel",
+      "chapter_label": "LEVEL 6 • CHAPTER I CLIMAX",
+      "output_file": "assets/videos/level_06.mp4",
+      "crossfade_seconds": 0.6,
+      "shots": [
+        {
+          "id": "level06_01_tempest",
+          "title": "Siege of the Sovereign Gate",
+          "keyframe": "assets/scenes/scene_level_06.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "CHRONICLE OF AETHELGARD",
+          "caption": "Lightning splits the night above the Ivory Citadel. After five bitter battles, the outer archway cracks under a roaring tempest — Chapter I reaches its reckoning.",
+          "prompt": "Dramatic wide establishing shot of a grand storm-lashed royal marble courtyard before towering gilded Citadel gates under violent forked lightning and sheets of rain. Cracks race across the outer stone archway as burning embers and storm rain whip across the flooded chessboard courtyard. Audio: deafening thunderclap, howling storm wind, tolling alarm bell, and ominous orchestral brass."
+        },
+        {
+          "id": "level06_02_vaelor",
+          "title": "Vaelor the Oathbreaker",
+          "keyframe": "assets/scenes/scene_level_06.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "VAELOR THE OATHBREAKER",
+          "caption": "\"Walls built on rules crumble the moment someone stops playing by them!\" Vaelor — Malakor’s first traitorous Warlord — shatters the marble arch with a blazing greatsword.",
+          "prompt": "Intense low-angle push-in as Vaelor the Oathbreaker — a colossal horned obsidian Warlord in jagged black armor — crashes through exploding marble pillars into the courtyard, swinging a molten fiery greatsword that boils raindrops into steam while dark obsidian legionnaires surge in his wake. Audio: shattering stone archway, roaring flame blade swing, deep demonic war horn, and pounding siege drums."
+        },
+        {
+          "id": "level06_03_king",
+          "title": "The Ivory King Takes the Field",
+          "keyframe": "assets/scenes/scene_level_06.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "KING ALDRIC OF AETHELGARD",
+          "caption": "\"No monarch hides while his Court bleeds!\" Stepping down from the Sovereign dais, the Ivory King lifts his golden scepter, binding every nearby defender in a radiant aura of valor.",
+          "prompt": "Majestic heroic shot of the noble Ivory King in gleaming white-and-gold marble plate striding down the Citadel steps into the storm. He thrusts his radiant golden scepter skyward, unleashing a warm expanding sphere of golden sovereign light that bathes surrounding Pawns, Knights, Bishops, Rooks, and the Queen in shimmering heroic power. Audio: majestic resonant royal fanfare, warm golden chime aura pulse, and stirring orchestral strings."
+        },
+        {
+          "id": "level06_04_clash",
+          "title": "Hold the Ivory Throne",
+          "keyframe": "assets/scenes/scene_level_06.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ROYAL VANGUARD DISPATCH",
+          "caption": "Place your King beside your strongest Rooks and Queens to supercharge their strikes and royal treasury — break Vaelor the Oathbreaker and save the Ivory Ranks!",
+          "prompt": "Epic cinematic wide battle panorama showing the blazing golden aura of the Ivory King and his united Royal Chess Court colliding across the rain-swept marble tiles with Vaelor's flaming greatsword and obsidian host beneath cracking storm lightning. Audio: heroic full-orchestra battle climax, clashing steel and magic, and echoing thunder."
         }
       ]
     },
     {
       "id": "chapter2",
+      "level_id": 7,
+      "chapter": 2,
       "title": "Beyond the Sixty-Four",
-      "chapter_label": "CHAPTER II • THE GLACIAL RIFT",
+      "chapter_label": "LEVEL 7 • CHAPTER II OPENING",
       "output_file": "assets/videos/chapter2.mp4",
       "crossfade_seconds": 0.6,
       "shots": [
         {
-          "id": "chapter2_01_malyss",
+          "id": "chapter2_01_fracture",
+          "title": "The Northern Fracture",
+          "keyframe": "assets/scenes/scene_chapter2_1.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "CHRONICLE OF AETHELGARD",
+          "caption": "Vaelor lies defeated behind the Ivory Gates, yet the victory brings no peace. Beyond the sixty-fourth rank, the earth splits open into an endless frozen abyss — the Glacial Rift.",
+          "prompt": "Sweeping panoramic aerial shot drifting beyond sunlit marble cliffs into a colossal jagged chasm of blue glaciers and wind-carved ice bridges disappearing into a howling arctic blizzard. Frost creeps across shattered chessboard squares suspended over bottomless frozen mist. Audio: howling arctic wind, groaning glacial ice plates, and haunting lonely cello."
+        },
+        {
+          "id": "chapter2_02_malyss",
           "title": "Arch-Cantor Malyss in the Blizzard",
           "keyframe": "assets/scenes/scene_chapter2_1.jpg",
           "duration_seconds": 8,
           "aspect_ratio": "16:9",
           "speaker": "ARCH-CANTOR MALYSS",
-          "caption": "Vaelor has fallen, yet the northern frontier cracks open into an abyss of ice. Through the blizzard marches Arch-Cantor Malyss, her ember-lantern knitting broken obsidian back to life.",
-          "prompt": "Atmospheric lateral tracking shot across a wind-swept icy chessboard bridge spanning a bottomless blue glacier chasm during a howling blizzard. Snowflakes whip diagonally across the frame. In dark tattered crimson-trimmed robes, Arch-Cantor Malyss raises a glowing crimson ember staff; ribbons of eerie red Rift-light arc from her lantern to mend the cracked iron armor of massive stomping Ironclad Bastion golems marching inexorably behind her. Cold cyan twilight contrasted with sinister crimson firelight, hand-painted dark-fantasy cinema, 24fps. Audio: howling arctic wind, heavy rhythmic iron footsteps crunching ice, eerie dark chanting, and brooding low cello."
+          "caption": "\"Ice preserves the flesh. Rift-fire restores the broken!\" Through the blizzard strides Arch-Cantor Malyss, her crimson lantern knitting shattered Bastions back to life.",
+          "prompt": "Atmospheric lateral tracking shot across a wind-swept icy chessboard bridge spanning a bottomless blue glacier chasm during a howling blizzard. Snowflakes whip diagonally across the frame. In dark tattered crimson-trimmed robes, Arch-Cantor Malyss raises a glowing crimson ember staff; ribbons of eerie red Rift-light arc from her lantern to mend the cracked iron armor of massive stomping Ironclad Bastion golems marching behind her. Audio: heavy rhythmic iron footsteps crunching ice, eerie dark chanting, and brooding low strings."
         },
         {
-          "id": "chapter2_02_obelisk",
+          "id": "chapter2_03_obelisk",
           "title": "Awakening the Frost Obelisk",
           "keyframe": "assets/scenes/scene_chapter2_2.jpg",
           "duration_seconds": 8,
           "aspect_ratio": "16:9",
           "speaker": "RELIC AWAKENED",
-          "caption": "Against foes who defy the rules of chess, the Accord alone is not enough. Beneath the glacier, your Court unearths the Frost Obelisk — a forbidden Relic forged before the Board existed.",
-          "prompt": "Majestic upward tilt and slow orbit around a towering ancient glacial alabaster Frost Obelisk rising out of cracked ice tiles in a frozen mountain pass. Luminous cyan runes ignite sequentially from base to spire, unleashing a shimmering radial frost shockwave that crystallizes swirling snowflakes in mid-air. Standing bravely in the foreground on frosted chess tiles, the Ivory Queen, Knight, and Rook shield their eyes as radiant azure light bathes their carved marble armor. Epic fantasy cinema oil painting aesthetic, 24fps. Audio: deep crystalline ice groaning, resonant harmonic frost chime explosion, and soaring ethereal orchestral choir."
+          "caption": "Against foes who defy the rules of chess, the Accord alone is not enough. Beneath the glacier, your Court unearths the Frost Obelisk — a mythic Relic forged before the Board existed.",
+          "prompt": "Majestic upward tilt and slow orbit around a towering ancient glacial alabaster Frost Obelisk rising out of cracked ice tiles in a frozen mountain pass. Luminous cyan runes ignite sequentially from base to spire, unleashing a shimmering radial frost shockwave that crystallizes swirling snowflakes in mid-air while the Ivory Queen, Knight, and Rook shield their eyes in awe. Audio: deep crystalline ice groaning, resonant harmonic frost chime explosion, and soaring ethereal orchestral choir."
+        },
+        {
+          "id": "chapter2_04_trial",
+          "title": "Trial of the Mythic Relic",
+          "keyframe": "assets/scenes/scene_chapter2_2.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ROYAL VANGUARD DISPATCH",
+          "caption": "Plant the Frost Obelisk at icy chokepoints to chill Malyss's relentless columns to a crawl while your Royal Chess pieces shatter them in frozen crossfire!",
+          "prompt": "Heroic wide tracking shot along frosted chessboard terraces as the newly awakened cyan Frost Obelisk pulses rings of shimmering ice across advancing dark obsidian soldiers, freezing their stride while golden beams and cannon fire from the Ivory Court rain down from the snow-dusted cliffs. Audio: rhythmic crystalline frost pulses, cracking ice, and determined northern brass theme."
+        }
+      ]
+    },
+    {
+      "id": "level_08",
+      "level_id": 8,
+      "chapter": 2,
+      "title": "Frozen Switchback",
+      "chapter_label": "LEVEL 8 • THE GLACIAL RIFT",
+      "output_file": "assets/videos/level_08.mp4",
+      "crossfade_seconds": 0.6,
+      "shots": [
+        {
+          "id": "level08_01_crevasse",
+          "title": "Descent into the Crevasse",
+          "keyframe": "assets/scenes/scene_level_08.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "GLACIAL SCOUT CORPS",
+          "caption": "Narrow icy switchbacks carve deep pockets down the walls of the crevasse. Soft snow blankets every square, hiding the sheer drop on either side of the march.",
+          "prompt": "High gliding aerial shot descending into a deep towering blue glacial canyon where winding snow-dusted marble chessboard switchbacks cling to sheer crystalline cliffs. Gentle snow drifts downward through shafts of pale arctic twilight illuminating frozen bridge spans below. Audio: crisp alpine breeze, faint echoing snow crunch, and atmospheric crystalline chimes."
+        },
+        {
+          "id": "level08_02_chokepoints",
+          "title": "Anchoring the Hairpins",
+          "keyframe": "assets/scenes/scene_level_08.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "RELIC KEEPER VEYRA",
+          "caption": "\"Every bend is a trap waiting for frost.\" Placing Frost Obelisks inside the tightest hairpin pockets turns the mountain’s own cold into a weapon against the Rift.",
+          "prompt": "Dramatic push-in on a carved alabaster Frost Obelisk planted snugly inside an icy hairpin bend of the chess road. Glowing azure runes flare to life, spreading a translucent hexagonal ring of hoarfrost across three adjacent lanes of the winding switchback. Audio: resonant crystalline hum, spreading frost crackle, and mysterious orchestral strings."
+        },
+        {
+          "id": "level08_03_slowed_column",
+          "title": "Caught in the Rime",
+          "keyframe": "assets/scenes/scene_level_08.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ARCH-CANTOR'S VANGUARD",
+          "caption": "As Malyss's Footmen and Ironclad Bastions round the frozen turn, crystalline chill encases their joints — slowing their dread march beneath the waiting cliffside battlements.",
+          "prompt": "Tense medium shot watching dark armored obsidian Footmen and towering Ironclad Bastions trudging heavily through glowing cyan frost mist on the icy chessboard switchback, icicles forming along their shields and legs as their pace slows to a grinding crawl. Audio: heavy frosted footsteps, creaking frozen metal, and deep booming bass pulse."
+        },
+        {
+          "id": "level08_04_harvest",
+          "title": "Fire and Frost",
+          "keyframe": "assets/scenes/scene_level_08.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ROYAL VANGUARD DISPATCH",
+          "caption": "Pair Frost Obelisks inside the switchbacks with elevated Rooks and Queens — freeze the column in place and bring down warm golden thunder!",
+          "prompt": "Sweeping wide battle shot contrasting glowing cyan Frost Obelisks below with warm orange-gold cannon fire arcing down from Ivory Rook towers perched atop snowy battlements, exploding directly into the chilled obsidian ranks amid clouds of snow and golden sparks. Audio: booming artillery blasts echoing through ice canyons, shattering frost, and triumphant brass."
+        }
+      ]
+    },
+    {
+      "id": "level_09",
+      "level_id": 9,
+      "chapter": 2,
+      "title": "Cavalry Crossing",
+      "chapter_label": "LEVEL 9 • THE GLACIAL RIFT",
+      "output_file": "assets/videos/level_09.mp4",
+      "crossfade_seconds": 0.6,
+      "shots": [
+        {
+          "id": "level09_01_blizzard",
+          "title": "Whiteout in the Twin Canyons",
+          "keyframe": "assets/scenes/scene_level_09.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "CHRONICLE OF AETHELGARD",
+          "caption": "A vicious blizzard tears across the Glacial Rift, carving twin narrow ravines between towering ridges of ice. Visibility drops to a spear’s length as iron hooves echo through the gale.",
+          "prompt": "Whip-panning cinematic shot through a fierce howling white blizzard over twin narrow icy canyon roads separated by high frosted marble ridges. Horizontal streaks of snow whip across colossal snow-covered chess monoliths silhouetted against turbulent arctic storm clouds. Audio: roaring blizzard gale, whistling canyon wind, and tense driving strings."
+        },
+        {
+          "id": "level09_02_stampede",
+          "title": "Chargers of the Whiteout",
+          "keyframe": "assets/scenes/scene_level_09.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ROYAL CAVALRY WATCH",
+          "caption": "\"They are splitting down both ravines!\" Packs of Shadow Chargers burst from the glowing cavern mouths, eyes burning crimson as they race through both canyons at once.",
+          "prompt": "Dynamic low-angle tracking shot inside a snowy canyon trench as spiked black obsidian Shadow Chargers burst out of an amber-lit icy cave mouth, crimson eyes blazing through swirling snow as they gallop furiously along parallel frozen paths. Audio: thunderous muffled hooves on snow, fierce stallion cries, and rapid war drums."
+        },
+        {
+          "id": "level09_03_high_ground",
+          "title": "Beacon on the Ice Ridge",
+          "keyframe": "assets/scenes/scene_level_09.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "KING ALDRIC OF AETHELGARD",
+          "caption": "\"Hold the high ground, Knights of Aethelgard!\" Standing upon the central icy precipice, the Ivory King ignites his golden rallying beacon, guiding his warhorses through the storm.",
+          "prompt": "Heroic upward shot of the golden-armored Ivory King standing resolutely atop a jagged blue ice ridge in the blizzard, radiating a brilliant warm golden halo that cuts through the whiteout while armored Ivory Knights gather beside him on the snowy bluff. Audio: inspiring royal horn cutting through blizzard wind, warm radiant shimmer, and swelling strings."
+        },
+        {
+          "id": "level09_04_leap",
+          "title": "Fork Across the Abyss",
+          "keyframe": "assets/scenes/scene_level_09.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ROYAL VANGUARD DISPATCH",
+          "caption": "Station Knights beside a buffing King on the elevated ridges to fork both frost canyons simultaneously — break the Charger stampede before it clears the pass!",
+          "prompt": "Exhilarating wide action shot of King-empowered Ivory Knight warhorses vaulting dramatically off the sunlit golden cliff in both directions across the swirling blizzard, swords raised to strike Shadow Charger packs in both icy ravines below. Audio: dramatic leap whoosh, clashing broadswords, and thunderous heroic percussion."
+        }
+      ]
+    },
+    {
+      "id": "level_10",
+      "level_id": 10,
+      "chapter": 2,
+      "title": "Cathedral of Rays",
+      "chapter_label": "LEVEL 10 • THE GLACIAL RIFT",
+      "output_file": "assets/videos/level_10.mp4",
+      "crossfade_seconds": 0.6,
+      "shots": [
+        {
+          "id": "level10_01_vaults",
+          "title": "Sanctum of Frozen Glass",
+          "keyframe": "assets/scenes/scene_level_10.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "CHRONICLE OF AETHELGARD",
+          "caption": "Suddenly the blizzard parts. Before the Court rises the Cathedral of Rays — an ancient ruined basilica whose translucent ice arches bend starlight into luminous prisms.",
+          "prompt": "Breathtaking slow crane shot soaring inside a colossal ruined gothic cathedral sculpted entirely from translucent blue glacial ice. Shimmering prismatic rainbow-cyan and golden sunbeams pour down through shattered crystalline vaults onto wide frozen chessboard stairs beneath a starry arctic night sky. Audio: ethereal cathedral reverb, delicate crystalline wind chimes, and awe-inspiring choral pad."
+        },
+        {
+          "id": "level10_02_invaders",
+          "title": "Profaning the Prism Stairs",
+          "keyframe": "assets/scenes/scene_level_10.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "PRELATE SERAPHINA",
+          "caption": "\"Malyss’s cantors dare bring Rift-fire into the house of light.\" Along the lower colonnades march armored Bastions and crimson-lantern Clerics, staining the clear ice red.",
+          "prompt": "Moody tracking shot along cracked icy chess tiles at the base of the cathedral steps as dark obsidian soldiers and hooded Blighted Clerics advance swinging glowing crimson lanterns, casting sinister blood-red reflections across the translucent glacial arches. Audio: echoing iron boots on glass-like ice, low ominous chanting, and subtle crackling ember fire."
+        },
+        {
+          "id": "level10_03_refraction",
+          "title": "Convergence of Dawn and Starlight",
+          "keyframe": "assets/scenes/scene_level_10.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "QUEEN ISOLDE OF THE IVORY COURT",
+          "caption": "\"Every diagonal here is a lens.\" Raising her staff beside a choir of Ivory Bishops, the Queen channels the cathedral’s prismatic light into blazing piercing beams.",
+          "prompt": "Radiant cinematic push-in on the Ivory Queen and four hooded Ivory Bishops standing atop the luminous frozen staircase. Golden starlight and prismatic cyan rays stream from the vaulted roof into their raised staves, coalescing into blinding golden-blue beams aimed down the diagonal aisles. Audio: crystalline resonance building to a harmonic crescendo, shimmering chimes, and majestic brass."
+        },
+        {
+          "id": "level10_04_crossfire",
+          "title": "Shatter the Columns",
+          "keyframe": "assets/scenes/scene_level_10.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ROYAL VANGUARD DISPATCH",
+          "caption": "Claim the grand diagonal colonnades with Bishops and Queens! Let refracted solar rays melt Malyss's iron armor and silence her cantors in a blaze of light.",
+          "prompt": "Wide spectacular shot of intersecting golden and prismatic starlight beams slicing diagonally through the ice cathedral, shattering dark Bastion armor and extinguishing crimson Cleric lanterns in dazzling showers of sparkling ice dust and golden motes. Audio: blazing piercing beams, crystalline shatter bursts, and soaring victorious orchestra."
+        }
+      ]
+    },
+    {
+      "id": "level_11",
+      "level_id": 11,
+      "chapter": 2,
+      "title": "Iron Ramparts",
+      "chapter_label": "LEVEL 11 • THE GLACIAL RIFT",
+      "output_file": "assets/videos/level_11.mp4",
+      "crossfade_seconds": 0.6,
+      "shots": [
+        {
+          "id": "level11_01_trenches",
+          "title": "The Frozen Perimeter",
+          "keyframe": "assets/scenes/scene_level_11.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "FORTRESS QUARTERMASTER",
+          "caption": "Beyond the ice cathedral lie the Iron Ramparts — frozen trenches and broken obsidian walls guarding the final approach to Arch-Cantor Malyss’s monoliths.",
+          "prompt": "Grim sweeping aerial shot over snowbound medieval siege trenches, timber barricades, and towering ice-encrusted obsidian fortress ramparts under a heavy twilight storm sky. Flickering orange braziers burn along fortified white-stone emplacements as snow drifts steadily across the scarred battlefield. Audio: cold winter wind, crackling torch fire, distant rumble of marching steel, and brooding war drums."
+        },
+        {
+          "id": "level11_02_iron_tide",
+          "title": "The Unbroken Golem Wall",
+          "keyframe": "assets/scenes/scene_level_11.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ARCH-CANTOR'S LEGION",
+          "caption": "Row upon row of Ironclad Bastions march shoulder-to-shoulder across the snowfield, flanked by chanting Clerics determined to grind the royal trenches into dust.",
+          "prompt": "Low ominous dolly shot across the snowfield as dozens of towering heavy armored Ironclad Bastion golems stride forward in relentless formation, hooded dark Clerics weaving between their legs holding glowing staffs while black banners snap in the icy wind. Audio: synchronized thunderous iron stomping, low ritual chant, and grinding steel percussion."
+        },
+        {
+          "id": "level11_03_battery",
+          "title": "Artillery on the Bastion Ridge",
+          "keyframe": "assets/scenes/scene_level_11.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "MASTER ARTIFICER TORIN",
+          "caption": "\"Elevate the culverins and hold the straight files!\" Anchored atop the frozen ridge, heavy Ivory Rook batteries ignite their braziers and sight down the perimeter corridors.",
+          "prompt": "Dramatic close tracking shot past torch-lit Ivory Rook siege towers anchored on raised icy battlements. Heavy bronze cannons recoil and belch roaring plumes of fiery orange smoke into the cold blue dusk as crews brace along the snow-packed trench walls. Audio: roaring black-powder ignition, echoing cannon blast, metallic recoil clank, and heroic brass."
+        },
+        {
+          "id": "level11_04_hold",
+          "title": "Shatter the Siege Line",
+          "keyframe": "assets/scenes/scene_level_11.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ROYAL VANGUARD DISPATCH",
+          "caption": "Build an unbreakable Rook and Frost Obelisk fireline along the ramparts! Hold the trenches through every iron wave to force the gates of the Twin Monoliths.",
+          "prompt": "Epic wide battle view of blazing cannonballs arcing from the glowing Ivory Rook towers directly into the advancing Ironclad Bastion ranks, erupting in colossal blasts of orange fire, flying snow, and shattered dark armor beneath the looming frozen fortress. Audio: thunderous cascading explosions, crashing iron golems, and stirring orchestral battle crescendo."
+        }
+      ]
+    },
+    {
+      "id": "level_12",
+      "level_id": 12,
+      "chapter": 2,
+      "title": "The Twin Monoliths",
+      "chapter_label": "LEVEL 12 • CHAPTER II CLIMAX",
+      "output_file": "assets/videos/level_12.mp4",
+      "crossfade_seconds": 0.6,
+      "shots": [
+        {
+          "id": "level12_01_monoliths",
+          "title": "Two Islands Above the Abyss",
+          "keyframe": "assets/scenes/scene_level_12.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "CHRONICLE OF AETHELGARD",
+          "caption": "At the frozen edge of the Rift rise the Twin Monoliths — two colossal spires of ancient ice linked by narrow chessboard causeways above a churning arctic sea.",
+          "prompt": "Grand sweeping aerial shot revealing two colossal jagged glacial island monoliths jutting out of a stormy icy ocean during a fierce blizzard, connected by treacherous snow-covered marble chessboard bridges swaying over crashing frozen waves. Audio: roaring arctic surf, howling blizzard wind, and monumental ominous choir."
+        },
+        {
+          "id": "level12_02_malyss_rise",
+          "title": "Matriarch of the Blighted Conclave",
+          "keyframe": "assets/scenes/scene_level_12.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ARCH-CANTOR MALYSS",
+          "caption": "\"Your Relics chill the body, Ivory Sovereign — my flame denies death itself!\" Raising her blazing ember-lantern, Malyss weaves crimson life-threads into towering Warlords.",
+          "prompt": "Intense dramatic push-in on Arch-Cantor Malyss standing upon the dark western monolith in flowing crimson-trimmed obsidian robes. She lifts her towering flaming red ember-lantern staff, sending violently pulsing tendrils of red necromantic fire surging into horned Warlords and Bastions crossing the ice bridge. Audio: roaring crimson flame surge, haunting dark soprano chant, and thunderous warlord roar."
+        },
+        {
+          "id": "level12_03_rally",
+          "title": "Crown the Eastern Spire",
+          "keyframe": "assets/scenes/scene_level_12.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "QUEEN ISOLDE OF THE IVORY COURT",
+          "caption": "\"Then we break the lantern and the ice together!\" On the eastern monolith, the Ivory King and Queen ignite twin Frost Obelisks, answering Malyss’s crimson fire with starlight and rime.",
+          "prompt": "Heroic medium shot on the sunlit-gold eastern ice spire where the Ivory Queen raises her blazing starlight staff beside the golden-armored Ivory King and three radiant cyan Frost Obelisks, golden rings and azure frost waves swirling upward into the dark storm sky. Audio: soaring angelic orchestral theme, resonant crystalline frost chime, and rallying horn blast."
+        },
+        {
+          "id": "level12_04_climax",
+          "title": "Break the Glacial Rift",
+          "keyframe": "assets/scenes/scene_level_12.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ROYAL VANGUARD DISPATCH",
+          "caption": "Crown both frozen islands with Queens, a King, and Frost Obelisks! Shatter Arch-Cantor Malyss's healing armada and open the bridge to the Crimson Citadel!",
+          "prompt": "Spectacular wide boss-battle tableau spanning both monoliths as blinding arcs of golden starlight and cyan frost rings collide mid-bridge against Malyss's crimson Rift-fire tendrils and advancing Warlord legions amid whipping blizzard snow. Audio: thunderous magical collision, crashing ice, and epic full-orchestra climax."
         }
       ]
     },
     {
       "id": "chapter3",
-      "title": "Crown of Ash",
-      "chapter_label": "CHAPTER III • THE CRIMSON CITADEL",
+      "level_id": 13,
+      "chapter": 3,
+      "title": "Ember Gauntlet",
+      "chapter_label": "LEVEL 13 • CHAPTER III OPENING",
       "output_file": "assets/videos/chapter3.mp4",
       "crossfade_seconds": 0.6,
       "shots": [
         {
-          "id": "chapter3_01_citadel",
+          "id": "chapter3_01_border",
+          "title": "Where Ice Turns to Ash",
+          "keyframe": "assets/scenes/scene_chapter3_1.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "CHRONICLE OF AETHELGARD",
+          "caption": "Arch-Cantor Malyss is vanquished and the blizzard breaks behind you. Ahead, the sky bleeds volcanic scarlet as grey ash drifts down onto charred basalt squares.",
+          "prompt": "Sweeping dramatic crane shot rising past fading frost mist onto a colossal volcanic basalt bridge of cracked obsidian-and-marble chessboard squares glowing with molten lava seams beneath. Black ash drifts lazily upward against a towering smoking volcano and blood-red storm clouds. Audio: distant volcanic rumble, crackling magma, whistling hot wind, and deep brooding brass."
+        },
+        {
+          "id": "chapter3_02_citadel",
           "title": "Gates of the Crimson Citadel",
           "keyframe": "assets/scenes/scene_chapter3_1.jpg",
           "duration_seconds": 8,
           "aspect_ratio": "16:9",
+          "speaker": "CHRONICLE OF AETHELGARD",
+          "caption": "Across the lava chasm looms the Crimson Citadel — a jagged obsidian fortress veined with flowing magma, built by Malakor upon the shattered rim of the world.",
+          "prompt": "Slow ominous aerial push toward a colossal gothic volcanic fortress bristling with black jagged spires, rivers of molten lava pouring from its ramparts into the abyss below while siege catapults and burning war tents line the approaches. Audio: booming distant siege drums, roaring lava falls, and dark dissonant choral swell."
+        },
+        {
+          "id": "chapter3_03_malakor",
+          "title": "The Unbound King Speaks",
+          "keyframe": "assets/scenes/scene_chapter3_1.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
           "speaker": "MALAKOR, THE UNBOUND KING",
-          "caption": "The Glacial Rift lies behind you. Ahead rises the Crimson Citadel — charred obsidian squares veined with magma, where Malakor awaits upon the Throne of Ash for a final gambit.",
-          "prompt": "Sweeping dramatic crane shot rising over a volcanic basalt bridge made of scorched obsidian chessboard squares glowing with molten lava seams underneath. Glowing volcanic embers and black ash drift upward against a blood-red storm sky. Upon the jagged volcanic rampart ahead stands Malakor, the Unbound King, molten crown blazing as he raises his greatsword toward the oncoming camera while vast legions of armored obsidian warriors stir along the bridge below. Dark epic fantasy cinema oil-painted realism, intense orange underlighting, 24fps. Audio: booming siege war drums, crackling volcanic lava rumble, blazing brass fanfare, and distant echoing war horns."
+          "caption": "\"So the Ivory Court dares cross into my dominion!\" High upon the flaming rampart, Malakor lifts his Rift-forged greatsword, his molten crown burning like a fallen star.",
+          "prompt": "Dramatic low-angle push-in on towering Malakor, the Unbound King standing atop a torch-lit volcanic stone parapet. His jagged molten crown blazes fiercely and red runes ignite down the length of his colossal greatsword as he thrusts it toward the camera while vast obsidian legions roar below. Audio: blazing molten sword draw, echoing warlord battle roar, and thunderous dark brass fanfare."
+        },
+        {
+          "id": "chapter3_04_gauntlet",
+          "title": "Into the Ember Gauntlet",
+          "keyframe": "assets/scenes/scene_chapter3_1.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ROYAL VANGUARD DISPATCH",
+          "caption": "Enter the Ember Gauntlet! Anchor Frost Obelisks in the scorching hairpins and unleash Rooks, Bishops, and Queens — the road to Malakor’s throne begins here.",
+          "prompt": "Wide heroic tracking shot along the cracked checkerboard causeway as glowing blue frost light and golden banners of the Ivory Court advance bravely onto the volcanic bridge against surging torch-bearing obsidian legions under falling ash. Audio: resolute war drums, clashing steel, and soaring heroic orchestral counter-theme."
+        }
+      ]
+    },
+    {
+      "id": "level_14",
+      "level_id": 14,
+      "chapter": 3,
+      "title": "Obsidian Labyrinth",
+      "chapter_label": "LEVEL 14 • THE CRIMSON CITADEL",
+      "output_file": "assets/videos/level_14.mp4",
+      "crossfade_seconds": 0.6,
+      "shots": [
+        {
+          "id": "level14_01_rings",
+          "title": "Coils Over Magma",
+          "keyframe": "assets/scenes/scene_level_14.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "CHRONICLE OF AETHELGARD",
+          "caption": "Inside the outer fortress walls lies the Obsidian Labyrinth — concentric volcanic chess rings suspended over glowing magma chasms that spiral endlessly toward a single raised vault.",
+          "prompt": "Sweeping orbital aerial shot gliding above concentric circular rings of dark volcanic obsidian chessboard corridors coiling around a glowing magma pit inside a cavernous fortress chamber. Rising sparks and heat haze shimmer above rivers of liquid fire below the stone bridges. Audio: deep subterranean lava rumble, crackling embers, and tense rhythmic low strings."
+        },
+        {
+          "id": "level14_02_coiling_host",
+          "title": "Armored Coils Advance",
+          "keyframe": "assets/scenes/scene_level_14.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "CITADEL WATCH",
+          "caption": "From every tunnel mouth march relentless obsidian phalanxes and heavy Bastions, winding around the fiery rings to crush whoever dares hold the central stone.",
+          "prompt": "Low dramatic tracking shot along the curved dark checkerboard rings as densely packed dark-armored obsidian warriors, horned shields, and massive Bastions march relentlessly around the glowing lava precipice, orange magma reflecting off raised halberds. Audio: rhythmic synchronized steel footsteps, clanging shields, and pounding anvil war drums."
+        },
+        {
+          "id": "level14_03_sanctum",
+          "title": "Sanctum of Frost and Gold",
+          "keyframe": "assets/scenes/scene_level_14.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "KING ALDRIC OF AETHELGARD",
+          "caption": "\"Claim the heart of the maze and turn their own spiral against them!\" At the central dais, the Ivory King and Queen raise a blazing cyan Frost Obelisk amid the volcanic heat.",
+          "prompt": "Majestic push-in onto the raised stone sanctum at the center of the labyrinth where the golden-armored Ivory King and radiant Ivory Queen stand beside a towering glowing cyan Frost Obelisk. Cool azure frost magic spills down the central steps, colliding with rising orange embers in shimmering steam. Audio: resonant crystalline frost pulse, sizzling steam hiss, and noble brass melody."
+        },
+        {
+          "id": "level14_04_hold_core",
+          "title": "Hold the Inner Sanctum",
+          "keyframe": "assets/scenes/scene_level_14.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ROYAL VANGUARD DISPATCH",
+          "caption": "Fortify the central pocket with your King, Queens, Rooks, and Frost Obelisks! Every coiled lane passes beneath your crossfire — break the labyrinth's guard!",
+          "prompt": "Wide epic battle vista looking down across all concentric lava-lit rings as blinding cyan frost waves and golden starlight fire radiate outward from the central sanctum into the spiraling obsidian columns below. Audio: booming magical blasts, roaring fire and ice contrast, and driving heroic orchestra."
+        }
+      ]
+    },
+    {
+      "id": "level_15",
+      "level_id": 15,
+      "chapter": 3,
+      "title": "Cleric's Conclave",
+      "chapter_label": "LEVEL 15 • THE CRIMSON CITADEL",
+      "output_file": "assets/videos/level_15.mp4",
+      "crossfade_seconds": 0.6,
+      "shots": [
+        {
+          "id": "level15_01_cloister",
+          "title": "Halls of Falling Ash",
+          "keyframe": "assets/scenes/scene_level_15.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "CHRONICLE OF AETHELGARD",
+          "caption": "Past the labyrinth yawns the Blighted Cloister — soot-blackened gothic arches choked with drifting volcanic ash where Malyss’s surviving disciples have gathered for a final rite.",
+          "prompt": "Slow eerie tracking shot down a cavernous ruined gothic volcanic cloister of charred basalt pillars and shattered chess-tiled aisles. Soft grey volcanic ash drifts slowly through shafts of smoky firelight glowing from cracked upper arches. Audio: hushed hollow cavern echo, distant whispering chorus, and solemn low cello."
+        },
+        {
+          "id": "level15_02_conclave",
+          "title": "The Undying Litany",
+          "keyframe": "assets/scenes/scene_level_15.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "THE BLIGHTED CONCLAVE",
+          "caption": "Standing shoulder-to-shoulder, rows of hooded Clerics raise crimson lanterns in unison — weaving glowing scarlet webs that render their armored Bastions nearly immortal.",
+          "prompt": "Sinister medium push-in on a tight semicircle of hooded Blighted Clerics lifting glowing red iron lanterns across the checkered ash floor. Vivid glowing crimson threads of dark magic weave between their lanterns and surge into towering spiked Ironclad Bastion golems standing beside them. Audio: layered eerie liturgical chanting, pulsing red energy hum, and heavy iron breathing."
+        },
+        {
+          "id": "level15_03_bishops_queen",
+          "title": "Shatter the Choir",
+          "keyframe": "assets/scenes/scene_level_15.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "PRELATE SERAPHINA",
+          "caption": "\"No false flame endures true dawn!\" Advancing onto the marble dais, the Ivory Queen and her Archbishops aim piercing solar beams straight through the cloister diagonals.",
+          "prompt": "Heroic tracking shot framing the gleaming Ivory Queen and two white-and-gold Ivory Bishops standing atop cracked marble steps on the left. They extend their ornate golden staves in unison, unleashing searing parallel beams of golden solar fire slicing straight across the ash-choked hall. Audio: crisp radiant beam ignition, soaring golden choir swell, and bold orchestral strings."
+        },
+        {
+          "id": "level15_04_focus_fire",
+          "title": "Silence the Cloister",
+          "keyframe": "assets/scenes/scene_level_15.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ROYAL VANGUARD DISPATCH",
+          "caption": "Bring piercing Bishops, Frost Obelisks, and concentrated Queen-Rook bursts! Break the Cleric conclave quickly before their synchronized healing outpaces your line.",
+          "prompt": "Dramatic wide shot of the entire gothic cloister ablaze with golden solar beams severing the glowing crimson healing threads, causing the dark lanterns to explode in sparks while towering Bastions stagger under golden fire and ash. Audio: snapping arcane threads, resonant explosions, and urgent triumphant percussion."
+        }
+      ]
+    },
+    {
+      "id": "level_16",
+      "level_id": 16,
+      "chapter": 3,
+      "title": "Castle Perimeter",
+      "chapter_label": "LEVEL 16 • THE CRIMSON CITADEL",
+      "output_file": "assets/videos/level_16.mp4",
+      "crossfade_seconds": 0.6,
+      "shots": [
+        {
+          "id": "level16_01_moat",
+          "title": "The Inner Keep Moat",
+          "keyframe": "assets/scenes/scene_level_16.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "FORTRESS QUARTERMASTER",
+          "caption": "Only the inner keep stands between the Court and Malakor’s throne. A blazing river of molten lava rings the central stronghold, bridged by treacherous outer battlements.",
+          "prompt": "Sweeping panoramic aerial shot orbiting a dramatic volcanic fortress surrounded by a glowing molten lava moat beneath a fiery crimson night sky and smoking mountain peaks. Glowing sparks drift upward as outer black-stone walls encircle an illuminated inner keep. Audio: roaring lava river, crackling firestorm wind, and deep ominous war drums."
+        },
+        {
+          "id": "level16_02_swarm",
+          "title": "Storming the Outer Wall",
+          "keyframe": "assets/scenes/scene_level_16.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "CITADEL WATCH",
+          "caption": "Obsidian legions swarm across the outer battlements with ladders and siege fire, racing around the perimeter to force the drawbridge straight into the keep’s heart.",
+          "prompt": "Urgent dynamic tracking shot along fiery outer stone battlements crowded with surging dark obsidian soldiers, horned Warlords, and siege ladders silhouetted against blazing molten glow below as flaming projectiles streak across the moat. Audio: roaring siege battle cries, clashing iron ladders, crackling flames, and pounding percussion."
+        },
+        {
+          "id": "level16_03_killbox",
+          "title": "Bastion of Fire and Ice",
+          "keyframe": "assets/scenes/scene_level_16.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "MASTER ARTIFICER TORIN",
+          "caption": "\"Let them march the perimeter — they’ll meet our killbox at the moat!\" Inside the inner courtyard, layered Ivory Rooks and glowing cyan Frost Obelisks lock onto every causeway.",
+          "prompt": "Heroic medium shot inside the lava-ringed inner keep courtyard where massive bronze-cannon Ivory Rook towers stand flanked by two brilliant blue Frost Obelisks. Wide cyan frost rings radiate across the stone bridges while the Rook culverins glow hot and fire blazing golden shells outward. Audio: booming synchronized cannon fire, resonant crystalline frost nova, and stirring brass."
+        },
+        {
+          "id": "level16_04_breach_held",
+          "title": "Hold the Keep Moat",
+          "keyframe": "assets/scenes/scene_level_16.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ROYAL VANGUARD DISPATCH",
+          "caption": "Layer heavy Rooks and Frost Obelisks at the core keep! Crush the perimeter waves before the obsidian host breaks across the throne moat.",
+          "prompt": "Breathtaking wide battle panorama of the entire lava-moated fortress alive with arcing golden Rook artillery trails and luminous blue frost rings smashing into the dark legions storming the outer ramparts under a storm of embers. Audio: thunderous siege explosions, roaring fire and ice clash, and full heroic orchestra."
+        }
+      ]
+    },
+    {
+      "id": "level_17",
+      "level_id": 17,
+      "chapter": 3,
+      "title": "The Dread March",
+      "chapter_label": "LEVEL 17 • THE CRIMSON CITADEL",
+      "output_file": "assets/videos/level_17.mp4",
+      "crossfade_seconds": 0.6,
+      "shots": [
+        {
+          "id": "level17_01_caldera",
+          "title": "Lightning Over the Caldera",
+          "keyframe": "assets/scenes/scene_level_17.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "CHRONICLE OF AETHELGARD",
+          "caption": "Crimson lightning tears the ash-choked sky above the volcanic summit. The staggered ramparts climb directly toward Malakor’s citadel — one final ridge before the Throne of Ash.",
+          "prompt": "Dramatic wide upward shot of a towering volcanic mountain fortress silhouetted against violently cracking crimson lightning and swirling ash clouds. Jagged stepped obsidian battlements wind up the flaming slopes toward the dark crown-like citadel at the peak. Audio: deafening thunderclap, howling volcanic storm gale, and ominous dark brass choir."
+        },
+        {
+          "id": "level17_02_armada",
+          "title": "The Dread March Ascends",
+          "keyframe": "assets/scenes/scene_level_17.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "MALAKOR'S ROYAL GUARD",
+          "caption": "Malakor unleashes his personal Warlord guard — an unbroken river of horned titans, Bastions, and Clerics climbing every rank of the mountain in a deafening Dread March.",
+          "prompt": "Terrifying low-angle tracking shot watching an immense surging army of horned Crimson Warlords, flaming banners, and obsidian warriors storming relentlessly up jagged volcanic terraces illuminated by lava veins below. Audio: deafening war horns, thunderous marching horde, clashing greatswords, and relentless pounding timpani."
+        },
+        {
+          "id": "level17_03_united",
+          "title": "Every Piece in Line",
+          "keyframe": "assets/scenes/scene_level_17.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "KING ALDRIC OF AETHELGARD",
+          "caption": "\"Pawns, Knights, Bishops, Rooks, Queen, and Relic — stand together!\" Along the upper battlement, the complete Ivory Court locks ranks beside a towering radiant Frost Obelisk.",
+          "prompt": "Breathtaking heroic tracking shot gliding along the entire united Ivory Royal Court lined shoulder-to-shoulder on the high volcanic ridge: halberd Pawns, gleaming Knights, solar Bishops, cannon Rooks, the radiant Queen, the golden King holding his banner, and a towering glowing cyan Frost Obelisk pulsing behind them. Audio: unforgettable soaring heroic orchestral theme, clashing shields in unison, and rallying royal horn."
+        },
+        {
+          "id": "level17_04_synergy",
+          "title": "Weather the Storm",
+          "keyframe": "assets/scenes/scene_level_17.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ROYAL VANGUARD DISPATCH",
+          "caption": "Only complete synergy between Frost Obelisks, Bishops, Rooks, Knights, Queens, and the King can halt the Dread March — break Malakor's guard and claim the summit!",
+          "prompt": "Monumental wide cinematic clash as golden artillery, solar beams, leaping ivory cavalry, and blazing cyan frost shields slam down the volcanic steps into the surging horned Warlord armada under red storm lightning. Audio: colossal symphonic battle crescendo, thunderous magic impacts, and roaring flames."
+        }
+      ]
+    },
+    {
+      "id": "level_18",
+      "level_id": 18,
+      "chapter": 3,
+      "title": "Crown of Ash",
+      "chapter_label": "LEVEL 18 • GRAND FINALE",
+      "output_file": "assets/videos/level_18.mp4",
+      "crossfade_seconds": 0.6,
+      "shots": [
+        {
+          "id": "level18_01_throne",
+          "title": "The Sixty-Fourth Square",
+          "keyframe": "assets/scenes/scene_level_18.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "CHRONICLE OF AETHELGARD",
+          "caption": "At the summit of the world lies the fractured Royal Board suspended above an erupting caldera. Above it swirls the bleeding Crimson Rift — and beneath it waits the final checkmate.",
+          "prompt": "Awe-inspiring wide establishing shot of a colossal cracked white-marble-and-obsidian chessboard suspended over rivers of molten lava beneath an erupting volcano and a swirling blood-red Rift vortex in the sky crackling with crimson lightning. Audio: roaring abyssal Rift wind, deep volcanic thunder, and monumental tragic-epic choir."
+        },
+        {
+          "id": "level18_02_malakor_descends",
+          "title": "Malakor, the Unbound King",
+          "keyframe": "assets/scenes/scene_level_18.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "MALAKOR, THE UNBOUND KING",
+          "caption": "\"I broke the Board to rule without limit! Come, Ivory Sovereign — show me your final move!\" Malakor steps onto the blazing tiles, his molten crown scorching the air itself.",
+          "prompt": "Dramatic low-angle push-in on colossal Malakor, the Unbound King striding onto the right side of the cracked magma-veined chessboard. His jagged lava-cracked obsidian armor radiates blinding heat, his crown burns with wild flames, and he hefts his enormous Rift-forged greatsword as magma cracks spread from his feet. Audio: terrifying molten metallic screech, booming bass tremor, and roaring Rift flame."
+        },
+        {
+          "id": "level18_03_sovereigns",
+          "title": "Chess and Relic United",
+          "keyframe": "assets/scenes/scene_level_18.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "QUEEN ISOLDE & KING ALDRIC",
+          "caption": "\"The Accord lives in every square we defended!\" Side by side, the Ivory King and Queen raise radiant golden blades amid glowing cyan Frost Obelisks and promoted Royal defenders.",
+          "prompt": "Radiant heroic push-in on the left side of the colossal chessboard where the gleaming Ivory King and Ivory Queen step forward together, golden starlight streaming like a comet behind their cloaks while glowing blue Frost Obelisks and armored Pawns, Knights, and Rooks brace along the luminous marble squares. Audio: soaring golden orchestral climax, resonant crystalline frost chime, and heroic choir."
+        },
+        {
+          "id": "level18_04_checkmate",
+          "title": "Deliver Checkmate",
+          "keyframe": "assets/scenes/scene_level_18.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "ROYAL VANGUARD DISPATCH",
+          "caption": "Marshal every promoted piece and Relic across all twelve siege waves! Break Malakor's Warlord armada, shatter the Crown of Ash, and seal the Rift forever!",
+          "prompt": "Ultimate wide cinematic showdown across the lava-ringed chessboard as a blinding tidal wave of golden starlight and azure frost surges from the Ivory Sovereign's army directly toward Malakor's flaming greatsword beneath the swirling red Rift vortex. Audio: earth-shaking full-orchestra finale, thunderous clash of light and fire, and deafening war horns."
         }
       ]
     },
     {
       "id": "epilogue",
+      "level_id": 19,
+      "chapter": 3,
       "title": "Checkmate & Dawn",
       "chapter_label": "EPILOGUE • THE ACCORD RESTORED",
       "output_file": "assets/videos/epilogue.mp4",
       "crossfade_seconds": 0.6,
       "shots": [
         {
-          "id": "epilogue_01_dawn",
-          "title": "The Accord Restored",
+          "id": "epilogue_01_crown_cools",
+          "title": "The Unbound Crown Falls Cold",
           "keyframe": "assets/scenes/scene_epilogue_1.jpg",
           "duration_seconds": 8,
           "aspect_ratio": "16:9",
           "speaker": "CHRONICLE OF AETHELGARD",
-          "caption": "Checkmate. The Unbound Crown lies cold upon sunlit marble as the Crimson Rift seals on the horizon. Chess and Relic now stand united — guardians of the Sixty-Four Squares.",
-          "prompt": "Serene slow pull-back and gentle rise from a shattered obsidian crown cooling to dark stone on a sunlit white-and-gold marble chessboard terrace. The last faint wisps of ember smoke fade away into crisp morning air. In the glowing golden background, the Ivory King and Queen stand side by side beside the softly pulsing blue Frost Obelisk, gazing over peaceful sunlit valleys as the last sliver of the red Rift closes into bright golden sunrise clouds. Luminous warm golden-hour lighting, floating sunlit pollen motes, hand-painted epic fantasy cinema, 24fps. Audio: gentle fading wind, triumphant warm major-key orchestral strings and horn resolution, peaceful chime."
+          "caption": "Checkmate. Upon the quiet marble terrace lies Malakor’s shattered Black Crown, its stolen Rift-fire fading to cold dark stone as the last ember drifts away on the morning breeze.",
+          "prompt": "Intimate slow pull-back from a shattered jagged obsidian crown resting upon a sunlit white-and-gold marble chessboard terrace. The last faint orange embers inside the cracked black stone cool and fade to quiet grey wisps of smoke drifting upward into crisp golden morning air. Audio: soft fading wind, gentle dying crackle of embers, and a lone tender solo violin note."
+        },
+        {
+          "id": "epilogue_02_rift_seals",
+          "title": "Dawn Over Aethelgard",
+          "keyframe": "assets/scenes/scene_epilogue_1.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "CHRONICLE OF AETHELGARD",
+          "caption": "Far across the horizon, the bleeding scar of the Crimson Rift folds shut in a flood of sunrise gold. Warm morning light washes back over the Ivory Ranks and the melting glaciers.",
+          "prompt": "Sweeping panoramic sunrise shot looking out beyond the sunlit marble citadel battlements as the final dark crimson sliver of the Rift in the distant sky seals shut in a radiant burst of warm golden sunlight, illuminating green highland valleys and peaceful drifting clouds below. Audio: warm radiant shimmer, swelling golden orchestral strings, and peaceful distant alpine wind."
+        },
+        {
+          "id": "epilogue_03_united",
+          "title": "Guardians of the Sixty-Four",
+          "keyframe": "assets/scenes/scene_epilogue_1.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "KING ALDRIC OF AETHELGARD",
+          "caption": "\"Never again shall Aethelgard stand divided.\" Beside the Ivory King and Queen pulses the peaceful blue Frost Obelisk — Chess and Relic bound together in a stronger Accord.",
+          "prompt": "Serene heroic medium shot on the sunlit marble balcony where the Ivory King and Ivory Queen stand side by side with lowered weapons beside a softly pulsing crystalline cyan Frost Obelisk, bathed in warm golden-hour sunlight as shimmering pollen motes float gently past their carved marble armor. Audio: warm triumphant French horn melody, soft crystalline chime, and lush major-key strings."
+        },
+        {
+          "id": "epilogue_04_peace",
+          "title": "A New Age of the Board",
+          "keyframe": "assets/scenes/scene_prologue_1.jpg",
+          "duration_seconds": 8,
+          "aspect_ratio": "16:9",
+          "speaker": "CHRONICLE OF AETHELGARD",
+          "caption": "The Sixty-Four Squares endure in peace, their silent sentinels watchful at the edge of the world. Thank you for defending Aethelgard, Grand Sovereign of TowerDeChess!",
+          "prompt": "Majestic slow aerial pull-back soaring high above the restored sunlit marble chessboard kingdom and gleaming Ivory Citadel bathed in radiant golden morning sunbeams, pennants fluttering peacefully in the warm breeze as golden dust motes sparkle across the horizon. Audio: triumphant peaceful full-orchestra resolution fading into warm resonant chimes."
         }
       ]
     }

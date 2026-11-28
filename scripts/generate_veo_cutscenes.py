@@ -23,17 +23,23 @@ Authentication (pick one):
     gcloud auth application-default login
 
 Usage Examples:
-    # Preview all shot prompts without calling the API:
+    # Preview all 19 cutscenes (75 shots across Levels 1-18 + Epilogue) without calling the API:
     python3 scripts/generate_veo_cutscenes.py --dry-run
 
-    # Generate only the Prologue cutscene (3 x 8s shots -> assets/videos/prologue.mp4):
-    python3 scripts/generate_veo_cutscenes.py --cutscene prologue
+    # Generate a single level's 30-second cutscene (4 x 8s shots -> assets/videos/level_04.mp4):
+    python3 scripts/generate_veo_cutscenes.py --level 4
 
-    # Generate all 4 cutscenes at 1080p using Vertex AI Veo 3.1 GA:
+    # Generate all 6 cutscenes for Chapter II:
+    python3 scripts/generate_veo_cutscenes.py --chapter 2
+
+    # Generate only a named cutscene (prologue | level_02..18 | chapter2 | chapter3 | epilogue):
+    python3 scripts/generate_veo_cutscenes.py --cutscene chapter2
+
+    # Generate all 19 cutscenes at 1080p using Vertex AI Veo 3.1 GA:
     python3 scripts/generate_veo_cutscenes.py --vertexai --model veo-3.1-generate-001 --resolution 1080p
 
     # Re-generate a single shot only:
-    python3 scripts/generate_veo_cutscenes.py --shot prologue_02_shattering --force
+    python3 scripts/generate_veo_cutscenes.py --shot level04_04_barrage --force
 """
 
 from __future__ import annotations
@@ -347,12 +353,25 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--cutscene",
         default="all",
-        help="Cutscene ID to generate: prologue | chapter2 | chapter3 | epilogue | all (default: all)",
+        help="Cutscene ID to generate: prologue | level_02..level_18 | chapter2 | chapter3 | epilogue | all (default: all)",
+    )
+    parser.add_argument(
+        "--level",
+        type=int,
+        default=None,
+        help="Shortcut to generate a specific level's 30s cutscene (1-18)",
+    )
+    parser.add_argument(
+        "--chapter",
+        type=int,
+        choices=[1, 2, 3],
+        default=None,
+        help="Shortcut to generate all 6 level cutscenes for a chapter (1, 2, or 3)",
     )
     parser.add_argument(
         "--shot",
         default=None,
-        help="Generate only a single shot ID (e.g. prologue_02_shattering)",
+        help="Generate only a single shot ID (e.g. level04_04_barrage)",
     )
     parser.add_argument(
         "--model",
@@ -421,7 +440,13 @@ def main() -> None:
     negative_prompt = manifest["negative_prompt"]
 
     cutscenes = manifest["cutscenes"]
-    if args.cutscene != "all":
+    if args.level is not None:
+        cutscenes = [c for c in cutscenes if c.get("level_id") == args.level]
+        if not cutscenes:
+            sys.exit(f"No cutscene found for --level {args.level} (valid: 1-18).")
+    elif args.chapter is not None:
+        cutscenes = [c for c in cutscenes if c.get("chapter") == args.chapter and c.get("id") != "epilogue"]
+    elif args.cutscene != "all":
         cutscenes = [c for c in cutscenes if c["id"] == args.cutscene]
         if not cutscenes:
             valid = ", ".join(c["id"] for c in manifest["cutscenes"])
