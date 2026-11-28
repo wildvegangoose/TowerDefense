@@ -2,7 +2,7 @@
  * TowerDeChess — Main App Controller, Campaign Progression & Reactive HUD.
  */
 
-import { preloadAssets, getSpriteUrl, getSceneUrl } from './assets.js';
+import { preloadAssets, getSpriteUrl, getSceneUrl, getMapBgUrl, getMapNodeUrl } from './assets.js';
 import { sound } from './audio.js';
 import { CutscenePlayer } from './cutscene.js';
 import { LEVELS, CHAPTERS, getChapterForLevel } from './data/levels.js';
@@ -604,13 +604,13 @@ class TowerDeChessApp {
           earnedStars: chEarned,
           maxStars: ch.levelIds.length * 3,
         });
-        activeBand = { theme: ch.theme, top: bandTop, bottom: cursorY + 130 };
-        cursorY += 98;
+        activeBand = { theme: ch.theme, top: bandTop, bottom: cursorY + 140 };
+        cursorY += 108;
       }
 
       nodesLayout.push({ lvl, x: lvl.mapX, y: cursorY, shrouded: false });
       this._mapNodeY.set(lvl.id, cursorY);
-      cursorY += 124;
+      cursorY += 136;
     }
 
     if (nextMysteryLevel) {
@@ -621,12 +621,12 @@ class TowerDeChessApp {
         y: cursorY,
         shrouded: true,
       });
-      cursorY += 178;
+      cursorY += 188;
     } else {
-      cursorY += 36;
+      cursorY += 108;
     }
 
-    const totalH = Math.max(380, cursorY);
+    const totalH = Math.max(420, cursorY);
     if (activeBand) {
       activeBand.bottom = totalH;
       chapterBands.push(activeBand);
@@ -634,12 +634,19 @@ class TowerDeChessApp {
 
     canvas.style.height = `${totalH}px`;
 
-    // 2. Render per-chapter biome terrain backdrops
+    // 2. Render per-chapter illustrated cartography backdrops at low opacity
     for (const band of chapterBands) {
       const el = document.createElement('div');
       el.className = `map-biome-band theme-${band.theme}`;
       el.style.top = `${band.top}px`;
       el.style.height = `${Math.max(0, band.bottom - band.top)}px`;
+      const bgUrl = getMapBgUrl(band.theme);
+      if (bgUrl) {
+        const art = document.createElement('div');
+        art.className = 'map-biome-art';
+        art.style.backgroundImage = `url("${bgUrl}")`;
+        el.appendChild(art);
+      }
       canvas.appendChild(el);
     }
 
@@ -779,6 +786,7 @@ class TowerDeChessApp {
 
       btn.className = [
         'map-node',
+        `chapter-${lvl.chapter}`,
         earnedStars > 0 ? 'conquered' : '',
         isFrontier ? 'frontier' : '',
         isSelected ? 'selected' : '',
@@ -796,7 +804,7 @@ class TowerDeChessApp {
       btn.innerHTML = `
         ${isFrontier ? '<span class="map-node-beacon">Next Battle</span>' : ''}
         <div class="map-node-medallion">
-          <img class="map-node-sprite" src="${getSpriteUrl(piece.sprite)}" alt="${piece.name}" />
+          <img class="map-node-art" src="${getMapNodeUrl(lvl.id)}" alt="${lvl.name}" />
           <span class="map-node-num">${lvl.isChapterBoss ? `👑${lvl.id}` : lvl.id}</span>
         </div>
         <div class="map-node-stars" aria-label="${earnedStars} of 3 stars">${starsHtml}</div>

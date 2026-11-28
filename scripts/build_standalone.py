@@ -39,6 +39,8 @@ SPRITE_KEYS = [
     "citadel_gate",
 ]
 
+MAP_BG_KEYS = ["ivory", "glacial", "crimson"]
+
 SCENE_KEYS = [
     "scene_prologue_1",
     "scene_prologue_2",
@@ -140,6 +142,16 @@ def build() -> str:
         scene_path = os.path.join(REPO_DIR, "assets", "scenes", f"{key}.jpg")
         if os.path.exists(scene_path):
             inline_scenes[key] = encode_scene_webp_data_uri(scene_path, width=640, height=360, quality=74)
+    inline_map_bgs = {}
+    for theme in MAP_BG_KEYS:
+        bg_path = os.path.join(REPO_DIR, "assets", "map", f"map_bg_{theme}.jpg")
+        if os.path.exists(bg_path):
+            inline_map_bgs[theme] = encode_scene_webp_data_uri(bg_path, width=480, height=640, quality=72)
+    inline_map_nodes = {}
+    for lvl_id in range(1, 19):
+        node_path = os.path.join(REPO_DIR, "assets", "map", f"node_{lvl_id:02d}.png")
+        if os.path.exists(node_path):
+            inline_map_nodes[str(lvl_id)] = encode_sheet_webp_data_uri(node_path, width=144, height=144, quality=80)
 
     music_path = os.path.join(REPO_DIR, "assets", "audio", f"{MUSIC_KEY}.mp3")
     inline_music_b64 = encode_music_base64(music_path) if os.path.exists(music_path) else ""
@@ -165,6 +177,8 @@ def build() -> str:
 const INLINE_SPRITE_URIS = {json.dumps(inline_sprites)};
 const INLINE_SHEET_URIS = {json.dumps(inline_sheets)};
 const INLINE_SCENE_URIS = {json.dumps(inline_scenes)};
+const INLINE_MAP_BG_URIS = {json.dumps(inline_map_bgs)};
+const INLINE_MAP_NODE_URIS = {json.dumps(inline_map_nodes)};
 const SHEET_META = {json.dumps(SHEET_META)};
 const SPRITES = {{}};
 const SHEETS = {{}};
@@ -176,6 +190,12 @@ function getSheetUrl(key) {{
 }}
 function getSceneUrl(key) {{
   return INLINE_SCENE_URIS[key] || '';
+}}
+function getMapBgUrl(theme) {{
+  return INLINE_MAP_BG_URIS[theme] || '';
+}}
+function getMapNodeUrl(levelId) {{
+  return INLINE_MAP_NODE_URIS[String(levelId)] || '';
 }}
 // Videos are not inlined: video cutscenes play their painted slides instead
 function getVideoUrl(key) {{

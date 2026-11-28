@@ -59,6 +59,14 @@ export function getMusicUrl(key) {
   return `assets/audio/${key}.mp3`;
 }
 
+export function getMapBgUrl(theme) {
+  return `assets/map/map_bg_${theme}.jpg`;
+}
+
+export function getMapNodeUrl(levelId) {
+  return `assets/map/node_${String(levelId).padStart(2, '0')}.png`;
+}
+
 function loadImage(url) {
   return new Promise((resolve) => {
     const img = new Image();
