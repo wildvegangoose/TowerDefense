@@ -45,38 +45,74 @@
   </div>
 
   <div id="app">
-    <!-- ==================== CAMPAIGN / HOME SCREEN ==================== -->
-    <section id="screen-home" class="screen screen-home active" aria-label="Campaign Menu">
+    <!-- ==================== MAIN LANDING SCREEN ==================== -->
+    <section id="screen-home" class="screen screen-home active" aria-label="Main Menu">
+      <div class="home-backdrop-art" aria-hidden="true"></div>
+
       <header class="home-header">
-        <div class="brand-lockup">
-          <img src="assets/icons/icon-192.png" alt="TowerDeChess Crest" class="brand-emblem" />
-          <div class="brand-copy">
-            <h1>TowerDeChess</h1>
-            <p class="brand-subtitle">Tactical Chess Tower Defense</p>
-          </div>
+        <div class="brand-lockup" aria-label="TowerDeChess">
+          <img src="assets/ui/game_logo.png" alt="" class="brand-logo-crest" aria-hidden="true" />
+          <h1 class="brand-logo-wordmark">TowerDeChess</h1>
         </div>
         <div class="home-actions">
-          <button id="btn-open-codex" class="btn btn-secondary btn-with-icon" type="button">
-            <img src="assets/ui/ui_codex.png" alt="" class="btn-ui-icon" aria-hidden="true" />
-            <span>Codex &amp; Lore</span>
-          </button>
-          <button id="btn-open-settings" class="btn btn-secondary btn-with-icon" type="button">
+          <button id="btn-open-settings" class="btn btn-secondary btn-with-icon home-nav-btn" type="button">
             <img src="assets/ui/ui_settings.png" alt="" class="btn-ui-icon" aria-hidden="true" />
             <span>Settings</span>
           </button>
-          <button id="btn-install-pwa" class="btn btn-gold hidden" type="button">Install App</button>
+          <button id="btn-open-codex" class="btn btn-secondary btn-with-icon home-nav-btn" type="button">
+            <img src="assets/ui/ui_codex.png" alt="" class="btn-ui-icon" aria-hidden="true" />
+            <span>Codex</span>
+          </button>
         </div>
       </header>
 
+      <main class="home-landing-stage">
+        <div class="home-mode-grid">
+          <button id="btn-mode-campaign" class="mode-banner-btn mode-campaign" type="button">
+            <img src="assets/ui/mode_campaign.jpg" alt="" class="mode-banner-art" aria-hidden="true" />
+            <div class="mode-banner-scrim" aria-hidden="true"></div>
+            <div class="mode-banner-content">
+              <span id="home-campaign-meta" class="mode-banner-pill">Chapter I • 1/18 • ★ 0/54</span>
+              <h2 class="mode-banner-title">Campaign</h2>
+              <p class="mode-banner-sub">Conquer 18 strongholds across 3 realms &amp; reclaim the Ivory Throne.</p>
+            </div>
+            <span class="mode-banner-arrow" aria-hidden="true">&#8594;</span>
+          </button>
+
+          <button id="btn-mode-quickmatch" class="mode-banner-btn mode-quickmatch" type="button">
+            <img src="assets/ui/mode_quickmatch.jpg" alt="" class="mode-banner-art" aria-hidden="true" />
+            <div class="mode-banner-scrim" aria-hidden="true"></div>
+            <div class="mode-banner-content">
+              <span class="mode-banner-pill mode-pill-skirmish">Skirmish • All 7 Defenders</span>
+              <h2 class="mode-banner-title">Quick Match</h2>
+              <p class="mode-banner-sub">Jump straight onto a random battlefield with every royal piece unlocked.</p>
+            </div>
+            <span class="mode-banner-arrow" aria-hidden="true">&#8594;</span>
+          </button>
+        </div>
+
+        <div class="home-footer-actions">
+          <button id="btn-install-pwa" class="btn btn-gold hidden" type="button">Install App</button>
+        </div>
+      </main>
+    </section>
+
+    <!-- ==================== ROYAL CAMPAIGN MAP SCREEN ==================== -->
+    <section id="screen-campaign" class="screen screen-campaign" aria-label="Campaign Map">
       <main class="campaign-shell">
         <div class="campaign-bar">
-          <div>
-            <div class="campaign-title-row">
-              <h2>Royal Campaign</h2>
-              <span id="campaign-total-stars" class="stars-summary-pill" title="Total stars earned">★ 0 / 54</span>
-              <span id="campaign-revealed-pill" class="revealed-summary-pill" title="Territories revealed on the map">1 / 18 Revealed</span>
+          <div class="campaign-bar-lead">
+            <button id="btn-campaign-back" class="icon-btn hud-action-btn" type="button" aria-label="Back to Main Menu" title="Main Menu">
+              <img src="assets/ui/ui_back.png" alt="" class="hud-btn-icon" aria-hidden="true" />
+            </button>
+            <div>
+              <div class="campaign-title-row">
+                <h2>Royal Campaign</h2>
+                <span id="campaign-total-stars" class="stars-summary-pill" title="Total stars earned">★ 0 / 54</span>
+                <span id="campaign-revealed-pill" class="revealed-summary-pill" title="Territories revealed on the map">1 / 18 Revealed</span>
+              </div>
+              <p class="campaign-hint">Tap any revealed stronghold on the map to inspect &amp; deploy across 3 Realms.</p>
             </div>
-            <p class="campaign-hint">Tap any revealed stronghold on the map to deploy — conquer each battle to part the fog of war across 3 Realms.</p>
           </div>
           <div class="campaign-controls">
             <div class="difficulty-switch" role="group" aria-label="Difficulty Mode">

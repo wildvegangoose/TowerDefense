@@ -270,80 +270,367 @@ body {
   min-width: 44px;
 }
 
-/* ==================== HOME / CAMPAIGN SCREEN ==================== */
+/* ==================== MAIN LANDING SCREEN & CAMPAIGN SCREEN ==================== */
 
 .screen-home {
-  padding: max(16px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
+  position: relative;
+  min-height: 100dvh;
+  padding: max(14px, env(safe-area-inset-top)) 14px max(28px, env(safe-area-inset-bottom));
   max-width: 1080px;
   width: 100%;
   margin: 0 auto;
-  gap: 22px;
+  gap: 18px;
 }
 
+.home-backdrop-art {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 72% 52% at 50% 24%, rgba(218, 170, 86, 0.12) 0%, transparent 72%),
+    radial-gradient(ellipse 65% 55% at 50% 92%, rgba(168, 72, 42, 0.1) 0%, transparent 70%);
+}
+
+.screen-home > .home-header,
+.screen-home > .home-landing-stage {
+  position: relative;
+  z-index: 1;
+}
+
+/* Open unboxed top bar: game logo on left, Settings & Codex on right */
 .home-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 14px;
-  padding: 16px 20px;
-  background: linear-gradient(180deg, var(--surface-walnut) 0%, #241912 100%);
-  border: 1px solid var(--border-brass);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-card), var(--shadow-inset);
+  gap: 10px;
+  padding: 6px 2px;
+  background: transparent;
+  border: none;
+  box-shadow: none;
 }
 
 .brand-lockup {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
+  min-width: 0;
 }
 
-.brand-emblem {
-  width: 58px;
-  height: 58px;
-  border-radius: 14px;
-  border: 1px solid var(--border-brass-strong);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
-  object-fit: cover;
+.brand-logo-crest {
+  width: clamp(36px, 9vw, 52px);
+  height: clamp(36px, 9vw, 52px);
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.72)) drop-shadow(0 0 10px rgba(245, 202, 109, 0.22));
 }
 
-.brand-copy h1 {
+.brand-logo-wordmark {
   margin: 0;
   font-family: var(--font-display);
-  font-size: clamp(1.45rem, 4vw, 2.05rem);
+  font-size: clamp(1.06rem, 4.2vw, 1.85rem);
+  font-weight: 800;
   letter-spacing: 0.06em;
-  color: var(--text-ivory);
-  line-height: 1.1;
-}
-
-.brand-subtitle {
-  margin: 4px 0 0;
-  color: var(--text-parchment);
-  font-size: 0.88rem;
-  letter-spacing: 0.03em;
+  line-height: 1.05;
+  white-space: nowrap;
+  background: linear-gradient(180deg, #fff8e4 0%, #f1cc7a 56%, #bd862f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.85));
 }
 
 .home-actions {
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: 8px;
+  flex-shrink: 0;
+}
+
+.home-nav-btn {
+  padding: 8px 12px;
+  min-height: 40px;
+  font-size: 0.8rem;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(56, 40, 29, 0.9) 0%, rgba(35, 24, 17, 0.94) 100%);
+  border: 1.25px solid rgba(218, 174, 96, 0.44);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 236, 190, 0.14);
+}
+
+.home-nav-btn:hover {
+  border-color: rgba(245, 202, 109, 0.82);
+  background: linear-gradient(180deg, rgba(72, 51, 36, 0.95) 0%, rgba(44, 30, 21, 0.96) 100%);
+}
+
+/* Main Landing Stage: Two Prominent Horizontal Mode Buttons */
+.home-landing-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 12px 0 24px;
+}
+
+.home-mode-grid {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+@media (min-width: 780px) {
+  .screen-home {
+    padding: max(20px, env(safe-area-inset-top)) 24px max(32px, env(safe-area-inset-bottom));
+  }
+
+  .home-actions {
+    gap: 12px;
+  }
+
+  .home-nav-btn {
+    padding: 9px 16px;
+    min-height: 44px;
+    font-size: 0.88rem;
+  }
+
+  .home-mode-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+  }
+}
+
+.mode-banner-btn {
+  position: relative;
+  width: 100%;
+  min-height: 186px;
+  padding: 22px 24px;
+  border-radius: 18px;
+  border: 1.5px solid rgba(223, 174, 88, 0.56);
+  background: #1c130d;
+  color: var(--text-ivory);
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  box-shadow:
+    0 14px 34px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(255, 236, 190, 0.08) inset;
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+@media (min-width: 780px) {
+  .mode-banner-btn {
+    min-height: 248px;
+    padding: 26px 28px;
+  }
+}
+
+.mode-banner-btn:hover {
+  transform: translateY(-4px);
+  border-color: var(--gold-bright);
+  box-shadow:
+    0 20px 42px rgba(0, 0, 0, 0.72),
+    0 0 26px rgba(245, 202, 109, 0.24),
+    0 0 0 1px rgba(255, 240, 200, 0.22) inset;
+}
+
+.mode-banner-btn:active {
+  transform: translateY(-1px) scale(0.99);
+}
+
+.mode-banner-btn.mode-quickmatch {
+  border-color: rgba(230, 152, 92, 0.54);
+}
+
+.mode-banner-btn.mode-quickmatch:hover {
+  border-color: #ffd180;
+  box-shadow:
+    0 20px 42px rgba(0, 0, 0, 0.74),
+    0 0 26px rgba(238, 146, 74, 0.28),
+    0 0 0 1px rgba(255, 232, 196, 0.22) inset;
+}
+
+.mode-banner-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 35%;
+  pointer-events: none;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.mode-banner-btn:hover .mode-banner-art {
+  transform: scale(1.05);
+}
+
+.mode-banner-scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(16, 10, 6, 0.16) 0%, rgba(16, 10, 6, 0.48) 46%, rgba(14, 9, 6, 0.92) 100%),
+    linear-gradient(95deg, rgba(16, 10, 6, 0.84) 0%, rgba(16, 10, 6, 0.46) 52%, rgba(16, 10, 6, 0.14) 100%);
+}
+
+.mode-banner-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.mode-banner-pill {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(24, 16, 10, 0.78);
+  border: 1px solid rgba(245, 202, 109, 0.45);
+  color: var(--gold-bright);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  backdrop-filter: blur(4px);
+}
+
+.mode-pill-skirmish {
+  border-color: rgba(255, 178, 108, 0.5);
+  color: #ffd599;
+}
+
+.mode-banner-title {
+  margin: 2px 0 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.55rem, 5vw, 2.15rem);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.05;
+  color: #fff8e8;
+  text-shadow: 0 3px 14px rgba(0, 0, 0, 0.9);
+}
+
+.mode-banner-sub {
+  margin: 0;
+  font-size: clamp(0.8rem, 2.3vw, 0.9rem);
+  color: rgba(240, 224, 198, 0.88);
+  line-height: 1.38;
+  max-width: 38ch;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+.mode-banner-arrow {
+  position: relative;
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(180deg, rgba(232, 184, 88, 0.92) 0%, rgba(176, 118, 28, 0.94) 100%);
+  border: 1.5px solid #fff0c2;
+  color: #1f1207;
+  font-size: 1.2rem;
+  font-weight: 800;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+  transition: transform 0.2s ease;
+}
+
+.mode-banner-btn:hover .mode-banner-arrow {
+  transform: translateX(4px);
+}
+
+.home-footer-actions {
+  display: flex;
+  justify-content: center;
+}
+
+@media (max-width: 480px) {
+  .brand-lockup {
+    gap: 6px;
+  }
+
+  .brand-logo-crest {
+    width: 32px;
+    height: 32px;
+  }
+
+  .brand-logo-wordmark {
+    font-size: 0.88rem;
+    letter-spacing: 0.03em;
+  }
+
+  .home-actions {
+    gap: 6px;
+  }
+
+  .home-nav-btn {
+    padding: 6px 9px;
+    min-height: 38px;
+    font-size: 0.72rem;
+    gap: 5px;
+  }
+
+  .home-nav-btn .btn-ui-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .mode-banner-btn {
+    padding: 18px 18px;
+    min-height: 178px;
+  }
+
+  .mode-banner-pill {
+    font-size: 0.61rem;
+    letter-spacing: 0.05em;
+    padding: 4px 9px;
+    white-space: nowrap;
+  }
+}
+
+/* ==================== ROYAL CAMPAIGN MAP SCREEN ==================== */
+
+.screen-campaign {
+  padding: max(14px, env(safe-area-inset-top)) 14px max(24px, env(safe-area-inset-bottom));
+  max-width: 1080px;
+  width: 100%;
+  margin: 0 auto;
+  gap: 16px;
 }
 
 .campaign-shell {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 14px;
 }
 
 .campaign-bar {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px;
-  padding: 0 4px;
+  padding: 0 2px;
+}
+
+.campaign-bar-lead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
 }
 
 .campaign-title-row {

@@ -169,6 +169,18 @@ def build() -> str:
         if os.path.exists(icon_path):
             inline_ui_icons[key] = encode_webp_data_uri(icon_path, size=96, quality=88)
 
+    game_logo_path = os.path.join(REPO_DIR, "assets", "ui", "game_logo.png")
+    game_logo_uri = (
+        encode_webp_data_uri(game_logo_path, size=160, quality=90)
+        if os.path.exists(game_logo_path)
+        else ""
+    )
+    mode_banners = {}
+    for bname in ("mode_campaign", "mode_quickmatch"):
+        bpath = os.path.join(REPO_DIR, "assets", "ui", f"{bname}.jpg")
+        if os.path.exists(bpath):
+            mode_banners[bname] = encode_scene_webp_data_uri(bpath, width=640, height=360, quality=78)
+
     music_path = os.path.join(REPO_DIR, "assets", "audio", f"{MUSIC_KEY}.mp3")
     inline_music_b64 = encode_music_base64(music_path) if os.path.exists(music_path) else ""
 
@@ -195,6 +207,10 @@ def build() -> str:
     body_inner = body_inner.replace('src="assets/icons/icon-192.png"', f'src="{app_icon_uri}"')
     if studio_logo_uri:
         body_inner = body_inner.replace('src="assets/icons/wildgoose_logo.png"', f'src="{studio_logo_uri}"')
+    if game_logo_uri:
+        body_inner = body_inner.replace('src="assets/ui/game_logo.png"', f'src="{game_logo_uri}"')
+    for bname, uri in mode_banners.items():
+        body_inner = body_inner.replace(f'src="assets/ui/{bname}.jpg"', f'src="{uri}"')
     for key, uri in inline_ui_icons.items():
         body_inner = body_inner.replace(f'src="assets/ui/ui_{key}.png"', f'src="{uri}"')
 

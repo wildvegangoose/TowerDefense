@@ -71,8 +71,13 @@ class TowerDeChessApp {
   _cacheDom() {
     this.el = {
       screenHome: document.getElementById('screen-home'),
+      screenCampaign: document.getElementById('screen-campaign'),
       screenGame: document.getElementById('screen-game'),
       gameBgArt: document.getElementById('game-bg-art'),
+      btnModeCampaign: document.getElementById('btn-mode-campaign'),
+      btnModeQuickmatch: document.getElementById('btn-mode-quickmatch'),
+      homeCampaignMeta: document.getElementById('home-campaign-meta'),
+      btnCampaignBack: document.getElementById('btn-campaign-back'),
       campaignTotalStars: document.getElementById('campaign-total-stars'),
       campaignRevealedPill: document.getElementById('campaign-revealed-pill'),
       mapRealmIndicator: document.getElementById('map-realm-indicator'),
@@ -376,7 +381,25 @@ class TowerDeChessApp {
       }
     });
 
-    this.el.btnBackMenu.addEventListener('click', () => this._returnToCampaign());
+    this.el.btnModeCampaign?.addEventListener('click', () => {
+      sound.unlock();
+      sound.playSelect();
+      this._openCampaignScreen();
+    });
+
+    this.el.btnModeQuickmatch?.addEventListener('click', () => {
+      sound.unlock();
+      sound.playSelect();
+      this._startQuickMatch();
+    });
+
+    this.el.btnCampaignBack?.addEventListener('click', () => {
+      sound.unlock();
+      sound.playSelect();
+      this._returnToHome();
+    });
+
+    this.el.btnBackMenu.addEventListener('click', () => this._leaveBattle());
     this.el.btnStartWave.addEventListener('click', () => this.engine?.startNextWave());
     this.el.btnSpeed.addEventListener('click', () => {
       sound.unlock();
@@ -418,20 +441,28 @@ class TowerDeChessApp {
 
     this.el.btnResultMenu.addEventListener('click', () => {
       this.el.modalResult.classList.add('hidden');
-      this._returnToCampaign();
+      this._leaveBattle();
     });
 
     this.el.btnResultRetry.addEventListener('click', () => {
       this.pendingProgression = null;
       this.el.modalResult.classList.add('hidden');
-      if (this.currentLevel) this._startLevel(this.currentLevel.id, false);
+      if (this.currentLevel?.isQuickMatch) {
+        this._launchLevelBoard(this.currentLevel);
+      } else if (this.currentLevel) {
+        this._startLevel(this.currentLevel.id, false);
+      }
     });
 
     this.el.btnResultNext.addEventListener('click', () => {
       sound.unlock();
       sound.playSelect();
       this.el.modalResult.classList.add('hidden');
-      this._returnToCampaign();
+      if (this.currentLevel?.isQuickMatch) {
+        this._startQuickMatch();
+      } else {
+        this._returnToCampaign();
+      }
     });
 
     // Android PWA Install Prompt
@@ -449,7 +480,7 @@ class TowerDeChessApp {
       this.el.btnInstallPwa.classList.add('hidden');
     });
 
-    // Settings Modal (accessible both from Campaign Map & inside Battle)
+    // Settings Modal (accessible from Main Menu, Campaign Map & inside Battle)
     this.el.btnOpenSettings?.addEventListener('click', () => this._openSettings());
     this.el.btnCloseSettings?.addEventListener('click', () => this._closeSettings());
     this.el.modalSettings?.addEventListener('click', (e) => {
@@ -469,14 +500,18 @@ class TowerDeChessApp {
       sound.playSelect();
       this._pausedBySettings = false;
       this.el.modalSettings.classList.add('hidden');
-      if (this.currentLevel) this._startLevel(this.currentLevel.id, false);
+      if (this.currentLevel?.isQuickMatch) {
+        this._launchLevelBoard(this.currentLevel);
+      } else if (this.currentLevel) {
+        this._startLevel(this.currentLevel.id, false);
+      }
     });
     this.el.btnSettingsMap?.addEventListener('click', () => {
       sound.unlock();
       sound.playSelect();
       this._pausedBySettings = false;
       this.el.modalSettings.classList.add('hidden');
-      this._returnToCampaign();
+      this._leaveBattle();
     });
     this.el.toggleSettingMusic?.addEventListener('change', (e) => {
       sound.unlock();
@@ -564,7 +599,8 @@ class TowerDeChessApp {
       !this.el.modalCodex?.classList.contains('hidden') ||
       !this.el.modalBriefing?.classList.contains('hidden') ||
       !this.el.modalResult?.classList.contains('hidden') ||
-      Boolean(this.el.screenGame?.classList.contains('active'))
+      Boolean(this.el.screenGame?.classList.contains('active')) ||
+      Boolean(this.el.screenCampaign?.classList.contains('active'))
     );
   }
 
@@ -584,7 +620,7 @@ class TowerDeChessApp {
     if (this._hasBackTarget()) {
       this._pushHistoryGuard();
     } else if (history.state?.tdcGuard) {
-      // Returned to root Campaign Map via UI controls — pop our guard so the next Back exits naturally
+      // Returned to root Main Menu via UI controls — pop our guard so the next Back exits naturally
       this._ignoringPopstate = true;
       history.back();
     }
@@ -617,11 +653,15 @@ class TowerDeChessApp {
     }
     if (!this.el.modalResult?.classList.contains('hidden')) {
       this.el.modalResult.classList.add('hidden');
-      this._returnToCampaign();
+      this._leaveBattle();
       return true;
     }
     if (this.el.screenGame?.classList.contains('active')) {
-      this._returnToCampaign();
+      this._leaveBattle();
+      return true;
+    }
+    if (this.el.screenCampaign?.classList.contains('active')) {
+      this._returnToHome();
       return true;
     }
     return false;
@@ -671,6 +711,12 @@ class TowerDeChessApp {
     const inGame = this.el.screenGame.classList.contains('active');
     if (this.el.settingsBattleSection) {
       this.el.settingsBattleSection.classList.toggle('hidden', !inGame);
+    }
+    if (this.el.btnSettingsMap) {
+      const labelEl = this.el.btnSettingsMap.querySelector('span');
+      if (labelEl) {
+        labelEl.textContent = this.currentLevel?.isQuickMatch ? 'Main Menu' : 'Campaign Map';
+      }
     }
     // Auto-pause active gameplay while Royal Settings is open
     this._pausedBySettings = false;
@@ -793,6 +839,10 @@ class TowerDeChessApp {
         revealedMax >= LEVELS.length
           ? `All ${LEVELS.length} Revealed`
           : `${revealedMax} / ${LEVELS.length} Revealed`;
+    }
+    if (this.el.homeCampaignMeta) {
+      const frontierCh = getChapterForLevel(frontierId);
+      this.el.homeCampaignMeta.textContent = `Chapter ${frontierCh.roman} • ${revealedMax}/${LEVELS.length} • ★ ${modeStars}/${maxStars}`;
     }
 
     if (this.selectedMapLevelId > revealedMax) {
@@ -1199,7 +1249,7 @@ class TowerDeChessApp {
       if (i % 2 === 0) {
         this._progressionTimers.push(
           setTimeout(() => {
-            if (this.el.screenHome.classList.contains('active')) {
+            if (this.el.screenCampaign?.classList.contains('active')) {
               sound.playSelect();
             }
           }, delayMs)
@@ -1221,7 +1271,7 @@ class TowerDeChessApp {
           void targetNode.offsetWidth;
           targetNode.classList.add('just-revealed');
         }
-        if (newlyUnlocked && this.el.screenHome.classList.contains('active')) {
+        if (newlyUnlocked && this.el.screenCampaign?.classList.contains('active')) {
           sound.playPlace();
         }
         this.justUnlockedLevelId = null;
@@ -1317,12 +1367,74 @@ class TowerDeChessApp {
     this._launchLevelBoard(lvl);
   }
 
+  _openCampaignScreen() {
+    this.el.screenHome.classList.remove('active');
+    this.el.screenGame.classList.remove('active');
+    this.el.screenCampaign.classList.add('active');
+    this._renderCampaign(true);
+    this._syncHistoryGuard();
+  }
+
+  _returnToHome() {
+    this._clearProgressionTimers();
+    this.engine?.stop();
+    this.weather?.stop();
+    this._pendingBriefLevel = null;
+    this._pausedBySettings = false;
+    this.el.modalBriefing.classList.add('hidden');
+    this.el.modalResult.classList.add('hidden');
+    this.el.modalSettings?.classList.add('hidden');
+    this.el.screenGame.classList.remove('active');
+    this.el.screenCampaign.classList.remove('active');
+    this.el.screenHome.classList.add('active');
+    this._renderCampaign(false);
+    this._syncHistoryGuard();
+  }
+
+  _leaveBattle() {
+    if (this.currentLevel?.isQuickMatch) {
+      this._returnToHome();
+    } else {
+      this._returnToCampaign();
+    }
+  }
+
+  _startQuickMatch() {
+    // Pick a varied arena across all 3 Chapter biomes & weather effects
+    const pool = LEVELS.filter((l) => l.id !== this._lastQuickMatchId);
+    const base = pool[Math.floor(Math.random() * pool.length)] || LEVELS[0];
+    this._lastQuickMatchId = base.id;
+    const ch = getChapterForLevel(base.id);
+
+    const skirmishLevel = {
+      ...base,
+      isQuickMatch: true,
+      unlockAllPieces: true,
+      startingGold: 320,
+      startingLives: 12,
+      subtitle: `Quick Match • Chapter ${ch.roman}`,
+      waves: [
+        { groups: [{ type: 'footman', count: 10, interval: 0.72 }, { type: 'lancer', count: 4, interval: 0.56, delay: 0.9 }] },
+        { groups: [{ type: 'lancer', count: 9, interval: 0.48 }, { type: 'bastion', count: 2, interval: 1.8, delay: 0.9 }] },
+        { groups: [{ type: 'footman', count: 12, interval: 0.55 }, { type: 'cleric', count: 3, interval: 1.25, delay: 0.8 }, { type: 'bastion', count: 2, interval: 1.7, delay: 0.9 }] },
+        { groups: [{ type: 'lancer', count: 12, interval: 0.42 }, { type: 'cleric', count: 4, interval: 1.05, delay: 0.7 }, { type: 'footman', count: 10, interval: 0.5, delay: 0.8 }] },
+        { groups: [{ type: 'bastion', count: 5, interval: 1.4 }, { type: 'cleric', count: 4, interval: 1.0, delay: 0.7 }, { type: 'lancer', count: 10, interval: 0.42, delay: 0.8 }] },
+        { groups: [{ type: 'footman', count: 14, interval: 0.44 }, { type: 'bastion', count: 5, interval: 1.35, delay: 0.7 }, { type: 'cleric', count: 5, interval: 0.95, delay: 0.7 }] },
+        { groups: [{ type: 'warlord', count: 1, interval: 2.0 }, { type: 'cleric', count: 4, interval: 1.0, delay: 0.9 }, { type: 'bastion', count: 4, interval: 1.35, delay: 1.0 }, { type: 'lancer', count: 12, interval: 0.4, delay: 1.1 }] },
+      ],
+    };
+
+    this._launchLevelBoard(skirmishLevel);
+  }
+
   _launchLevelBoard(lvl) {
     this._clearProgressionTimers();
     this.pendingProgression = null;
     this._pendingBriefLevel = null;
     this.currentLevel = lvl;
-    this.selectedMapLevelId = lvl.id;
+    if (!lvl.isQuickMatch) {
+      this.selectedMapLevelId = lvl.id;
+    }
 
     // Apply per-level painted battlefield backdrop at low opacity behind the 2.5D board
     if (this.el.gameBgArt) {
@@ -1332,9 +1444,15 @@ class TowerDeChessApp {
 
     this.el.modalBriefing.classList.add('hidden');
     this.el.screenHome.classList.remove('active');
+    this.el.screenCampaign.classList.remove('active');
     this.el.screenGame.classList.add('active');
-    const diffTag = this.difficulty === 'grandmaster' ? ' • GRANDMASTER' : '';
-    this.el.hudLevelNum.textContent = `LEVEL ${lvl.id}${diffTag}`;
+    if (lvl.isQuickMatch) {
+      const ch = getChapterForLevel(lvl.id);
+      this.el.hudLevelNum.textContent = `QUICK MATCH • CH. ${ch.roman}`;
+    } else {
+      const diffTag = this.difficulty === 'grandmaster' ? ' • GRANDMASTER' : '';
+      this.el.hudLevelNum.textContent = `LEVEL ${lvl.id}${diffTag}`;
+    }
     this.el.hudLevelName.textContent = lvl.name;
 
     this.engine.loadLevel(lvl, this.difficulty);
@@ -1355,7 +1473,8 @@ class TowerDeChessApp {
     this.el.modalResult.classList.add('hidden');
     this.el.modalSettings?.classList.add('hidden');
     this.el.screenGame.classList.remove('active');
-    this.el.screenHome.classList.add('active');
+    this.el.screenHome.classList.remove('active');
+    this.el.screenCampaign.classList.add('active');
     this._renderCampaign(Boolean(this.justUnlockedLevelId || this.pendingProgression));
     this._syncHistoryGuard();
   }
@@ -1444,7 +1563,9 @@ class TowerDeChessApp {
   }
 
   _renderPieceDock(state) {
-    const unlockedIds = new Set(getUnlockedPiecesForLevel(this.currentLevel.id));
+    const unlockedIds = new Set(
+      getUnlockedPiecesForLevel(this.currentLevel.unlockAllPieces ? 99 : this.currentLevel.id)
+    );
     const dock = this.el.pieceDock;
     dock.innerHTML = '';
 
@@ -1548,6 +1669,34 @@ class TowerDeChessApp {
   // ==================== VICTORY / DEFEAT ====================
 
   _handleGameEnd(result) {
+    if (result.level?.isQuickMatch) {
+      const modal = this.el.modalResult;
+      modal.classList.remove('hidden');
+      this.el.resultNextUnlock.classList.add('hidden');
+      this.el.btnResultMenu.textContent = 'Main Menu';
+      this.el.btnResultMenu.classList.remove('hidden');
+      this.el.btnResultRetry.textContent = 'Replay';
+      this.el.btnResultNext.textContent = 'New Quick Match →';
+      this.el.btnResultNext.classList.remove('hidden');
+
+      if (result.victory) {
+        this.el.resultKicker.textContent = `QUICK MATCH VICTORY • ${result.level.name.toUpperCase()}`;
+        this.el.resultTitle.textContent = 'Skirmish Won!';
+        this.el.resultStars.textContent = '★'.repeat(result.stars) + '☆'.repeat(3 - result.stars);
+        this.el.resultSummary.textContent = `You crushed the Warlord vanguard with ${result.livesLeft} Citadel lives intact. Final Score: ${result.score.toLocaleString()}.`;
+      } else {
+        this.el.resultKicker.textContent = `QUICK MATCH • ${result.level.name.toUpperCase()}`;
+        this.el.resultTitle.textContent = 'Checkmate';
+        this.el.resultStars.textContent = '☆☆☆';
+        this.el.resultSummary.textContent =
+          'The Obsidian Legion broke through! Try a fresh formation or deploy onto another random arena.';
+      }
+      return;
+    }
+
+    this.el.btnResultMenu.textContent = 'Campaign';
+    this.el.btnResultRetry.textContent = 'Replay';
+
     const showResultModal = () => {
       const modal = this.el.modalResult;
       modal.classList.remove('hidden');
