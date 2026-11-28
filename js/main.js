@@ -31,6 +31,7 @@ import {
   LEVEL_DISPATCHES,
 } from './data/story.js';
 import { GameEngine } from './engine/game.js';
+import { WeatherRenderer } from './engine/weather.js';
 import {
   loadProgressSync,
   hydrateProgressFromBackup,
@@ -86,6 +87,7 @@ class TowerDeChessApp {
 
       // Game HUD
       canvas: document.getElementById('game-canvas'),
+      gameWeatherCanvas: document.getElementById('game-weather-canvas'),
       btnBackMenu: document.getElementById('btn-back-menu'),
       hudLevelNum: document.getElementById('hud-level-num'),
       hudLevelName: document.getElementById('hud-level-name'),
@@ -274,6 +276,8 @@ class TowerDeChessApp {
 
     await preloadAssets();
 
+    this.weather = new WeatherRenderer(this.el.gameWeatherCanvas);
+
     this.engine = new GameEngine(this.el.canvas, {
       onHudUpdate: (state) => this._renderHud(state),
       onBanner: (msg) => this._showBanner(msg),
@@ -285,6 +289,7 @@ class TowerDeChessApp {
       const ro = new ResizeObserver(() => {
         if (this.el.screenGame.classList.contains('active')) {
           this.engine.resize();
+          this.weather?.resize();
         }
       });
       ro.observe(stage);
@@ -293,6 +298,7 @@ class TowerDeChessApp {
     window.addEventListener('resize', () => {
       if (this.el.screenGame.classList.contains('active')) {
         this.engine.resize();
+        this.weather?.resize();
       }
     });
   }
@@ -1144,7 +1150,11 @@ class TowerDeChessApp {
     this.el.hudLevelName.textContent = lvl.name;
 
     this.engine.loadLevel(lvl, this.difficulty);
-    requestAnimationFrame(() => this.engine.resize());
+    this.weather?.start(lvl.weather || 'sunrays', lvl.id);
+    requestAnimationFrame(() => {
+      this.engine.resize();
+      this.weather?.resize();
+    });
 
     if (showBriefing) {
       const ch = getChapterForLevel(lvl.id);
@@ -1172,6 +1182,7 @@ class TowerDeChessApp {
 
   _returnToCampaign() {
     this.engine?.stop();
+    this.weather?.stop();
     this.el.modalBriefing.classList.add('hidden');
     this.el.modalResult.classList.add('hidden');
     this.el.screenGame.classList.remove('active');

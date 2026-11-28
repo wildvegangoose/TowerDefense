@@ -60,6 +60,7 @@ JS_FILES_IN_ORDER = [
     "js/cutscene.js",
     "js/engine/targeting.js",
     "js/engine/game.js",
+    "js/engine/weather.js",
     "js/main.js",
 ]
 

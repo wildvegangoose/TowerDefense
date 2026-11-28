@@ -1252,7 +1252,7 @@ export class GameEngine {
     this._drawKingTethers(ctx);
     this._drawEntitiesSorted(ctx);
     this._drawProjectilesAndVfx(ctx);
-    this._drawBiomeAtmosphere(ctx);
+    // Weather & atmospheric effects are rendered exclusively on #game-weather-canvas behind the board
     this._drawFloatTexts(ctx);
 
     ctx.restore();
